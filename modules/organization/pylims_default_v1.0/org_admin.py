@@ -117,12 +117,47 @@ def admin_load_members(request):
     cursor = conn.cursor()
     cursor.execute("SELECT users.userid, users.username, users.email, uo.* FROM users LEFT JOIN user_organization AS uo ON users.userid=uo.user AND uo.org=%s::integer LEFT JOIN organizations AS o ON o.oid=uo.org ORDER BY users.email ASC;", (data['id'],))
     results = cursor.fetchall()
-    print('organization count:',len(results))
+    print('user count:',len(results))
     response['data']=results
     cursor.close()
     conn.close()
     
     if not 'error' in response:
+        response['status']='success'
+    return JsonResponse(response)
+
+def admin_assign_save(request):
+    accepted_permissions=['organizations_assign','assign']
+    response={}
+    if not pylims.adminauthmatch(request,accepted_permissions):
+        response['error']='Insufficient permissions'
+        return JsonResponse(response)
+    
+    data = json.loads(request.body)
+    
+    conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
+    cursor = conn.cursor()
+    cursor.execute("SELECT users.userid, users.username, users.email, uo.* FROM users LEFT JOIN user_organization AS uo ON users.userid=uo.user AND uo.org=%s::integer LEFT JOIN organizations AS o ON o.oid=uo.org ORDER BY users.email ASC;", (data['id'],))
+    results = cursor.fetchall()
+    print('user count:',len(results))
+    
+    for user in results:
+        print('processing',user['userid'],user['uoid'],str(user['userid']) in data['members'],str(user['userid']) in data['nonmembers'])
+        if user['uoid']==None and str(user['userid']) in data['members']:
+            print('add!')
+            cursor.execute("INSERT INTO user_organization (\"user\", org) VALUES (%s::integer, %s::integer);",(user['userid'],int(data['id'])))
+        elif not user['uoid']==None and str(user['userid']) in data['nonmembers']:
+            print('remove')
+            cursor.execute("DELETE FROM user_organization WHERE uoid=%s::integer;",(user['uoid'],))
+        else:
+            print('do nothing')
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
+    
+    if not 'error' in response:
+        response['msg_success']='Member assignments saved'
         response['status']='success'
     return JsonResponse(response)
     
@@ -133,5 +168,6 @@ urlpatterns=[
     path('admin_upload_image/', admin_upload_image, name="admin_upload_image"),
     path('admin_edit_save/', admin_edit_save, name="admin_edit_save"),
     path('admin_load_members/', admin_load_members, name="admin_load_members"),
+    path('admin_assign_save/', admin_assign_save, name="admin_assign_save"),
     ]
     

@@ -159,7 +159,15 @@ function admin_load_members(id) {
 
 			// Create the second cell
 			var cell2 = document.createElement('td');
-			cell2.innerHTML = '<input type="checkbox">';
+			var checkbox = document.createElement('input');
+			checkbox.type = 'checkbox';
+			checkbox.className = 'assign_org';
+			checkbox.value = member.userid; // Assuming member.userid is defined elsewhere
+			if (member.uoid) {
+				checkbox.checked=true;
+			}
+			// Append the input element to the table cell
+			cell2.appendChild(checkbox);
 			row.appendChild(cell2);
 
 			// Append the row to the table
@@ -175,10 +183,36 @@ function admin_load_members(id) {
 		saveButton.classList.add('button_save');
 		saveButton.textContent = 'Save Members';
 		main.appendChild(saveButton);
-		saveButton.addEventListener('click',admin_assign_save)
+		saveButton.addEventListener('click', function() {
+			admin_assign_save(id);
+		});
+		document.querySelectorAll('.assign_org').forEach(function(ele) {
+			ele.addEventListener('input',function() { clear_msg_elements(true); })
+		});
 	}).catch(error => {
         console.error(error);
       });
+}
+
+function admin_assign_save(id) {
+	var data={};
+	data.id=id;
+	data.members=[];
+	data.nonmembers=[];
+	document.querySelectorAll('.assign_org:checked').forEach(function(member) {
+		data.members.push(member.value);
+	})
+	document.querySelectorAll('.assign_org:not(:checked)').forEach(function(member) {
+		data.nonmembers.push(member.value);
+	});
+	console.log(data);
+	const pyoptions={data,csrf,urlprefix,url:'admin_assign_save',submit_mode:'success'}
+	pylims_post(pyoptions).then(result => {
+		console.log('pylims.post result x',result.data);
+		
+	}).catch(error => {
+        console.error(error);
+    });
 }
 admin_list_orgs();
 </script>{% endblock %}

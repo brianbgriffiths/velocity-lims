@@ -10,7 +10,6 @@ from pathlib import Path
 from settings import settings
 from django.template.loader import get_template
 import pylims
-import setup_updated
 
 def handlePost(request):
     if request.method == 'POST':
