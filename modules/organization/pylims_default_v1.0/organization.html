@@ -1,0 +1,22 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}pylims/organization{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<style>
+	
+</style>
+{% endblock %}
+{% block centercontent %}
+
+<div id="organization" class="center-border">
+{{ adminlinks|safe }}
+<img src="{{ mod_data.data.image }}" style="height:80px;">
+<div class="h1">{{ mod_data.data.organization_name }}</div>
+<div class="normal">{{ mod_data.data.description }}</div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+{% endblock %}

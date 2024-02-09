@@ -1,0 +1,20 @@
+{
+	"type": "module",
+	"category": "login",
+	"author": "Brian Griffiths",
+	"author_email": "tech@pylims.com",
+	"authentication": "loggedout",
+	"scripts": [
+		"login.py"
+	],
+	"default_template": "login.html",
+	"templates": {
+		"login.html": {"name":"Login","display_link":true,"authentication":"loggedout"}
+	},
+	"title": "Default Pylims Login Module",
+	"version_major": 1,
+	"version_minor": 1,
+	"setup_options":{
+		"login":{"type":"select","value":["Username","Email"]}
+	}
+}

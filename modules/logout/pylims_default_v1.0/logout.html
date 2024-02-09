@@ -1,0 +1,87 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}pylims{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<style>
+	#pylims_request_error {
+		border:solid 1px #ff0000;
+		color:#ff0000;
+		background:#660000;
+		padding:10px;
+		display:none;
+		margin:10px 0px;
+	}
+	#pylims_request_success {
+		border:solid 1px #00ff00;
+		color:#00ff00;
+		background:#006600;
+		padding:10px;
+		display:none;
+		margin:10px 0px;
+	}
+</style>
+{% endblock %}
+{% block centercontent %}
+
+<div id="account_logout" class="center-border">
+<p>Do you really want to logout?</p>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+<script>
+const mod={{ mod|safe }};
+const urlprefix='{{url}}';
+const options={{ mod_options|safe }};
+const csrf = '{{ csrf_token }}';
+
+console.log('mod',mod,'options',options)
+const main = document.getElementById('account_logout');
+
+var container = document.createElement("span");
+var button = document.createElement("button");
+container.appendChild(button)
+button.type="text";
+button.textContent='no';
+button.id='logout-no'
+button.style.display='inline-block';
+button.style.marginRight="25px";
+main.appendChild(container);
+button.addEventListener('click', nevermind);
+
+var container2 = document.createElement("span");
+var button2 = document.createElement("button");
+container2.appendChild(button2)
+button2.type="text";
+button2.textContent='yes';
+button2.id='logout-yes'
+main.appendChild(container2);
+button2.addEventListener('click', logout);
+
+var error = document.createElement("div");
+error.id='pylims_request_error';
+main.appendChild(error);
+
+var success = document.createElement("div");
+success.id='pylims_request_success';
+main.appendChild(success);
+
+
+
+function nevermind() {
+	window.location.href=`https://${window.location.hostname}`;
+}
+
+function logout() {
+	let data={}
+	const pyoptions={data,csrf,urlprefix,url:'submit',submit_id:'logout-yes',submit_mode:'success'}
+	const result = pylims_post(pyoptions).then(result => {
+	  console.log('pylims.post result',result);
+	  setTimeout(function() { window.location.href=`https://${window.location.hostname}`; }, 1000);  
+	}).catch(error => {
+        console.error(error);
+      });;
+}
+</script>{% endblock %}

@@ -1,0 +1,37 @@
+{
+    "setup": {
+        "login": "pylims_default_v1.0",
+        "organization": "pylims_default_v1.0",
+        "logout": "pylims_default_v1.0",
+        "account_creation": "pylims_default_v1.0"
+    },
+    "options": {
+        "login": {
+            "pylims_default_v1.0": {
+                "login": "1"
+            }
+        },
+        "organization": {
+            "pylims_default_v1.0": {
+                "show_departments": "true",
+                "show_teams": "true",
+                "show_people": "false"
+            }
+        },
+        "logout": {
+            "pylims_default_v1.0": {}
+        },
+        "account_creation": {
+            "pylims_default_v1.0": {
+                "username": "false",
+                "email": "true",
+                "firstname": "false",
+                "midname": "false",
+                "lastname": "false",
+                "password": "true",
+                "password_complex": "false"
+            },
+            "disabled_message_v1.0": {}
+        }
+    }
+}

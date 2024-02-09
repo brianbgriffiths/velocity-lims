@@ -1,0 +1,242 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}setup{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_object.js' %}"></script>
+{% endblock %}
+{% block centercontent %}
+<div class="center-border"><div id="modules">These are your enabled modules. Click a title to show more.
+<br><button id="expand_enabled_button">Expand Enabled</button></div>
+<div class="button_container">Note: Saving setup will result in a brief service outage ( &lt;10s ) as the server reboots.<br>
+<button onClick="saveSetup()" id="save_setup">Save Setup</button></div></div>{% endblock %}
+
+{% block javascript %}
+<script>
+
+const csrf = '{{ csrf_token }}';
+const settings={{ setup|safe }};
+var modules={{ modules|safe }};
+const modblock = document.getElementById('modules');
+</script>
+<script type="module">
+import pylims_UI from '/static/js/pylims_ui.js';
+const ui = new pylims_UI();
+
+function display_modules(expand_enabled=false) {
+	var useroptions=JSON.parse(JSON.stringify(settings.options))
+	for (let m in modules) {
+		console.log(m)
+		if (settings.setup[m] && !modules[m][settings.setup[m]] && settings.setup[m]!='disabled') {
+			console.error('looks like module has been deleted.',modules[m][settings.setup[m]])
+			settings.setup[m]='disabled';
+		}
+		const block = document.createElement('details');
+		modblock.appendChild(block);
+		const summary = document.createElement('summary');
+		summary.id=m;
+		block.appendChild(summary);
+		summary.innerHTML = replaceAndCapitalize(m);
+		var checkbox = document.createElement("input");
+		checkbox.type = "radio";
+		checkbox.value='disabled'
+		checkbox.name=m;
+		if (!settings.setup[m] || settings.setup[m]=='disabled') {
+			checkbox.checked=true;
+			summary.className="mod_disabled";
+			summary.innerHTML+=' <span class="setup_mod_options">(disabled)</span>';
+		} else {
+			summary.innerHTML+=' <span class="setup_mod_options">('+modules[m][settings.setup[m]].title+')</span>';
+		}
+		var textNode = document.createTextNode('disabled');
+		var label = document.createElement("label");
+		label.appendChild(checkbox);
+		label.appendChild(textNode);
+		block.appendChild(label);
+		checkbox.addEventListener('click', function() {
+			console.log('clicked',this.name,this.value)
+			let otheroptions = document.querySelectorAll('.'+this.name+'_od');
+			for (let oo of otheroptions) {
+				oo.style.display='none';
+			}
+			let thisoptions = document.getElementById(this.name+'_'+this.value+'_options');
+			if (thisoptions) {
+				thisoptions.style.display='block';
+			}
+			settings.setup[m]=this.value;
+			clear_msg_elements(true);
+		});
+		for (let p in modules[m]) {
+			console.log(p)
+			const mod=modules[m][p]
+			const page = document.createElement('div');
+			var checkbox = document.createElement("input");
+			checkbox.type = "radio";
+			checkbox.name=m;
+			checkbox.value=p;
+			
+			checkbox.addEventListener('click', function() {
+				console.log('clicked',this.name,this.value)
+				let otheroptions = document.querySelectorAll('.'+this.name+'_od');
+				for (let oo of otheroptions) {
+					oo.style.display='none';
+				}
+				let thisoptions = document.getElementById(this.name+'_'+this.value+'_options');
+				if (thisoptions) {
+					thisoptions.style.display='block';
+				}
+				settings.setup[m]=this.value;
+				clear_msg_elements(true);
+			});
+			if (settings.setup[m] && settings.setup[m]==p) {
+				checkbox.checked=true;
+			}
+			var textNode = document.createTextNode(mod.title);
+			var label = document.createElement("label");
+			label.appendChild(checkbox);
+			label.appendChild(textNode);
+			page.appendChild(label);
+			
+			const version = document.createElement("span");
+			version.className = "version";
+			version.innerHTML = `v${mod.version_major}.${mod.version_minor}`;
+			page.appendChild(version);
+			block.appendChild(page);
+			var optioncount=0;
+			if (modules[m][p]['setup_options']) {
+				optioncount=Object.keys(modules[m][p]['setup_options']).length
+			}
+			
+			console.log('options?',optioncount,modules[m][p]['setup_options'])
+			if (optioncount>0) {
+				const oblock = document.createElement('details');
+				oblock.className=m+'_od options_details';
+				oblock.id=m+'_'+p+'_options';
+				page.appendChild(oblock);
+			
+				const osummary = document.createElement('summary');
+				oblock.appendChild(osummary);
+				osummary.innerText='options'
+				if (settings.setup[m] && settings.setup[m]==p) {
+					oblock.open=true;
+				}
+			
+				for (let o in modules[m][p]['setup_options']) {
+					const thiso=modules[m][p]['setup_options'][o]
+					const option=document.createElement("div");
+					option.innerHTML+=o;
+					oblock.appendChild(option);
+					oblock.style.display='block';
+					if (thiso.type=='tf') {
+						var setval=thiso.value;
+						if (settings.options[m] && settings.options[m][p] && settings.options[m][p][o]) {
+							setval=settings.options[m][p][o];
+						}
+						const tf=ui.create_toggle(setval);
+						tf.id=`${m}_${p}_${o}`;
+						tf.dataset.cat=m;
+						tf.dataset.mod=p;
+						tf.dataset.opt=o;
+						option.appendChild(tf);
+						tf.addEventListener('click', function() {
+							console.log(`${this.id} clicked!`);
+							let newval = ui.toggle(this.id);
+							console.log(this.id,newval,settings.options)
+							let m=this.dataset.cat
+							let p=this.dataset.mod
+							let o=this.dataset.opt
+							settings.options[m][p][o]=newval;
+							clear_msg_elements(true);
+						});
+					} else if (thiso.type=='select') {
+						var setval=thiso.value[0];
+						if (settings.options[m] && settings.options[m][p] && settings.options[m][p][o]) {
+							console.log('current val set to',settings.options[m][p][o])
+							setval=settings.options[m][p][o];
+						}
+						const select=ui.create_select(thiso.value,setval);
+						select.id=`${m}_${p}_${o}`;
+						select.dataset.cat=m;
+						select.dataset.mod=p;
+						select.dataset.opt=o;
+						option.appendChild(select);
+						select.addEventListener('change', function() {
+							console.log(`${this.id} changed!`);
+							let newval = ui.select(this.id);
+							settings.options[this.dataset.cat][this.dataset.mod][this.dataset.opt]=newval;
+							clear_msg_elements(true);
+						});
+					}
+					
+				}
+				
+			}
+		}
+	}
+	var error = document.createElement("div");
+	error.id='pylims_request_error';
+	var success = document.createElement("div");
+	success.id='pylims_request_success';
+	var unsaved = document.createElement("div");
+	unsaved.id='pylims_unsaved_changes';
+	unsaved.textContent='Unsaved changes';
+	modblock.append(unsaved)
+	modblock.append(error)
+	modblock.append(success);
+}
+display_modules();
+const expand_enabled_button=document.getElementById('expand_enabled_button');
+var enabled_expanded=false;
+expand_enabled_button.addEventListener('click', function() {
+	const label=['Expand Enabled','Collapse Enabled'];
+	for (let m in modules) {
+		if (settings.setup[m] && settings.setup[m]!='disabled') {
+			const details=document.getElementById(m).parentElement;
+			details.open=!enabled_expanded;
+		}
+	}
+	enabled_expanded=!enabled_expanded;
+	this.innerText=label[enabled_expanded*1]
+	clear_msg_elements(true);
+});
+</script>
+<script>
+function replaceAndCapitalize(inputString) {
+  // Replace underscores with spaces
+  let modifiedString = inputString.replace(/_/g, ' ');
+
+  // Capitalize the first letter of each word
+  modifiedString = modifiedString.replace(/\b\w/g, (match) => match.toUpperCase());
+
+  return modifiedString;
+}
+function saveSetup() {
+
+	for (let m in modules) {
+		let selected=document.querySelector(`input[name=${m}]:checked`).value;
+		console.log(m,selected)
+		
+		
+		const thism = document.getElementById(m);
+		
+		if (selected!='disabled') {
+			thism.innerHTML=replaceAndCapitalize(m)+' <span class="setup_mod_options">('+modules[m][selected].title+')</span>';
+			thism.classList.remove('mod_disabled');
+			
+			
+		} else {
+			thism.innerHTML=replaceAndCapitalize(m)+' <span class="setup_mod_options">(disabled)</span>';
+			thism.className='mod_disabled';
+		}
+		
+	}
+	data={"setup":settings.setup,"options":settings.options}
+	const pyoptions={data,csrf,urlprefix:'../',url:'setup_save',submit_mode:'save',submit_id:'save_setup'}
+	pylims_post(pyoptions).then(result => {
+		console.log(result)
+	
+	}).catch(error => {
+		console.error(error);
+	});  
+}
+</script>{% endblock %}

@@ -1,0 +1,72 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}pylims{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<style>
+	
+</style>
+{% endblock %}
+{% block centercontent %}
+
+<div id="account_login" class="center-border">
+{{ mod_data.adminlinks|safe }}
+<div class="h1">Admin: Create Organization</div>
+<div class="normal"><input type="text"><br><textarea></textarea></div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+<script>
+const mod={{ mod|safe }};
+const urlprefix='{{url}}';
+const options={{ mod_options|safe }};
+const csrf = '{{ csrf_token }}';
+const mod_data = {{ mod_data.data|safe }};
+
+console.log('mod',mod,'options',options)
+const main = document.getElementById('account_login');
+
+var container = document.createElement("div");
+var textbox = document.createElement("input");
+container.appendChild(textbox)
+textbox.type="text";
+textbox.placeholder=mod.login.value[options.login];
+textbox.id='login-account'
+textbox.dataset.type=mod.login.value[options.login];
+main.appendChild(container);
+
+var pcontainer = document.createElement("div");
+var password = document.createElement("input");
+pcontainer.appendChild(password)
+password.type="password";
+password.placeholder='password';
+password.id='login-password'
+main.appendChild(pcontainer);
+
+var error = document.createElement("div");
+error.id='pylims_request_error';
+main.appendChild(error);
+
+var success = document.createElement("div");
+success.id='pylims_request_success';
+main.appendChild(success);
+
+var button = document.createElement("button");
+button.innerText='Login';
+button.id='login-button';
+main.appendChild(button)
+button.addEventListener('click', login);
+
+
+function login() {
+	let data={}
+	data['login']=document.getElementById('login-account').value;
+	data['logintype']=document.getElementById('login-account').dataset.type;
+	data['password']=document.getElementById('login-password').value;
+	const pyoptions={data,csrf,urlprefix,url:'submit',submit_id:'login-button',submit_mode:'success'}
+	const result = pylims_post(pyoptions);
+	console.log('result',result)
+}
+</script>{% endblock %}

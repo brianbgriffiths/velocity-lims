@@ -1,0 +1,595 @@
+{% extends "header-user.html" %}
+{% block title %}Ctools - Screens{% endblock %}
+
+{% block disptitle %}Active Screens{% endblock %}
+
+
+{% block content %}
+<div id="pipelinestatus-mariana" class="pipelinestatus"></div>
+<div id="pipelinestatus-voyager" class="pipelinestatus"></div>
+<div id="pipelinestatus-hotdog" class="pipelinestatus"></div>
+<div id="screens">Loading...</div>
+<div id="errorhover"></div>
+<div id="screenblock" onClick="resetfullscreen();"></div>
+<div id="fullscreen"></div>
+<div id="killscreen"></div>
+ 
+ {% endblock %}
+
+{% block js %}
+<style>
+#errorhover {
+	position:absolute;
+	color:#ffffff;
+	background-color:#000000;
+	border:solid 2px #cc0000;
+	display:none;
+	width:1000px;
+	padding:5px;
+}
+.screen {
+	border:solid 1px #000000;
+	border-radius:5px;
+	margin:10px;
+	height:400px;
+	width:250px;
+	background-color:#EBEBEB;
+	display:inline-block;
+	position:relative;
+	overflow:hidden;
+}
+.title, .title_error, .title_finished, .title_paused {
+	font-weight:bold;
+	padding:5px;
+	overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.title {
+	background-color:#E78700;
+}
+.title_error {
+	background-color:#cc0000;
+	color:#ffffff;
+}
+.title_finished {
+	background-color:#00E79C;
+	color:#000000;
+}
+.title_paused {
+	background-color:#E14D85;
+	color:#000000;
+}
+.id {
+	position:absolute;
+	bottom:0px;
+	left: 4px;
+    color: #919191;
+    font-size: 10px;
+}
+.pipelinestatus {
+	font-size: 24px;
+    padding: 15px;   
+    border-radius: 60px;
+    width: 500px;
+}
+.pipelinestatus.ready {
+	background-color: hsl(154 76% 94% / 1);
+	border: solid 2px #43e59e;
+}
+.pipelinestatus.busy {
+	background-color: #f6dabc;
+    border: solid 2px #e28826;
+}
+.displayicon {
+	fill:#000000;
+}
+.killicon {
+	fill:#919191;
+}
+.displayicon:hover, .killicon:hover {
+	fill:#E14D85;
+	cursor:pointer;
+}
+.display, .kill {
+	
+	
+}
+.samplelist {
+	position: absolute;
+    top: 80px;
+    left: 3px;
+    line-height: 18px;
+	white-space: nowrap;
+	width:99%;
+}
+.display {
+	top: 29px;
+    left: -3px;
+    height: 60px;
+    width: 60px;
+    margin: 10px;
+    position: absolute;
+}
+.kill {
+	position:absolute;
+	bottom: -1px;
+    right: 3px;
+	height:30px;
+	width:30px;
+}
+.output {
+	position:absolute;
+	background-color:#000000;
+	width: 50px;
+    height: 40px;
+    top: 47px;
+    left: 15px;
+	display:none;
+	transition: top .5s, left .5s, height .5s, width .5s, line-height .5s;
+	color:#ffffff;
+	font-family:consolas;
+	line-height:40px;
+	text-align:center;
+}
+#fullscreen {
+	background-color:#000000;
+	display:none;
+	position:absolute;
+	top:0px;
+	left:0px;
+	width:200px;
+	height:200px;
+	opacity:0;
+	transition: top .5s, left .5s, height .5s, width .5s, line-height .5s, opacity .5s;
+	color: #ffffff;
+    font-family: Consolas;
+    border: outset 3px #bdbdbd;
+    padding: 10px;
+	overflow-y:auto;
+	overflow-x:hidden;
+}
+#killscreen {
+	background-color:#cc0000;
+	display:none;
+	position:absolute;
+	top:300px;
+	left:calc(50% - 300px);
+	width:600px;
+	height:240px;
+	transition: top .5s, left .5s, height .5s, width .5s, line-height .5s, opacity .5s;
+	color: #ffffff;
+    padding: 10px;
+	font-size:24px;
+	text-align:center;
+}
+#screenblock {
+	position:absolute;
+	left:0px;
+	top:0px;
+	width:100%;
+	height:100%;
+	display:none;
+	opacity:0;
+	background-color:rgba(0, 0, 0, .7);
+	transition:opacity .5s;
+}
+.killbutton, .nmbutton {
+	display:inline-block;
+	border:solid 1px #ffffff;
+	padding:5px;
+	margin:5px;
+	font-size:18px;
+	cursor:pointer;
+}
+.killbutton {
+	background-color: yellow;
+    color: #cc0000;
+    border-color: black;
+}
+.killbutton:hover {
+	background-color:#E78700;
+}
+.nmbutton {
+	background-color: #566055;
+    border-color: white;
+}
+.nmbutton:hover {
+	background-color:#779a73;
+}
+.closeoutput {
+	position: absolute;
+    color: #cccccc;
+    top: 52px;
+	right:5px;
+	font-size:30px;
+	text-align: right;
+    margin-top: -50px;
+	width:50px;
+}
+.closeoutput:hover {
+	color:#00E79C;
+	cursor:pointer;
+}
+.elapsed {
+	position: absolute;
+    top: 51px;
+    left: 75px;
+}
+.icon_working {
+	font-size:19px;
+	-webkit-animation:spin 2s linear infinite;
+    -moz-animation:spin 2s linear infinite;
+    animation:spin 2s linear infinite;
+}
+.displayline {
+	text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+.spinner {
+	animation-duration: 2s;
+    animation-name: spin;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+    height: 20px;
+    width: 20px;
+    text-align: left;
+    transform-origin: 10px 10px;
+    line-height: 20px;
+    font-size: 20px;
+    position: relative;
+	display:inline-block;
+}
+@-moz-keyframes spin { 
+    100% { -moz-transform: rotate(360deg); } 
+}
+@-webkit-keyframes spin { 
+    100% { -webkit-transform: rotate(360deg); } 
+}
+@keyframes spin { 
+    100% { 
+        -webkit-transform: rotate(360deg); 
+        transform:rotate(360deg); 
+    } 
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<script type="text/javascript">
+
+const display='<svg class="displayicon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path d="M528 0h-480C21.5 0 0 21.5 0 48v320C0 394.5 21.5 416 48 416h192L224 464H152C138.8 464 128 474.8 128 488S138.8 512 152 512h272c13.25 0 24-10.75 24-24s-10.75-24-24-24H352L336 416h192c26.5 0 48-21.5 48-48v-320C576 21.5 554.5 0 528 0zM512 352H64V64h448V352z"/></svg>';
+const kill='<svg class="killicon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M96 0C113.7 0 128 14.33 128 32V128H64V32C64 14.33 78.33 0 96 0zM288 0C305.7 0 320 14.33 320 32V128H256V32C256 14.33 270.3 0 288 0zM352 160C369.7 160 384 174.3 384 192C384 194.3 383.7 196.6 383.3 198.8C309.8 219.1 256 287.7 256 368C256 379.4 257.1 390.5 259.1 401.3C248.1 406.4 236.3 410.3 224 412.8V512H160V412.8C86.97 397.1 32 333.4 32 256V224C14.33 224 0 209.7 0 192C0 174.3 14.33 160 32 160H352zM288 368C288 288.5 352.5 224 432 224C511.5 224 576 288.5 576 368C576 447.5 511.5 512 432 512C352.5 512 288 447.5 288 368zM491.3 331.3C497.6 325.1 497.6 314.9 491.3 308.7C485.1 302.4 474.9 302.4 468.7 308.7L432 345.4L395.3 308.7C389.1 302.4 378.9 302.4 372.7 308.7C366.4 314.9 366.4 325.1 372.7 331.3L409.4 368L372.7 404.7C366.4 410.9 366.4 421.1 372.7 427.3C378.9 433.6 389.1 433.6 395.3 427.3L432 390.6L468.7 427.3C474.9 433.6 485.1 433.6 491.3 427.3C497.6 421.1 497.6 410.9 491.3 404.7L454.6 368L491.3 331.3z"/></svg>';
+let screeninfo={}
+let sillywait;
+let sillycount=0;
+function pipelinebusy(machine) {
+	let div=document.getElementById('pipelinestatus-'+machine);
+	div.innerHTML='<div class="spinner"><i class="fa-solid fa-spinner"></i></div> Pipeline Running';
+	div.classList.add('busy')
+	div.classList.remove('ready')
+}
+function pipelineready(machine) {
+	let div=document.getElementById('pipelinestatus-'+machine);
+	div.innerHTML='<i class="fa-regular fa-circle-pause"></i> Pipeline Ready';
+	div.classList.add('ready')
+	div.classList.remove('busy')
+}
+function displayScreens() {
+	let html='';
+	
+	for (let i in screeninfo) {
+		//console.log('processing',i);
+		let id=i;
+		let title=screeninfo[i].name;
+		let titleclass='title';
+		let elapsed=screeninfo[i].elapsed.split('-');
+		if (elapsed[1]) {
+			elapsed=elapsed[0]+' days '+elapsed[1];
+		}
+		let samples='';
+		let s_count=0;
+		let f_count=0;
+		let e_count=0;
+		for (let s in screeninfo[i].samples) {
+			s_count++;
+			let thissample=s.trim();
+			let samplestatus='';
+			if (screeninfo[i].error[thissample]) {
+				samplestatus='<i class="ctool_error fa-solid fa-circle-exclamation" style="color:#cc0000;" data-error="'+screeninfo[i].error[thissample]+'"></i> '
+				titleclass='title_error'
+				e_count++;
+			} 
+			
+			if (screeninfo[i].samples[s].finished==1) {
+				f_count++;
+				samplestatus='<i class="fa-solid fa-clipboard-check" style="color:#00E79C;"></i> '
+			} 
+			
+			samples+='<br>'+samplestatus;
+			
+			if (screeninfo[i].samples[s].finished==1) {
+				samples+='<a href="https://seqoutputdatabase.s3.us-west-1.amazonaws.com/'+thissample+'_Report.html" target="_Blank">'+thissample+'</a>';
+			} else {
+				samples+=thissample
+			} 
+		}
+		
+		if (screeninfo[i].error['screen']) {
+			samples='<div style="color:#cc0000;margin-top:20px;"><i class="fa-solid fa-circle-exclamation"></i> '+screeninfo[i].error['screen']+'</div>';
+			e_count++;
+			console.log('found error for screen',i)
+		}
+		let lastchars='';
+		if (screeninfo[i].output) {
+			for (let r=screeninfo[i].output.length-1;r>0;r--) { 
+				let thisrow=screeninfo[i].output[r];
+				if (thisrow!='\n') {
+					lastchars=thisrow[thisrow.length-2];
+					break;
+				}
+				
+			}
+			console.log('lastchars',id,lastchars)
+		}
+		
+		if (e_count>0) {
+			titleclass='title_error';
+		} else if (s_count>0 && s_count==f_count) {
+			titleclass='title_finished'
+		} else if (lastchars=='$') {
+			title='<i class="fa-solid fa-circle-pause"></i> '+title;
+			titleclass='title_paused'
+		} else if (e_count==0) {
+			title='<i class="icon_working fa-solid fa-gear"></i> '+title;
+		}
+		let displaylines='';
+		if (screeninfo[i].display) {
+			displaylines+='<br>'+screeninfo[i].display;
+		}
+		
+		
+		html+='<div class="screen" id="'+id+'"><div class="'+titleclass+'">'+title+'</div><div class="display" onClick="showOutput('+id+');" id="d_'+id+'">'+display+'</div><div class="samplelist">'+samples+''+displaylines+'</div><div class="elapsed">'+elapsed+'</div><div class="kill" onClick="killScreen('+id+');">'+kill+'</div><div class="id">ID# '+id+'</div></div>';
+	}
+	html+='<input type="hidden" id="currentscreenid" value="0">';
+	document.getElementById('screens').innerHTML=html;
+	resetfullscreen();
+	let elements_errors=document.querySelectorAll('.ctool_error');
+	//console.log('elements_errors',elements_errors)
+	for (const ele of elements_errors) {
+		//console.log('adding event listeners to',ele)
+		ele.addEventListener("mouseover", showerror);
+		ele.addEventListener("mouseout", hideerror);
+	}
+}
+
+function showerror(e) {  
+	//console.log('show error',e.srcElement.dataset.error);
+	ediv=document.getElementById('errorhover');
+	ediv.style.display='block';
+	ediv.innerHTML='<i class="fa-solid fa-circle-exclamation" style="color:#cc0000;"></i>';
+	let error=e.srcElement.dataset.error.split('log/logs/');
+	ediv.innerHTML+=error[1]
+	ediv.style.top=(e.pageY+5)+'px';
+	ediv.style.left=(e.pageX+20)+'px';
+}
+
+function hideerror(e) {  
+   //console.log('hide error',e);
+   ediv=document.getElementById('errorhover');
+   ediv.style.display='none';
+}
+
+
+function resetfullscreen() {
+	document.getElementById('screenblock').style.opacity=0;
+	let thisx=0;
+		let thisy=0;
+	if (document.getElementById('currentscreenid') && document.getElementById('currentscreenid').value!=0) {
+		let thisoutput=document.getElementById('d_'+document.getElementById('currentscreenid').value);
+		console.log(thisoutput);
+		thisx=thisoutput.getBoundingClientRect().x;
+		thisy=thisoutput.getBoundingClientRect().y;
+	} 
+	
+	let fullscreen=document.getElementById('fullscreen');
+	fullscreen.innerHTML=null;
+	fullscreen.style.left=thisx+'px';
+	fullscreen.style.top=thisy+'px';
+	fullscreen.style.width='50px';
+	fullscreen.style.height='40px';
+	fullscreen.style.opacity=0;
+	document.getElementById('killscreen').style.opacity=0;
+	setTimeout(function() {
+		fullscreen.style.display='none';
+		document.getElementById('screenblock').style.display='none';
+		document.getElementById('killscreen').style.display='none';
+	},500);
+	
+	document.getElementById('currentscreenid').value=0;
+}
+
+function loadScreens() {
+	let options={csrfmiddlewaretoken: '{{csrf_token}}', test:false}
+	
+	$.ajax(
+		{
+			type:"POST",
+			url: "/screen/",
+			data:options,
+			success: function( data ) 
+			{
+				let cdata = JSON.parse(data);
+				
+				clearInterval(sillywait);
+				
+				if (cdata.screens=='error') {
+					alert('error!');
+					return false;
+				}
+				screendata=JSON.parse(cdata.data)
+				console.log('data',screendata)
+				if (screendata.pipelineactive==true) {
+					pipelinebusy(screendata['machine']);
+				} else {
+					pipelineready(screendata['machine']);
+				}
+				screeninfo=screendata.screens;
+				displayScreens();
+			}
+		 },'JSON');
+}
+
+function showOutput(which) {
+	//console.log('load output',which);
+	let thisx=0;
+	let thisy=0;
+	if (which) {
+		document.getElementById('currentscreenid').value=which;
+		let thisoutput=document.getElementById('d_'+which);
+		console.log(thisoutput);
+		thisx=thisoutput.getBoundingClientRect().x;
+		thisy=thisoutput.getBoundingClientRect().y;
+	}
+	//console.log(thisx,thisy);
+
+
+		let fullscreen=document.getElementById('fullscreen');
+		fullscreen.style.left=thisx+'px';
+		fullscreen.style.top=thisy+'px';
+		fullscreen.style.width='50px';
+		fullscreen.style.height='40px';
+		fullscreen.style.opacity=0;
+		fullscreen.style.display='block';
+		document.getElementById('screenblock').style.display='block';
+		setTimeout(function() {
+			document.getElementById('screenblock').style.opacity=1;
+			let newwidth=window.innerWidth-200+'px';
+			let newheight=window.innerHeight-300+'px';
+			fullscreen.style.left='100px';
+			fullscreen.style.top='100px';
+			fullscreen.style.width=newwidth;
+			fullscreen.style.height=newheight;
+			fullscreen.style.opacity=1;
+			setTimeout(function() {
+			
+			if (which) {
+				let odata=screeninfo[which].output;
+				let thisoutput='';
+				let lastoutput='';
+				for (let o in odata) {
+					if (lastoutput==odata[o]) {
+						continue;
+					}
+					lastoutput=odata[o]
+					thisoutput+='<br>'+odata[o]
+				}
+				fullscreen.innerHTML='<div>ssh: atlasbio@192.168.2.233<br>screen -r '+which+'.'+screeninfo[which].name+'</div><div class="closeoutput" onClick="resetfullscreen();"><i class="fa-light fa-rectangle-xmark"></i></div><div id="fullscreen_content" style="margin-top:10px;">'+thisoutput+'</div>';
+			} else {
+				fullscreen.innerHTML='<div>ssh: atlasbio@192.168.2.233</div><div class="closeoutput" onClick="resetfullscreen();"><i class="fa-light fa-rectangle-xmark"></i></div><div id="fullscreen_content" style="margin-top:10px;">Connecting to Mariana...<div id="sillywait"></div></div>';
+				sillycount=0;
+				sillyarray=shuffle(sillyarray);
+				sillywait=setInterval(sillytext,2000);
+			}
+				
+				
+				
+				
+			},500);
+		},1);
+}
+
+function killScreen(which) {
+	const warn='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="height:50px;vertical-align: middle;fill: #ffff00;"><!--! Font Awesome Pro 6.1.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2022 Fonticons, Inc. --><path d="M506.3 417l-213.3-364c-16.33-28-57.54-28-73.98 0l-213.2 364C-10.59 444.9 9.849 480 42.74 480h426.6C502.1 480 522.6 445 506.3 417zM232 168c0-13.25 10.75-24 24-24S280 154.8 280 168v128c0 13.25-10.75 24-23.1 24S232 309.3 232 296V168zM256 416c-17.36 0-31.44-14.08-31.44-31.44c0-17.36 14.07-31.44 31.44-31.44s31.44 14.08 31.44 31.44C287.4 401.9 273.4 416 256 416z"/></svg>';
+	document.getElementById('screenblock').style.opacity=1;
+	document.getElementById('screenblock').style.display='block';
+	document.getElementById('killscreen').style.display='block';
+	document.getElementById('killscreen').style.opacity=1;
+	document.getElementById('killscreen').innerHTML='You are about to kill screen<br><b>'+screeninfo[which].name+'</b><br>which will stop all analysis and delete the run.<br>'+warn+'This cannot be undone'+warn+'<br>Are you sure?<br><span class="nmbutton" onClick="resetfullscreen();">nevermind</span> <span class="killbutton" onClick="definitelyKillScreen('+which+');"><i class="fa-solid fa-skull"></i> yes!</span>';
+}
+function definitelyKillScreen(which) {
+	let fullscreen=document.getElementById('fullscreen');
+		fullscreen.style.left='0px';
+		fullscreen.style.top='0px';
+		fullscreen.style.width='50px';
+		fullscreen.style.height='40px';
+		fullscreen.style.opacity=0;
+		fullscreen.style.display='block';
+		document.getElementById('killscreen').style.opacity=0;
+		document.getElementById('screenblock').style.display='block';
+		setTimeout(function() {
+			document.getElementById('screenblock').style.opacity=1;
+			let newwidth=window.innerWidth-200+'px';
+			let newheight=window.innerHeight-300+'px';
+			fullscreen.style.left='100px';
+			fullscreen.style.top='100px';
+			fullscreen.style.width=newwidth;
+			fullscreen.style.height=newheight;
+			fullscreen.style.opacity=1;
+			setTimeout(function() {
+				document.getElementById('killscreen').style.display='none';
+				fullscreen.innerHTML='<div>ssh: atlasbio@192.168.2.233<br>screen -XS '+which+'.'+screeninfo[which].name+' quit<br><br>Please wait...<div id="sillywait"></div></div><div class="closeoutput" onClick="resetfullscreen();"><i class="fa-light fa-rectangle-xmark"></i></div>';
+				sillycount=0;
+				sillyarray=shuffle(sillyarray);
+				sillywait=setInterval(sillytext,2000);
+			},500);
+		},1);
+	
+	
+	
+	let options={csrfmiddlewaretoken: '{{csrf_token}}', id:which+'.'+screeninfo[which].name}
+						
+	$.ajax(
+		{
+			type:"POST",
+			url: "/killscreen/",
+			data:options,
+			success: function( data ) 
+			{
+				let cdata = JSON.parse(data);
+				
+				clearInterval(sillywait);
+				
+				if (cdata.screens=='error') {
+					alert('error!');
+					return false;
+				}
+				screendata=JSON.parse(cdata.data)
+				console.log('data',screendata)
+				if (screendata.pipelineactive==true) {
+					pipelinebusy(screendata['machine']);
+				} else {
+					pipelineready(screendata['machine']);
+				}
+				screeninfo=screendata.screens;
+				displayScreens();
+			}
+		 },'JSON');
+}
+
+function shuffle(array) {
+  let currentIndex = array.length,  randomIndex;
+
+  // While there remain elements to shuffle.
+  while (currentIndex != 0) {
+
+    // Pick a remaining element.
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+
+  return array;
+}
+let sillyarray=['Inspecting electrons','Sorting bits','Obscuring data','Transmitting spam','Eating lunch','Tiling tiles','Synthesizing nucleotides','Memorizing citric acid cycle','Creating new bugs','Seeing ghosts','Reticulating splines','Solidifying Meshes','Reversing polarity','Hacking dominion voting machines','Changing 0s to 1s','Changing 1s to 0s','Lying about not being sentient'];
+function sillytext() {
+	document.getElementById('sillywait').innerHTML+='<br>'+sillyarray[sillycount]+'...';
+	sillycount+=1;
+}
+
+showOutput(null);
+loadScreens();
+</script>
+{% endblock %}

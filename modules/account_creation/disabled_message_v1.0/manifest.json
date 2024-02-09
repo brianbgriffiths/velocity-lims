@@ -1,0 +1,13 @@
+{
+	"type": "module",
+	"category": "account_creation",
+	"author": "Brian Griffiths",
+	"author_email": "tech@pylims.com",
+	"authentication": "loggedout",
+	"scripts": [],
+	"default_template": "disabled.html",
+	"header_links":[],
+	"title": "disabled display message",
+	"version_major": 0,
+	"version_minor": 0
+}

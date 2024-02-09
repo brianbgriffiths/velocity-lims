@@ -1,0 +1,219 @@
+{% extends "header-user.html" %}
+
+{% block disptitle %}Curio Internal Tools{% endblock %}
+
+{% block content %}
+<div style="width:1000px;margin:auto;"><svg width="1000px" viewBox="0 0 619 205" version="1.1" xmlns="https://www.w3.org/2000/svg" xmlns:xlink="https://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="https://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+<defs>
+  <linearGradient id="skyGradient" x1="100%" y1="100%">
+    <stop offset="0%" stop-color="#4DD0E1">  
+		<animate attributeName="stop-color" values="#4dd0e1;#4d9be1;#4d66e1;#694de1;#9e4de1;#d34de1;#e14dba;#e14d85;#e14d85;#e14d85;#e14d85;#e14d85;#d563b1;#bc7bd5;#9893ed;#6da7f9;#44b8f9;#33c5ef;#4dd0e1" dur="20s" repeatCount="indefinite" />    
+    </stop>
+    <stop offset="100%" stop-color="#00E79C"> 
+		<animate attributeName="stop-color" values="#00e79c;#57dd79;#7bd359;#97c739;#afb918;#c4aa00;#d79a00;#e78700;#e78700;#e78700;#e78700;#e78700;#d79a00;#c4aa00;#afb918;#97c739;#7bd359;#57dd79;#00e79c" dur="20s" repeatCount="indefinite" />    
+    </stop>
+  </linearGradient>
+</defs>
+    <path fill="url(#skyGradient)" d="M483.553,144.3C496.24,156.988 513.448,164.115 531.391,164.115C568.728,164.115 599.042,133.801 599.042,96.463C599.042,59.125 568.728,28.812 531.391,28.812C494.027,28.812 463.738,59.1 463.738,96.463L491.257,96.463C491.257,74.299 509.225,56.331 531.391,56.331C553.539,56.331 571.523,74.314 571.523,96.463C571.523,118.613 553.539,136.596 531.391,136.596C520.746,136.596 510.538,132.367 503.012,124.841L483.553,144.3ZM404.659,96.463L404.659,164.115L431.996,164.115L431.996,96.463L404.659,96.463ZM373.555,33.921C341.28,33.921 315.115,59.353 315.115,90.724L315.115,164.115L342.452,164.115L342.452,90.724C342.452,74.027 356.378,60.492 373.555,60.492L373.555,33.921ZM225.78,164.115C258.055,164.115 284.22,138.684 284.22,107.312L284.22,33.921L256.883,33.921L256.883,107.312C256.883,124.009 242.958,137.544 225.78,137.544L225.78,164.115ZM135.447,48.626C122.76,35.939 105.553,28.812 87.61,28.812C50.272,28.812 19.958,59.125 19.958,96.463C19.958,133.801 50.272,164.115 87.61,164.115C105.553,164.115 122.76,156.988 135.447,144.3L115.988,124.841C108.462,132.367 98.254,136.596 87.61,136.596C65.461,136.596 47.478,118.613 47.478,96.463C47.478,74.314 65.461,56.331 87.61,56.331C98.254,56.331 108.462,60.559 115.988,68.086L135.447,48.626ZM205.153,129.94C198.726,124.402 194.676,116.317 194.676,107.312L194.676,33.921L167.339,33.921L167.339,107.312C167.339,125.211 175.857,141.177 189.167,151.588L205.153,129.94ZM404.659,33.921L404.659,60.921L431.996,60.921L431.996,33.921L404.659,33.921Z"/>
+</svg></div>
+
+<div id="screenblock" onClick="resetfullscreen();"></div>
+<div id="fullscreen"></div>
+<div id="password-change">
+	<div style="font-family:curio;font-size:54px;">reset password</div>
+	<div id="pr-username"></div>
+	<div id="error-msg2"></div>
+	<input type="password" placeholder="old password" id="pr-password1">
+	<br><input type="password" placeholder="new password" id="pr-password2">
+	<br><input type="password" placeholder="confirm new password" id="pr-password3">
+	<br><input type="submit" value="create new password" onClick="changePassword();">
+</div>
+
+<style>
+#error-msg, #error-msg2 {
+	display:none;
+	border:solid 2px #cc0000;
+}
+#fullscreen {
+	background-color:#000000;
+	display:none;
+	position:absolute;
+	top:0px;
+	left:0px;
+	width:200px;
+	height:200px;
+	opacity:0;
+	transition: top .5s, left .5s, height .5s, width .5s, line-height .5s, opacity .5s;
+	color: #ffffff;
+    font-family: Consolas;
+    border: outset 3px #bdbdbd;
+    padding: 10px;
+	overflow-y:auto;
+	overflow-x:hidden;
+}
+#screenblock {
+	position:absolute;
+	left:0px;
+	top:0px;
+	width:100%;
+	height:100%;
+	display:none;
+	opacity:0;
+	background-color:rgba(0, 0, 0, .7);
+	transition:opacity .5s;
+}
+#password-change {
+	display:none;
+	position:absolute;
+	top:100px;
+	left:calc(50% - 200px);
+	width:400px;
+	height:400px;
+	background-color:#ffffff;
+	text-align:center;
+	border:solid 5px #E78700;
+}
+</style>
+{% endblock %}
+{% block js %}
+<script>
+function resetPassword() {
+	showFullscreen();
+	document.getElementById('password-change').style.display='block';
+}
+function error(msg) {
+	document.getElementById('error-msg').style.display='block';
+	document.getElementById('error-msg').innerText=msg;
+}
+function error2(msg) {
+	document.getElementById('error-msg2').style.display='block';
+	document.getElementById('error-msg2').innerText=msg;
+}
+function hideError() {
+	document.getElementById('error-msg').style.display='none';
+	document.getElementById('error-msg2').style.display='none';
+}
+function showRequestPassword() {
+	hideError();
+	showFullscreen();
+	document.getElementById('password-reset').style.display='block';
+}
+function requestPassword() {
+	hideError();
+	let username=document.getElementById('reset-request-username').value;
+	
+	if (!username) {
+		error('Provide your Curio ID');
+		return false;
+	} 
+	var options={csrfmiddlewaretoken: '{{csrf_token}}', username };
+	$.ajax(
+		{
+			type:"POST",
+			url: "/requestnewpassword/",
+			data:options,
+			success: function( data ) 
+			{
+				data=JSON.parse(data);
+				console.log('data',data)
+				if (data.error) {
+					error(data.error);
+				} else if (data.status=='requested') {
+					error2('Password reset request received. Check slack.');
+					resetfullscreen()
+				}
+			}
+		 },'JSON');
+	document.getElementById('curio-password').value=null;
+}
+
+function login() {
+	hideError();
+	let username=document.getElementById('curio-username').value;
+	let password=document.getElementById('curio-password').value;
+	
+	if (!username) {
+		error('Provide your Curio ID');
+		return false;
+	} else if (!password) {
+		error('Provide your current or temporary password.');
+		return false;
+	}
+	var options={csrfmiddlewaretoken: '{{csrf_token}}', username, password };
+	$.ajax(
+		{
+			type:"POST",
+			url: "/login/",
+			data:options,
+			success: function( data ) 
+			{
+				data=JSON.parse(data);
+				console.log('data',data)
+				if (data.error) {
+					error(data.error);
+				} else if (data.status=='createpassword') {
+					document.getElementById('pr-username').innerText=data.username;
+					resetPassword();
+				}
+			}
+		 },'JSON');
+	document.getElementById('curio-password').value=null;
+}
+function changePassword() {
+	hideError();
+	let password1=document.getElementById('pr-password1').value;
+	let password2=document.getElementById('pr-password2').value;
+	let password3=document.getElementById('pr-password3').value;
+	let username=document.getElementById('curio-username').value;
+	
+	if (!password1) {
+		error2('Type your old password.');
+		return false;
+	} else if (!password2) {
+		error2('Create a new password.');
+		return false;
+	} else if (!password3) {
+		error2('Confirm your new password.');
+		return false;
+	} else if (password2!=password3) {
+		error2('Passwords do not match.');
+		return false;
+	}
+	var options={csrfmiddlewaretoken: '{{csrf_token}}', username, password1, password2, password3 };
+	$.ajax(
+		{
+			type:"POST",
+			url: "/resetpassword/",
+			data:options,
+			success: function( data ) 
+			{
+				data=JSON.parse(data);
+				console.log('data',data)
+				if (data.error) {
+					error(data.error);
+				} else if (data.status=='createpassword') {
+					
+				}
+			}
+		 },'JSON');
+}
+
+function resetfullscreen() {
+		document.getElementById('screenblock').style.opacity=0;
+		document.getElementById('password-change').style.display='none';
+		setTimeout(function() {
+			document.getElementById('screenblock').style.opacity=1;
+			document.getElementById('screenblock').style.display='none';
+		},500);
+}
+
+function showFullscreen() {
+		
+		document.getElementById('screenblock').style.opacity=0;
+		document.getElementById('screenblock').style.display='block';
+		setTimeout(function() {
+			document.getElementById('screenblock').style.opacity=1;
+		},10);
+}
+</script>
+{% endblock %}
