@@ -31,6 +31,9 @@ function display_modules(expand_enabled=false) {
 			console.error('looks like module has been deleted.',modules[m][settings.setup[m]])
 			settings.setup[m]='disabled';
 		}
+		if (!settings.options[m]) {
+			settings.options[m]={}
+		}
 		const block = document.createElement('details');
 		modblock.appendChild(block);
 		const summary = document.createElement('summary');
@@ -68,6 +71,9 @@ function display_modules(expand_enabled=false) {
 		});
 		for (let p in modules[m]) {
 			console.log(p)
+			if (!settings.options[m][p]) {
+				settings.options[m][p]={}
+			}
 			const mod=modules[m][p]
 			const page = document.createElement('div');
 			var checkbox = document.createElement("input");
@@ -109,6 +115,7 @@ function display_modules(expand_enabled=false) {
 			
 			console.log('options?',optioncount,modules[m][p]['setup_options'])
 			if (optioncount>0) {
+				
 				const oblock = document.createElement('details');
 				oblock.className=m+'_od options_details';
 				oblock.id=m+'_'+p+'_options';
@@ -123,7 +130,11 @@ function display_modules(expand_enabled=false) {
 			
 				for (let o in modules[m][p]['setup_options']) {
 					const thiso=modules[m][p]['setup_options'][o]
+					if (!settings.options[m][p][o]) {
+						settings.options[m][p][o]=thiso.value
+					}
 					const option=document.createElement("div");
+					
 					option.innerHTML+=o;
 					oblock.appendChild(option);
 					oblock.style.display='block';

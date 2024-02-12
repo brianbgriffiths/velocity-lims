@@ -115,7 +115,7 @@ def admin_load_members(request):
     
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
     cursor = conn.cursor()
-    cursor.execute("SELECT users.userid, users.username, users.email, uo.* FROM users LEFT JOIN user_organization AS uo ON users.userid=uo.user AND uo.org=%s::integer LEFT JOIN organizations AS o ON o.oid=uo.org ORDER BY users.email ASC;", (data['id'],))
+    cursor.execute("SELECT users.userid, users.username, users.email, uo.*, uaid FROM users LEFT JOIN user_organization AS uo ON users.userid=uo.user AND uo.org=%s::integer LEFT JOIN organizations AS o ON o.oid=uo.org LEFT JOIN user_admin AS ua ON ua.user=users.userid AND ua.permission=10 AND ua.value=%s ORDER BY users.email ASC;", (data['id'],str(data['id'])))
     results = cursor.fetchall()
     print('user count:',len(results))
     response['data']=results
@@ -127,7 +127,7 @@ def admin_load_members(request):
     return JsonResponse(response)
 
 def admin_assign_save(request):
-    accepted_permissions=['organizations_assign','assign']
+    accepted_permissions=['organizations_assign','admin_assign']
     response={}
     if not pylims.adminauthmatch(request,accepted_permissions):
         response['error']='Insufficient permissions'
@@ -145,12 +145,22 @@ def admin_assign_save(request):
         print('processing',user['userid'],user['uoid'],str(user['userid']) in data['members'],str(user['userid']) in data['nonmembers'])
         if user['uoid']==None and str(user['userid']) in data['members']:
             print('add!')
-            cursor.execute("INSERT INTO user_organization (\"user\", org) VALUES (%s::integer, %s::integer);",(user['userid'],int(data['id'])))
+            cursor.execute("INSERT INTO user_organization (\"user\", org) VALUES (%s::integer, %s::integer);",(user['userid'],int(data['id'])))          
         elif not user['uoid']==None and str(user['userid']) in data['nonmembers']:
             print('remove')
             cursor.execute("DELETE FROM user_organization WHERE uoid=%s::integer;",(user['uoid'],))
         else:
             print('do nothing')
+        
+        cursor.execute("SELECT uaid FROM user_admin WHERE \"user\"=%s AND permission=10 AND value=%s LIMIT 1;",(user['userid'],str(data['id'])))
+        result = cursor.fetchone()
+        
+        if str(user['userid']) in data['dept']:
+            if result==None:
+                cursor.execute("INSERT INTO user_admin (\"user\",permission,value) VALUES (%s,10,%s);",(user['userid'],str(data['id'])))
+        elif str(user['userid']) in data['nondept']:
+            if not result==None:
+                cursor.execute("DELETE FROM user_admin WHERE \"user\"=%s AND permission=10 AND value=%s",(user['userid'],str(data['id'])))
     
     conn.commit()
     cursor.close()

@@ -49,13 +49,28 @@
 		min-height:128px;
 		box-sizing:border-box;
 	}
+	table {
+		border-collapse: collapse;
+	}
+	td {
+		border-top:solid 1px #cccccc;
+	}
+	tr:hover {
+		background-color:#f7f6f6;
+	}
+	td:not(:first-child) {
+		text-align:center;
+	}
+	th:not(:first-child) {
+		padding: 2px 10px;
+	}
 </style>
 {% endblock %}
 {% block centercontent %}
 
 <div id="organizations" class="center-border">
 {{ adminlinks|safe }}
-<div class="h1" id="page_title">Admin: Assign Members</div>
+<div class="h1" id="page_title">Organization Admin: Assign Members</div>
 <div id="organizations_display"></div>
 </div>
 
@@ -143,6 +158,13 @@ function admin_load_members(id) {
 		var headerCell2 = document.createElement('th');
 		headerCell2.textContent = 'Member';
 		headerRow.appendChild(headerCell2);
+		
+		if (mod_data.departments) {
+			// Create the third header cell
+			var headerCell3 = document.createElement('th');
+			headerCell3.textContent = 'Add Depts.';
+			headerRow.appendChild(headerCell3);
+		}
 
 		// Append the header row to the table
 		table.appendChild(headerRow);
@@ -162,14 +184,34 @@ function admin_load_members(id) {
 			var checkbox = document.createElement('input');
 			checkbox.type = 'checkbox';
 			checkbox.className = 'assign_org';
-			checkbox.value = member.userid; // Assuming member.userid is defined elsewhere
+			checkbox.value = member.userid; 
 			if (member.uoid) {
 				checkbox.checked=true;
+			}
+			if (member.email=='root') {
+				checkbox.disabled=true;
 			}
 			// Append the input element to the table cell
 			cell2.appendChild(checkbox);
 			row.appendChild(cell2);
-
+			
+			if (mod_data.departments) {
+				// Create the third cell
+				var cell3 = document.createElement('td');
+				var checkbox3 = document.createElement('input');
+				checkbox3.type = 'checkbox';
+				checkbox3.className = 'add_dept';
+				checkbox3.value = member.userid; 
+				if (!member.uoid) {
+					checkbox3.disabled=true;
+				}
+				if (member.uaid) {
+					checkbox3.checked=true;
+				}
+				// Append the input element to the table cell
+				cell3.appendChild(checkbox3);
+				row.appendChild(cell3);
+			}
 			// Append the row to the table
 			table.appendChild(row);
 		}
@@ -187,7 +229,18 @@ function admin_load_members(id) {
 			admin_assign_save(id);
 		});
 		document.querySelectorAll('.assign_org').forEach(function(ele) {
-			ele.addEventListener('input',function() { clear_msg_elements(true); })
+			ele.addEventListener('input',function() { 
+				clear_msg_elements(true);
+				let dept = ele.parentElement.nextSibling;
+				if (dept && dept.getElementsByClassName('add_dept').length>0) {
+					dept.getElementsByClassName('add_dept')[0].disabled=!ele.checked;
+				}
+			})
+		});
+		document.querySelectorAll('.add_dept').forEach(function(ele) {
+			ele.addEventListener('input',function() {
+				clear_msg_elements(true);
+			});
 		});
 	}).catch(error => {
         console.error(error);
@@ -199,11 +252,19 @@ function admin_assign_save(id) {
 	data.id=id;
 	data.members=[];
 	data.nonmembers=[];
+	data.dept=[];
+	data.nondept=[];
 	document.querySelectorAll('.assign_org:checked').forEach(function(member) {
 		data.members.push(member.value);
 	})
 	document.querySelectorAll('.assign_org:not(:checked)').forEach(function(member) {
 		data.nonmembers.push(member.value);
+	});
+	document.querySelectorAll('.add_dept:checked').forEach(function(member) {
+		data.dept.push(member.value);
+	})
+	document.querySelectorAll('.add_dept:not(:checked)').forEach(function(member) {
+		data.nondept.push(member.value);
 	});
 	console.log(data);
 	const pyoptions={data,csrf,urlprefix,url:'admin_assign_save',submit_mode:'success'}

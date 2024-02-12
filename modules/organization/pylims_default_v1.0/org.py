@@ -13,22 +13,22 @@ def getOrg(params):
     response={}
     response['data']={}
     mods = json.loads(pylims.get_setup_options())
-    mod=mods['options']['organization'][self]
-    print('mod',params['modinfo'])
+    mod=mods['options']['organization'][self];
+    # print('mod',params['modinfo'])
     if not 'userid' in params:
         response['error']='no userid'
         response['status']='failed'
         return response
     # print('getOrg userid',int(params['userid']))
-
-
+    if 'departments' in mods['setup'] and not mods['setup']['departments']=='disabled':
+        response['data']['departments']=mods['setup']['departments']
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
     cursor = conn.cursor()
 
     cursor.execute("SELECT * FROM user_organization JOIN organizations ON oid=user_organization.org WHERE user_organization.user = %s::integer LIMIT 1;", (int(params['userid']),))
 
     results = cursor.fetchone()
-    print('results',results)
+    # print('results',results)
     if results==None:
         cursor.execute("""SELECT 
             column_name
@@ -51,7 +51,7 @@ def getOrg(params):
         response['status']='no org'
         return response
     else:
-        response['data']=results
+        response['data'].update(results)
     cursor.close()
     conn.close()
     

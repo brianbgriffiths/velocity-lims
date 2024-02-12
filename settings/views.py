@@ -134,8 +134,11 @@ def mod_resolver(request, mod, page=False):
     context['admin']=''
     if 'admin_templates' in mods[mod][settings['setup'][mod]]:
         for adminlink in mods[mod][settings['setup'][mod]]['admin_templates']:
-            if pylims.adminauthmatch(request,mods[mod][settings['setup'][mod]]['admin_templates'][adminlink]['permission_needed']):   
-                context['admin']+=f'<span class="admin_link"><a href="/modules/organization/{adminlink.split(".")[0]}">{mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]["name"]}</a></span>'
+            if pylims.adminauthmatch(request,mods[mod][settings['setup'][mod]]['admin_templates'][adminlink]['permission_needed']):
+                adminmod=mod
+                if "module" in mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]:
+                    adminmod=mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]["module"]
+                context['admin']+=f'<span class="admin_link"><a href="/modules/{adminmod}/{adminlink.split(".")[0]}">{mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]["name"]}</a></span>'
     if not context['admin']=='':
         context['adminlinks']=f'<div id="adminlinks">Admin: {context["admin"]}</div>'
     
@@ -152,6 +155,7 @@ def mod_resolver(request, mod, page=False):
             options_to_send['admin']=request.session['admin']
         options_to_send['modinfo']=mods[mod][settings['setup'][mod]]
         context['mod_data']=function_to_call(options_to_send)
+        # print('loadscript moddata',context['mod_data'])
     else:
         print('no loadscript')
             

@@ -1,4 +1,4 @@
-
 setup_updated.py
 *.pyc
-*.pyc
+
+settings/__pycache__/views.cpython-312.pyc

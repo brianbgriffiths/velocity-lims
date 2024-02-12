@@ -3,7 +3,8 @@
         "login": "pylims_default_v1.0",
         "organization": "pylims_default_v1.0",
         "logout": "pylims_default_v1.0",
-        "account_creation": "pylims_default_v1.0"
+        "account_creation": "pylims_default_v1.0",
+        "departments": "pylims_default_v1.0"
     },
     "options": {
         "login": {
@@ -32,6 +33,13 @@
                 "password_complex": "false"
             },
             "disabled_message_v1.0": {}
+        },
+        "departments": {
+            "pylims_default_v1.0": {
+                "auto_add_to_parent_organization": "false",
+                "show_teams": "true",
+                "show_people": "false"
+            }
         }
     }
 }

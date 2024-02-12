@@ -16,7 +16,8 @@
 	"admin_templates":{
 		"admin_create.html": {"name":"Create","display_link":true,"authentication":"loggedin","permission_needed":["organizations_create"]},
 		"admin_edit.html": {"name":"Edit","display_link":true,"authentication":"loggedin","permission_needed":["organizations_edit"]},
-		"admin_assign.html": {"name":"Assign","display_link":true,"authentication":"loggedin","permission_needed":["organizations_assign"]}
+		"admin_assign.html": {"name":"Assign","display_link":true,"authentication":"loggedin","permission_needed":["organizations_assign"]},
+		"admin_create_dept.html": {"module":"departments","name":"Add Dept.","display_link":true,"authentication":"loggedin","permission_needed":["departments_create"]}
 	},
 	"title": "Pylims Default Organization",
 	"version_major": 1,
