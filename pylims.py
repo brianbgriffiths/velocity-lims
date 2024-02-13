@@ -1,5 +1,9 @@
 import os, json
 from settings import settings
+import psycopg
+from psycopg import sql
+from psycopg.rows import dict_row 
+from psycopg.pq import Escaping
 
 dbname = 'pylims'
 dbuser = 'dbroot'
@@ -65,10 +69,9 @@ def authmatch(loggedin,auth):
         return False
     return True
 
-def adminauthmatch(request,permissions_accepted):
-    if not 'admin' in request.session:
+def adminauthmatch(user_permissions,permissions_accepted):
+    if len(user_permissions)==0:
         return False
-    user_permissions=request.session['admin']
     print(term(),info('accepted permissions'),permissions_accepted)
     print(term(),info('user permissions'),user_permissions)
     if user_permissions=={}:
@@ -81,6 +84,24 @@ def adminauthmatch(request,permissions_accepted):
             print(term(),info('user has permission'),accept)
             return True
     print(term(),error('did not find sufficient permissions'))
+
+def loaduser_admin(userid):
+    conn = psycopg.connect(dbname=dbname, user=dbuser, password=dbpass, host=dbhost, port=dbport, row_factory=dict_row)
+    cursor = conn.cursor()
+    
+    admin={}
+    query = sql.SQL("""
+        SELECT admin.permission, user_admin.value
+        FROM user_admin
+        JOIN admin ON admin.aid = user_admin.permission
+        WHERE user_admin.USER = {}
+    """).format(sql.Literal(userid))
+    
+    cursor.execute(query)
+    result = cursor.fetchall()
+    for permission in result:
+        admin[permission['permission']]=permission['value'] 
+    return admin
 
 def error(msg):
     return f"\033[38;5;196m{msg}\033[0m"

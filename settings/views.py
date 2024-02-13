@@ -10,6 +10,10 @@ from pathlib import Path
 from settings import settings
 from django.template.loader import get_template
 import pylims
+import psycopg
+from psycopg import sql
+from psycopg.rows import dict_row 
+from psycopg.pq import Escaping
 
 def handlePost(request):
     if request.method == 'POST':
@@ -108,6 +112,37 @@ def mod_resolver(request, mod, page=False):
             print('no default template');
             return redirect('home')
     
+    conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
+    cursor = conn.cursor()
+    
+    context['admin']={}
+    if 'userid' in request.session and request.session['userid']>0:
+        query = sql.SQL("""
+            SELECT admin.permission, user_admin.value
+            FROM user_admin
+            JOIN admin ON admin.aid = user_admin.permission
+            WHERE user_admin.USER = {}
+        """).format(sql.Literal(request.session['userid']))
+        
+        cursor.execute(query)
+        result = cursor.fetchall()
+        print('result:', result)
+        for permission in result:
+            print('\t',permission['permission'])
+            context['admin'][permission['permission']]=permission['value']
+        print('admin',context['admin'])    
+        adminlinks=''
+        if 'admin_templates' in mods[mod][settings['setup'][mod]]:
+            for adminlink in mods[mod][settings['setup'][mod]]['admin_templates']:
+                if pylims.adminauthmatch(context['admin'],mods[mod][settings['setup'][mod]]['admin_templates'][adminlink]['permission_needed']):
+                    adminmod=mod
+                    if "module" in mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]:
+                        adminmod=mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]["module"]
+                    adminlinks+=f'<span class="admin_link"><a href="/modules/{adminmod}/{adminlink.split(".")[0]}">{mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]["name"]}</a></span>'
+        if 'admin' in context and len(context['admin']) > 0:
+            context['adminlinks']=f'<div id="adminlinks">Admin: {adminlinks}</div>'
+    
+    
     #check verification
     if f'{page}.html' in mods[mod][settings['setup'][mod]]['templates']:
         template = mods[mod][settings['setup'][mod]]['templates'][f'{page}.html']
@@ -117,12 +152,12 @@ def mod_resolver(request, mod, page=False):
             print(pylims.term(),page,pylims.error('Authentication not granted.'))
             return redirect('home')
     elif f'{page}.html' in mods[mod][settings['setup'][mod]]['admin_templates']:
-        if not 'admin' in request.session:
+        if 'admin' in context and len(context['admin']) == 0:
             print(pylims.term(),page,pylims.error('User is not an admin.'))
             return redirect('home')
         # print(pylims.term(),pylims.info('requested admin template:'),page)
         template = mods[mod][settings['setup'][mod]]['admin_templates'][f'{page}.html']
-        match=pylims.adminauthmatch(request,template['permission_needed'])
+        match=pylims.adminauthmatch(context['admin'],template['permission_needed'])
         print('match=',match)
         if match==False:
             print(pylims.term(),page,pylims.error('Authentication not granted.'))
@@ -131,16 +166,6 @@ def mod_resolver(request, mod, page=False):
         print(pylims.term(),page,pylims.error('Template not found.'))
         return redirect('home')
     
-    context['admin']=''
-    if 'admin_templates' in mods[mod][settings['setup'][mod]]:
-        for adminlink in mods[mod][settings['setup'][mod]]['admin_templates']:
-            if pylims.adminauthmatch(request,mods[mod][settings['setup'][mod]]['admin_templates'][adminlink]['permission_needed']):
-                adminmod=mod
-                if "module" in mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]:
-                    adminmod=mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]["module"]
-                context['admin']+=f'<span class="admin_link"><a href="/modules/{adminmod}/{adminlink.split(".")[0]}">{mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]["name"]}</a></span>'
-    if not context['admin']=='':
-        context['adminlinks']=f'<div id="adminlinks">Admin: {context["admin"]}</div>'
     
     if 'load_script_function' in mods[mod][settings['setup'][mod]]:
         loadscript = mods[mod][settings['setup'][mod]]['load_script_function']
@@ -148,11 +173,9 @@ def mod_resolver(request, mod, page=False):
         module_to_import = importlib.import_module(mods[mod][settings['setup'][mod]]['scripts'][loadscript[0]])
         function_to_call = getattr(module_to_import, loadscript[1])
         options_to_send = {}
-        options_to_send['admin']=request.session['admin']
+        options_to_send['admin']=context['admin']
         if 'user' in loadscript[2]:
             options_to_send['userid']=request.session['userid']
-        if 'admin' in request.session:
-            options_to_send['admin']=request.session['admin']
         options_to_send['modinfo']=mods[mod][settings['setup'][mod]]
         context['mod_data']=function_to_call(options_to_send)
         # print('loadscript moddata',context['mod_data'])

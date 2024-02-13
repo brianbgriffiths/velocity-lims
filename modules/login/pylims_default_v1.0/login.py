@@ -74,21 +74,7 @@ def submit(request):
     # bcrypt.checkpw(input_password.encode('utf-8'), hashed_password)
     request.session['userid']=result['userid'];
     
-    query = sql.SQL("""
-        SELECT admin.permission, user_admin.value
-        FROM user_admin
-        JOIN admin ON admin.aid = user_admin.permission
-        WHERE user_admin.USER = {}
-    """).format(sql.Literal(request.session['userid']))
-
-    cursor.execute(query)
-    result = cursor.fetchall()
-    print('result:', result)
-    if not result==None:
-        request.session['admin']={}
-    for permission in result:
-        print('\t',permission['permission'])
-        request.session['admin'][permission['permission']]=permission['value']
+    
     
     print('session',request.session.keys())
     if not 'error' in response:

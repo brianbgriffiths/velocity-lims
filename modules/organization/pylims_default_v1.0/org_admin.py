@@ -8,6 +8,10 @@ import bcrypt
 import base64
 from PIL import Image
 from io import BytesIO
+import psycopg
+from psycopg import sql
+from psycopg.rows import dict_row 
+from psycopg.pq import Escaping
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 self = os.path.basename(current_directory)
@@ -16,7 +20,7 @@ def admin_list_orgs(request):
     accepted_permissions=['organizations_edit']
     response={}
     
-    if not pylims.adminauthmatch(request,accepted_permissions):
+    if not pylims.adminauthmatch(pylims.loaduser_admin(request.session['userid']),accepted_permissions):
         response['error']='Insufficient permissions'
         return JsonResponse(response)
     
@@ -40,7 +44,7 @@ def admin_list_orgs(request):
 def admin_edit_org(request):
     accepted_permissions=['organizations_edit']
     response={}
-    if not pylims.adminauthmatch(request,accepted_permissions):
+    if not pylims.adminauthmatch(pylims.loaduser_admin(request.session['userid']),accepted_permissions):
         response['error']='Insufficient permissions'
         return JsonResponse(response)
     
@@ -63,7 +67,7 @@ def admin_edit_org(request):
 def admin_upload_image(request):
     accepted_permissions=['organizations_edit']
     response={}
-    if not pylims.adminauthmatch(request,accepted_permissions):
+    if not pylims.adminauthmatch(pylims.loaduser_admin(request.session['userid']),accepted_permissions):
         response['error']='Insufficient permissions'
         return JsonResponse(response)
     
@@ -86,7 +90,7 @@ def admin_upload_image(request):
 def admin_edit_save(request):
     accepted_permissions=['organizations_edit']
     response={}
-    if not pylims.adminauthmatch(request,accepted_permissions):
+    if not pylims.adminauthmatch(pylims.loaduser_admin(request.session['userid']),accepted_permissions):
         response['error']='Insufficient permissions'
         return JsonResponse(response)
     
@@ -107,7 +111,7 @@ def admin_edit_save(request):
 def admin_load_members(request):
     accepted_permissions=['organizations_assign','assign']
     response={}
-    if not pylims.adminauthmatch(request,accepted_permissions):
+    if not pylims.adminauthmatch(pylims.loaduser_admin(request.session['userid']),accepted_permissions):
         response['error']='Insufficient permissions'
         return JsonResponse(response)
     
@@ -129,7 +133,7 @@ def admin_load_members(request):
 def admin_assign_save(request):
     accepted_permissions=['organizations_assign','admin_assign']
     response={}
-    if not pylims.adminauthmatch(request,accepted_permissions):
+    if not pylims.adminauthmatch(pylims.loaduser_admin(request.session['userid']),accepted_permissions):
         response['error']='Insufficient permissions'
         return JsonResponse(response)
     
