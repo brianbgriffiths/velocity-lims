@@ -37,21 +37,21 @@ def home(request):
     with open("VERSION", 'r') as file:
         context['info'].append(['Pylims Version',file.read()])
     context['info'].append(['Python Version',".".join(sys.version.split()[0].split('.')[:2])])
-    print('links',context['links'])
-    print(setup)
-    if 'account_creation' in setup and not setup['account_creation']=='disabled':
-        print('default template',modules["account_creation"][setup["account_creation"]]["templates"][modules["account_creation"][setup["account_creation"]]["default_template"]][1])
-        return render(request, f'account_creation/{modules["account_creation"][setup["account_creation"]]["templates"][modules["account_creation"][setup["account_creation"]]["default_template"]][1]}', context)
+    # print('links',context['links'])
+    # print(setup)
+    # if 'account_creation' in setup and not setup['account_creation']=='disabled':
+        # print('default template',modules["account_creation"][setup["account_creation"]]["templates"][modules["account_creation"][setup["account_creation"]]["default_template"]][1])
+        # return render(request, f'account_creation/{modules["account_creation"][setup["account_creation"]]["templates"][modules["account_creation"][setup["account_creation"]]["default_template"]][1]}', context)
     return render(request, 'index.html', context)
 
 def setup(request):
-    print('building module list')
+    print(pylims.term(),pylims.info('building module list'))
     context={}
     #get all available modules 
     context['modules'] = pylims.build_module_dict()
     context['setup']=pylims.get_setup_options()
     context['links']=pylims.build_module_links(request)
-    print(context['modules'])
+    # print(context['modules'])
     return render(request, 'setup.html', context)
 
 def setup_save(request):
@@ -64,7 +64,7 @@ def setup_save(request):
         response_data = {'error': 'Invalid request method', 'message': 'Method not allowed'}
         return JsonResponse(response_data, status=405)
     json_data = json.loads(request.body)
-    print(json_data)
+    # print(json_data)
     
     file_path = settings.BASE_DIR / 'json/module_setup.json'
     with open(file_path, 'w+') as json_file:
@@ -91,9 +91,9 @@ def mod_resolver(request, mod, page=False):
     authrule = mods[mod][settings['setup'][mod]]['authentication']
     if 'userid' in request.session and request.session['userid']>0:
         #logged in
-        print('session userid',request.session['userid'])
+        # print('session userid',request.session['userid'])
         if authrule=='loggedout':
-            print('user is already logged in')
+            print(pylims.term(),pylims.error('user is already logged in'))
             return redirect('home')
         context['user']={}
         context['user']['userid']=request.session['userid']
@@ -109,7 +109,7 @@ def mod_resolver(request, mod, page=False):
             page = default_template_index.split('.')[0]
             print(pylims.term(),'loading default template', pylims.info(page))
         else:
-            print('no default template');
+            print(term(),pylims.error('no default template'));
             return redirect('home')
     
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
@@ -126,11 +126,11 @@ def mod_resolver(request, mod, page=False):
         
         cursor.execute(query)
         result = cursor.fetchall()
-        print('result:', result)
+        # print('result:', result)
         for permission in result:
-            print('\t',permission['permission'])
+            # print('\t',permission['permission'])
             context['admin'][permission['permission']]=permission['value']
-        print('admin',context['admin'])    
+        # print('admin',context['admin'])    
         adminlinks=''
         if 'admin_templates' in mods[mod][settings['setup'][mod]]:
             for adminlink in mods[mod][settings['setup'][mod]]['admin_templates']:
@@ -158,7 +158,7 @@ def mod_resolver(request, mod, page=False):
         # print(pylims.term(),pylims.info('requested admin template:'),page)
         template = mods[mod][settings['setup'][mod]]['admin_templates'][f'{page}.html']
         match=pylims.adminauthmatch(context['admin'],template['permission_needed'])
-        print('match=',match)
+        # print('match=',match)
         if match==False:
             print(pylims.term(),page,pylims.error('Authentication not granted.'))
             return redirect('home')

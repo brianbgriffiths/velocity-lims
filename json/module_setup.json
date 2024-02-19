@@ -1,7 +1,7 @@
 {
     "setup": {
         "login": "pylims_default_v1.0",
-        "organization": "pylims_default_v1.0",
+        "organization": "disabled",
         "logout": "pylims_default_v1.0",
         "account_creation": "pylims_default_v1.0",
         "departments": "pylims_default_v1.0"
