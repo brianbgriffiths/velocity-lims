@@ -114,7 +114,7 @@ def loaduser_admin(userid):
 
 
 def build_module_links(request):
-    # print('BUILDING MODULE LINKS')
+    print(term(),'BUILDING MODULE LINKS')
     modules = json.loads(build_module_dict())
     mods = json.loads(get_setup_options())
     file_path = settings.BASE_DIR / 'json/module_setup.json'
@@ -153,18 +153,22 @@ def build_module_links(request):
                     newlink=[m,link['name'],template.split('.')[0]]
                 links.append(newlink)
             elif isinstance(link['display_link'], dict):
+                addlink=True
                 if 'if' in link['display_link']:
                     for rule in link['display_link']['if']:
                         thisrule=rule.split('::')
                         if thisrule[0]=='notmodule':
-                            # print(f'checking if module {thisrule[1]} activated: {mods["setup"][thisrule[1]]}')
+                            print(f'checking if module {thisrule[1]} activated: {mods["setup"][thisrule[1]]}')
                             if not thisrule[1] in mods["setup"] or mods["setup"][thisrule[1]]=='disabled':
-                                # print('adding link')
-                                if template==modules[m][setup['setup'][m]]['default_template']:
-                                    newlink=[m,link['name'],'']
-                                else:
-                                    newlink=[m,link['name'],template.split('.')[0]]
-                                links.append(newlink)
+                                continue
+                            else:
+                                addlink=False
+                if addlink==True:
+                    if template==modules[m][setup['setup'][m]]['default_template']:
+                        newlink=[m,link['name'],'']
+                    else:
+                        newlink=[m,link['name'],template.split('.')[0]]
+                    links.append(newlink)
                                 
     
     # print(links)

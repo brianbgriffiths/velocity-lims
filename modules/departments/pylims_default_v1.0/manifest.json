@@ -1,0 +1,28 @@
+{
+	"type": "module",
+	"category": "departments",
+	"author": "Brian Griffiths",
+	"author_email": "tech@pylims.com",
+	"authentication": "loggedin",
+	"scripts": [
+		"dept.py", "dept_admin.py"
+	],
+	"load_script_function": [0,"getDept",["user"]],
+	"templates": {
+		"departments.html": {"name":"Department","display_link":{"if":["notmodule::organization"]},"authentication":"loggedin","menu_category":"structure"}
+	},
+	"default_template": "departments.html",
+	"admin_templates":{
+		"admin_create_dept.html": {"name":"Add Dept.","display_link":true,"authentication":"loggedin","permission_needed":["departments_create"]},
+		"admin_edit.html": {"name":"Edit","display_link":true,"authentication":"loggedin","permission_needed":["departments_edit"]},
+		"admin_assign.html": {"name":"Assign","display_link":true,"authentication":"loggedin","permission_needed":["departments_assign"]}
+	},
+	"title": "Pylims Default Departments",
+	"version_major": 1,
+	"version_minor": 0,
+	"setup_options":{
+		"auto_add_to_parent_organization":{"type":"tf","value":"false"},
+		"show_teams":{"type":"tf","value":"true"},
+		"show_people":{"type":"tf","value":"false"}
+	}
+}
