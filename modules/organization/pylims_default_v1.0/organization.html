@@ -4,19 +4,159 @@
 {% block headdata %}
 <script src="{% static 'js/pylims_request.js' %}"></script>
 <style>
+	.org_image {
+		max-height:128px;
+		max-width:128px;
+		float:left;	
+		margin-right:10px;
+	}
+	.org_name {
 	
+	}
+	.org_clear {
+		clear:both;
+	}
+	.dept_image {
+		max-height:64px;
+		max-width: 64px;
+		float:left;
+		margin-right:10px;
+	}
+	.team_image {
+		max-height:32px;
+		max-width: 32px;
+		float:left;
+		
+		margin-right:10px;
+	}
+	.org {
+		border: solid 3px var(--accent1);
+		background-color:var(--inputbg);
+		border-radius:10px;
+		padding:20px;
+		margin:5px;
+		overflow:hidden;
+		position:relative;
+	}
+	.dept {
+		border: solid 2px var(--accent1);
+		background-color:var(--inputbg);
+		border-radius:10px;
+		padding: 25px 5px 10px 5px;
+		margin:5px;
+		margin-left:75px;
+		overflow:hidden;
+		position:relative;		
+	}
+	.dept_tag {
+		position:absolute;
+		top:0px;
+		left:0px;
+		background-color: var(--accent3);
+		padding: 2px 5px;
+		height:22px;
+		box-sizing:border-box;
+		font-variant: small-caps;
+		color:#ffffff;
+		font-size:14px;
+	}
+	.team_tag {
+		position:absolute;
+		top:0px;
+		left:0px;
+		background-color: var(--accent2);
+		padding: 2px 5px;
+		height:22px;
+		box-sizing:border-box;
+		font-variant: small-caps;
+		color: #000000;
+		font-size:14px;
+	}
+	.triangle {
+		width: 22px;
+		height: 22px;
+		position:absolute;
+		top:0px;
+		right:-22px;
+	}
+	.dept_tag .triangle {
+		background: linear-gradient(to bottom right, var(--accent3) 0%, var(--accent3) 50%, transparent 50%, transparent 100%);
+	}
+	.team_tag .triangle {
+		background: linear-gradient(to bottom right, var(--accent2) 0%, var(--accent2) 50%, transparent 50%, transparent 100%);
+	}	
+	.team {
+		border: solid 1px var(--accent1);
+		background-color:var(--inputbg);
+		border-radius:10px;
+		padding: 25px 5px 5px 5px;
+		margin:5px;
+		margin-left:150px;
+		overflow:hidden;
+		position:relative;
+	}
+	.org:hover, .dept:hover, .team:hover {
+		cursor:pointer;
+		background-color:var(--inputhover);
+	}
 </style>
 {% endblock %}
 {% block centercontent %}
 
 <div id="organization" class="center-border">
 {{ adminlinks|safe }}
+{% if mod_data.data.oid %}
+<div id="breadcrumbs"><a href="/modules/organization"><i class="fa-light fa-sitemap"></i></a> <i class="fa-solid fa-caret-right"></i> {{ mod_data.data.organization_name }}</div>
+{% endif %}
+{% for org in mod_data.data.orgs %}
+	<div class="org" onClick="goToOrg({{ org.oid }});">
+	<img src="{{ org.image }}" class="org_image">
+	<div class="h1 org_name">{{ org.organization_name }}</div>
+	<div class="normal org_desc">{{ org.description }}</div>
+	<div class="org_clear"></div>
+	</div>
+	{% for dept in mod_data.data.departments %}
+		{% if dept.in_org == org.oid %}
+			<div class="dept" onClick="goToDept({{ dept.deptid }});">
+			<div class="dept_tag">Department<div class="triangle"></div></div>
+			<img src="{{ dept.dept_image }}" class="dept_image">
+			<div class="h2 dept_name">{{ dept.dept_name }}</div>
+			<div class="normal org_desc">{{ dept.dept_description }}</div>
+			<div class="org_clear"></div>
+			</div>
+			{% for team in mod_data.data.teams %}
+				{% if team.in_dept == dept.deptid %}
+					<div class="team" onClick="goToTeam({{ team.teamid }});">
+					<div class="team_tag">Team<div class="triangle"></div></div>
+					<img src="{{ team.team_image }}" class="team_image">
+					<div class="h3 team_name">{{ team.team_name }}</div>
+					<div class="normal org_desc">{{ team.team_description }}</div>
+					<div class="org_clear"></div>
+					</div>
+				{% endif %}
+			{% endfor %}
+		{% endif %}
+	{% endfor %}
+{% endfor %}
+{% if mod_data.data.oid %}
 <img src="{{ mod_data.data.image }}" style="height:80px;">
 <div class="h1">{{ mod_data.data.organization_name }}</div>
-<div class="normal">{{ mod_data.data.description }}</div>
+<div class="normal">{{ mod_data.data.organization_description }}</div>
+{% endif %}
 </div>
 
 {% endblock %}
 
 {% block javascript %}
+<script>
+	function goToOrg(id) {
+		window.location.href=`https://${window.location.hostname}/modules/organization?id=${id}`;
+	}
+	function goToDept(id) {
+		window.location.href=`https://${window.location.hostname}/modules/departments?id=${id}`;
+	}
+	function goToTeam(id) {
+		window.location.href=`https://${window.location.hostname}/modules/teams?id=${id}`;
+	}
+</script>
 {% endblock %}

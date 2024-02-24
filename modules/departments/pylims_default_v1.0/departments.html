@@ -11,7 +11,10 @@
 
 <div id="departments" class="center-border">
 {{ adminlinks|safe }}
-<img src="{{ mod_data.data.image }}" style="height:80px;">
+{% if mod_data.organization %}
+    <div id="breadcrumbs"><a href="/modules/organization"><i class="fa-light fa-sitemap"></i></a> <i class="fa-solid fa-caret-right"></i> <a href="/modules/organization/?id={{ mod_data.data.oid }}">{{ mod_data.data.organization_name }}</a> <i class="fa-solid fa-caret-right"></i> Departments </div>
+{% endif %}
+<img src="{{ mod_data.data.dept_image }}" style="height:80px;">
 <div class="h1">{{ mod_data.data.dept_name }}</div>
 <div class="normal">{{ mod_data.data.dept_description }}</div>
 </div>

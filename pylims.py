@@ -77,7 +77,7 @@ def authmatch(loggedin,auth):
         return False
     return True
 
-def adminauthmatch(user_permissions,permissions_accepted):
+def adminauthmatch(user_permissions,permissions_accepted,file=None):
     if len(user_permissions)==0:
         return False
     # print(term(),info('accepted permissions'),permissions_accepted)
@@ -89,7 +89,10 @@ def adminauthmatch(user_permissions,permissions_accepted):
         return False
     for accept in permissions_accepted:
         if accept in user_permissions:
-            print(term(),'user has permission: ',info(accept))
+            if not file==None:
+                print(term(),'user has permission:',info(accept),'for file',info(file))
+            else:
+                print(term(),'user has permission:',info(accept))
             return True
     # print(term(),error('did not find sufficient permissions'))
 

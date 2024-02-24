@@ -174,11 +174,16 @@ def mod_resolver(request, mod, page=False):
         function_to_call = getattr(module_to_import, loadscript[1])
         options_to_send = {}
         options_to_send['admin']=context['admin']
+        
+        if len(request.GET)>0:
+            options_to_send['query']={}
+            for query in request.GET:
+                options_to_send['query'][query]=request.GET.get(query, None)
         if 'user' in loadscript[2]:
             options_to_send['userid']=request.session['userid']
         options_to_send['modinfo']=mods[mod][settings['setup'][mod]]
         context['mod_data']=function_to_call(options_to_send)
-        # print('loadscript moddata',context['mod_data'])
+        # print(pylims.term(),pylims.info('loadscript moddata'),context['mod_data'])
     else:
         print('no loadscript')
             
