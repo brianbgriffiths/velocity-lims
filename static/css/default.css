@@ -46,6 +46,7 @@ input, textarea, button {
 input, textarea {
 	border: inset 1px #cccccc;
 	background-color: var(--inputbg);
+	box-sizing: border-box;
 }
 input:hover, textarea:hover {
 	background-color: var(--inputhover);
@@ -67,7 +68,7 @@ p {
 	font-weight:bold;
 	color:var(--accent1);
 	border-bottom:solid 2px var(--accent1);
-	margin-bottom:10px;
+	margin:10px 0px;
 	overflow: hidden;
 }
 .h2 {
@@ -84,6 +85,10 @@ p {
     overflow: hidden;
     margin-bottom: 2px;
     padding-bottom: 2px;
+}
+.indented {
+	box-sizing:border-box;
+	padding-left:30px;
 }
 a {
 	color: var(--accent1);
@@ -181,7 +186,7 @@ a:hover {
 	border-top-left-radius:10px;
 	margin:auto;
 }
-#pylims_request_error {
+#pylims_request_error, .localerror {
 	border:solid 1px #ff0000;
 	color:#ff0000;
 	background:#660000;
@@ -220,6 +225,7 @@ a:hover {
 	text-align:center;
 	border-top: solid 2px var(--accent1);
 	padding-top:10px;
+	margin:10px 0px;
 }
 
 

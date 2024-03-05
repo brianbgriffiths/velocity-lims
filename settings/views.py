@@ -101,6 +101,12 @@ def mod_resolver(request, mod, page=False):
             # for permission in request.session['admin']:
                 # print('ADMIN MODE:',permission)          
     
+    context['active_mods']={}
+    for amod in settings['setup']:
+        if settings['setup'][amod]!='disabled':
+            context['active_mods'][amod]=settings['setup'][amod];
+            
+    
     if page==False:
         # print('no page specicified.')
         if 'default_template' in mods[mod][settings['setup'][mod]]: 
@@ -182,6 +188,8 @@ def mod_resolver(request, mod, page=False):
         if 'user' in loadscript[2]:
             options_to_send['userid']=request.session['userid']
         options_to_send['modinfo']=mods[mod][settings['setup'][mod]]
+        options_to_send['active_mods']=context['active_mods']
+        print(pylims.term(),'load script:',pylims.info(loadscript[1]))
         context['mod_data']=function_to_call(options_to_send)
         # print(pylims.term(),pylims.info('loadscript moddata'),context['mod_data'])
     else:

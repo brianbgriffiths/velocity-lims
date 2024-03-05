@@ -3,7 +3,7 @@
 {% block title %}setup{% endblock %}
 {% block headdata %}
 <script src="{% static 'js/pylims_request.js' %}"></script>
-<script src="{% static 'js/pylims_object.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
 {% endblock %}
 {% block centercontent %}
 <div class="center-border"><div id="modules">These are your enabled modules. Click a title to show more.
@@ -18,10 +18,6 @@ const csrf = '{{ csrf_token }}';
 const settings={{ setup|safe }};
 var modules={{ modules|safe }};
 const modblock = document.getElementById('modules');
-</script>
-<script type="module">
-import pylims_UI from '/static/js/pylims_ui.js';
-const ui = new pylims_UI();
 
 function display_modules(expand_enabled=false) {
 	var useroptions=JSON.parse(JSON.stringify(settings.options))
@@ -143,20 +139,14 @@ function display_modules(expand_enabled=false) {
 						if (settings.options[m] && settings.options[m][p] && settings.options[m][p][o]) {
 							setval=settings.options[m][p][o];
 						}
-						const tf=ui.create_toggle(setval);
+						const tf=new pylims_setup_toggle(setval,option);
 						tf.id=`${m}_${p}_${o}`;
-						tf.dataset.cat=m;
-						tf.dataset.mod=p;
-						tf.dataset.opt=o;
-						option.appendChild(tf);
-						tf.addEventListener('click', function() {
+						tf.category = m
+						tf.module = p
+						tf.option = o
+						tf.ele.addEventListener('click', function() {
 							console.log(`${this.id} clicked!`);
-							let newval = ui.toggle(this.id);
-							console.log(this.id,newval,settings.options)
-							let m=this.dataset.cat
-							let p=this.dataset.mod
-							let o=this.dataset.opt
-							settings.options[m][p][o]=newval;
+							settings.options[tf.category][tf.module][tf.option]=tf.toggle(this.id);
 							clear_msg_elements(true);
 						});
 					} else if (thiso.type=='select') {
@@ -165,16 +155,14 @@ function display_modules(expand_enabled=false) {
 							console.log('current val set to',settings.options[m][p][o])
 							setval=settings.options[m][p][o];
 						}
-						const select=ui.create_select(thiso.value,setval);
+						const select=new pylims_setup_select(thiso.value,setval,option);
 						select.id=`${m}_${p}_${o}`;
-						select.dataset.cat=m;
-						select.dataset.mod=p;
-						select.dataset.opt=o;
-						option.appendChild(select);
-						select.addEventListener('change', function() {
+						select.category = m
+						select.module = p
+						select.option = o
+						select.ele.addEventListener('change', function() {
 							console.log(`${this.id} changed!`);
-							let newval = ui.select(this.id);
-							settings.options[this.dataset.cat][this.dataset.mod][this.dataset.opt]=newval;
+							settings.options[select.category][select.module][select.option]=select.select();
 							clear_msg_elements(true);
 						});
 					}
@@ -210,8 +198,7 @@ expand_enabled_button.addEventListener('click', function() {
 	this.innerText=label[enabled_expanded*1]
 	clear_msg_elements(true);
 });
-</script>
-<script>
+
 function replaceAndCapitalize(inputString) {
   // Replace underscores with spaces
   let modifiedString = inputString.replace(/_/g, ' ');
