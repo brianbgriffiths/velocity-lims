@@ -11,7 +11,7 @@
 	"templates": {
 		"login.html": {"name":"Login","display_link":true,"authentication":"loggedout"}
 	},
-	"title": "Default Pylims Login Module",
+	"title": "Pylims Default Login",
 	"version_major": 1,
 	"version_minor": 1,
 	"setup_options":{

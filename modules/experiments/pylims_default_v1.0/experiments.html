@@ -80,8 +80,11 @@
 {% block centercontent %}
 
 <div id="projects" class="center-border">
+{% if active_mods.projects %}
+<div id="breadcrumbs"><a href="/modules/projects?id=0"><i class="fa-light fa-sitemap"></i></a> <i class="fa-solid fa-caret-right"></i> project</div>
+{% endif %}
 	<div>Projects are folders that can contain experiments and track progress.</div>
-	<button id="new_project_button" class="button-hover-right" onClick="newProject();"><div><i class="fa-regular fa-folder-plus"></i> New Project</div>
+	<button id="new_project_button" class="button-hover-right" onClick="newProject();"><div><i class="fa-solid fa-flask"></i> New Experiment</div>
 	<div id="arrowBox"><div id="hoverBox">
 	  <a href="#">From Template</a>
 	</div></div>
@@ -137,7 +140,7 @@ function newProject() {
 	}
 	
 	const header_group = document.createElement("div");
-	header_group.textContent = 'Group';
+	header_group.textContent = 'Parent Project';
 	header_group.classList.add('h1');
 	newproject.add(header_group);
 	
@@ -151,7 +154,7 @@ function newProject() {
 	radio.checked=true;
 	radio.name="new_project";
 	radio.value='self';
-	indv_label = document.createTextNode("Private Project");
+	indv_label = document.createTextNode("Private Experiment");
 	const indv_value = document.createElement("input");
 	indv_value.type='hidden';
 	indv_value.value='self';

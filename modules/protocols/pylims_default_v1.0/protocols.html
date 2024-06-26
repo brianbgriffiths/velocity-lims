@@ -89,9 +89,8 @@
 {% block centercontent %}
 
 <div id="projects" class="center-border">
-	<div>Projects are folders that can contain experiments and track progress.</div>
-	<button id="new_project_button" class="button-hover-right" onClick="newProject();"><div><i class="fa-regular fa-folder-plus"></i> New Project</div>
-	<!--<div id="arrowBox"><div id="hoverBox"><a href="#">From Template</a></div></div>-->
+	<div>Protocols detail how to do one assay. Multiple protocols can be chained together in a workflow.</div>
+	<button id="new_project_button" class="button-hover-right" onClick="newProject();"><div><i class="fa-regular fa-clipboard-list"></i> New Protocol</div>
 	</button>
 </div>
 
@@ -113,7 +112,7 @@ const project_container=document.getElementById('projects');
 const projectlist = new content_container('project_list',project_container)
 const newproject = new content_container('newproject',project_container)
 
-function load_projects() {
+function load_protocols() {
 	newproject.hide();
 	projectlist.clear();
 	if (mod_data['error']) {
@@ -347,6 +346,6 @@ function localerror(msg) {
 	error_element.style.display='block';
 }
 
-load_projects()
+load_protocols()
 
 </script>{% endblock %}

@@ -105,7 +105,7 @@ def mod_resolver(request, mod, page=False):
     for amod in settings['setup']:
         if settings['setup'][amod]!='disabled':
             context['active_mods'][amod]=settings['setup'][amod];
-            
+            pylims.active_mods[amod]=settings['setup'][amod];
     
     if page==False:
         # print('no page specicified.')
@@ -115,7 +115,7 @@ def mod_resolver(request, mod, page=False):
             page = default_template_index.split('.')[0]
             print(pylims.term(),'loading default template', pylims.info(page))
         else:
-            print(term(),pylims.error('no default template'));
+            print(pylims.term(),pylims.error('no default template'));
             return redirect('home')
     
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
@@ -136,18 +136,18 @@ def mod_resolver(request, mod, page=False):
         for permission in result:
             # print('\t',permission['permission'])
             context['admin'][permission['permission']]=permission['value']
-        # print('admin',context['admin'])    
+        print(pylims.term(),'Admin Permissions: ',context['admin'])    
         adminlinks=''
         if 'admin_templates' in mods[mod][settings['setup'][mod]]:
             for adminlink in mods[mod][settings['setup'][mod]]['admin_templates']:
                 if pylims.adminauthmatch(context['admin'],mods[mod][settings['setup'][mod]]['admin_templates'][adminlink]['permission_needed']):
                     adminmod=mod
-                    if "module" in mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]:
-                        adminmod=mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]["module"]
-                    adminlinks+=f'<span class="admin_link"><a href="/modules/{adminmod}/{adminlink.split(".")[0]}">{mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]["name"]}</a></span>'
+                    # if "module" in mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]:
+                    #     adminmod=adminlink
+                        
+                    adminlinks+=f'<span class="admin_link"><a href="/modules/{adminmod}/{adminlink.split(".")[0]}">{mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]["name"]}</a></span>'          
         if 'admin' in context and len(context['admin']) > 0:
             context['adminlinks']=f'<div id="adminlinks">Admin: {adminlinks}</div>'
-    
     
     #check verification
     if f'{page}.html' in mods[mod][settings['setup'][mod]]['templates']:
@@ -175,11 +175,12 @@ def mod_resolver(request, mod, page=False):
     
     if 'load_script_function' in mods[mod][settings['setup'][mod]]:
         loadscript = mods[mod][settings['setup'][mod]]['load_script_function']
-        # print('loadscript',mods[mod][settings['setup'][mod]]['scripts'][loadscript[0]])
+        print('loadscript',mods[mod][settings['setup'][mod]]['scripts'][loadscript[0]])
         module_to_import = importlib.import_module(mods[mod][settings['setup'][mod]]['scripts'][loadscript[0]])
         function_to_call = getattr(module_to_import, loadscript[1])
         options_to_send = {}
         options_to_send['admin']=context['admin']
+        options_to_send['adminlinks']=context['adminlinks']
         
         if len(request.GET)>0:
             options_to_send['query']={}
@@ -199,16 +200,17 @@ def mod_resolver(request, mod, page=False):
     
     context['url']=f'mod_{mod}';
     if 'setup_options' in mods[mod][settings['setup'][mod]]:
-        context["mod"]=json.dumps(mods[mod][settings['setup'][mod]]['setup_options'])
+        context["mod"]=mods[mod][settings['setup'][mod]]['setup_options']
     else:
         context["mod"]={}
     
     
-    
+    print(pylims.term(),pylims.info('Loading page'),context)
+    print(pylims.term(),pylims.info('Loading page'),f'{mod}/{page}.html')
     return render(request, f'{mod}/{page}.html', context)
     
 def login_password_reset(request):
-    return render(request, 'index.html', context)
+    return render(request, 'index.html')
 
 
 def test(test):

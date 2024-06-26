@@ -11,6 +11,9 @@ dbpass = 'pylims2023'
 dbhost = '127.0.0.1'
 dbport = '5432'
 
+modules={}
+active_mods={}
+
 def term():
     return f"[\033[38;5;32mp\033[38;5;220my\033[38;5;32ml\033[38;5;220mi\033[38;5;32mm\033[38;5;220ms\033[0m]"
 

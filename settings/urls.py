@@ -45,8 +45,7 @@ with open(file_path, 'r') as json_file:
 # print('URL modules',modules)
 
 for mod in setup['setup']:
-    
-    
+    pylims.modules[mod]={}  
     if setup['setup'][mod]=='disabled':
         print(pylims.term(),f'skipping {mod}: {pylims.warning("disabled")}')
         continue
@@ -61,18 +60,21 @@ for mod in setup['setup']:
     folder_path = str(settings.BASE_DIR / f'modules/{mod}/{setup['setup'][mod]}')
     for script in modules[mod][setup['setup'][mod]]['scripts']:
         module_path=os.path.join(folder_path,script)
-        # print(f"loading {folder_path}/{script}")
-        your_module = SourceFileLoader(script, module_path).load_module()
+        script_base = script.split('.')[0]
+        # print(f"loading {folder_path}/{script_base}")
+        pylims.modules[mod][script_base] = SourceFileLoader(script, module_path).load_module()
         try:
-            urls = getattr(your_module, 'urlpatterns')
+            urls = getattr(pylims.modules[mod][script_base], 'urlpatterns')
+            # print('urls',urls)
             for url in urls:
+                # print(pylims.term(),f'URL: mod_{mod}/' + str(url.pattern))
                 url.pattern._route = f'mod_{mod}/' + str(url.pattern)
             # print(f'urls for {script}:',urls)
             urlpatterns=urlpatterns+urls
-            # url(fr"^modules/{mod}/{setup['setup'][mod]}/(?P<path>.*)$", static.serve, {'document_root': settings.BASE_DIR / f"modules/{mod}/{setup['setup'][mod]}"})
+            url(fr"^modules/{mod}/{setup['setup'][mod]}/(?P<path>.*)$", static.serve, {'document_root': settings.BASE_DIR / f"modules/{mod}/{setup['setup'][mod]}"})
         except Exception as e:
             continue
-            # print('module does not have any urls',e)
+            print('module does not have any urls',e)
         # spec = importlib.util.spec_from_file_location(script, f"{folder_path}/{script}")
         # script_module = importlib.util.module_from_spec(spec)
         # loaded_module = spec.loader.exec_module(script_module)    

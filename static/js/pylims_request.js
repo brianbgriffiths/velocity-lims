@@ -1,23 +1,17 @@
 function pylims_post(options) {
 	console.log('pylims post with following options:',options);
-	let success_element = document.getElementById(options.success_id);
-	let error_element = document.getElementById(options.error_id);
-	if (success_element) {
-		success_element.style.display='none';
-	}
-	if (error_element) {
-		error_element.style.display='none';
-	}
+	clear_msg_elements();
+
 	return new Promise((resolve, reject) => {
 		if (!options.data) {
 			pylims_request_error({error:'no data',error_id:options.error_id})
-			reject("pylims.post did not complete");
+			reject("pylims.post did not complete [1]");
 		} if (!options.url) {
 			pylims_request_error({error:'no url',error_id:options.error_id})
-			reject("pylims.post did not complete");
+			reject("pylims.post did not complete [2]");
 		} if (!options.csrf) {
 			pylims_request_error({error:'no csrf token',error_id:options.error_id})
-			reject("pylims.post did not complete");
+			reject("pylims.post did not complete [3]");
 		}
 		if (options.submit_id) {
 			var submitbutton = document.getElementById(options.submit_id);
@@ -44,39 +38,32 @@ function pylims_post(options) {
 		  .then(data => {
 			console.log("Response:", data)
 			clear_msg_elements();
-			var error_element=null;
-			var success_element=null;
+			var error_element=document.getElementById('pylims_request_error');
+			var success_element=document.getElementById('pylims_request_success');
 			if (options.error_id && document.getElementById(options.error_id)) {
 				error_element = document.getElementById(options.error_id);
-			} else if (document.getElementById('pylims_request_error')) {
-				error_element = document.getElementById('pylims_request_error');
-				//console.log('found default error element');
-			}
+			} 
 			
 			if (options.success_id && document.getElementById(options.success_id)) {
 				success_element = document.getElementById(options.success_id);
-			} else if (document.getElementById('pylims_request_success')) {
-				success_element = document.getElementById('pylims_request_success');
-				//console.log('found default success element');
-			}
+			} 
 			
 			if (options.submit_id) {
 				var submitbutton = document.getElementById(options.submit_id);
 			}
-			if (data.error && error_element) {
+
+			if (!options.silent && data.error && error_element) {
 				error_element.textContent=data.error;
 				error_element.style.display='block';
 				submitbutton.disabled = false;
-				reject("pylims.post did not complete");
-			} else if (error_element) {
-				error_element.style.display='none';
-			}
+				reject("pylims.post did not complete [4]");
+			} 
 			
-			if (data.status && data.status=='success' && !data.msg_success && success_element) {
+			if (!options.silent && data.status && data.status=='success' && !data.msg_success && success_element) {
 				success_element.textContent='Successful';
 				success_element.style.display='block';
 				resolve(data);
-			} else if (data.status && data.status=='success' && data.msg_success && success_element) {
+			} else if (!options.silent && data.status && data.status=='success' && data.msg_success && success_element) {
 				success_element.textContent=data.msg_success;
 				success_element.style.display='block';
 				resolve(data);
@@ -85,10 +72,11 @@ function pylims_post(options) {
 			} else if (success_element) {
 				success_element.style.display='none';
 				submitbutton.disabled = false;
-				reject("pylims.post did not complete");
+				reject("pylims.post did not complete [5]");
 			} else {
 				console.error('unknown status')
 			}
+
 			
 			if (options.submit_mode=='save') {
 				submitbutton.disabled = false;
@@ -114,7 +102,7 @@ function pylims_post(options) {
 			if (options.submit_mode=='save') {
 				submitbutton.disabled = false;
 			}
-			reject("pylims.post did not complete");
+			reject("pylims.post did not complete [6]");
 		  });
 	});
 }

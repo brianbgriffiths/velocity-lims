@@ -12,7 +12,7 @@
 		"display_message.html": {"name":"Display","display_link":false,"authentication":"any"},
 		"create_account.html": {"name":"Create Account","display_link":true,"authentication":"loggedout"}
 	},
-	"title": "Default Pylims Account Creation Module",
+	"title": "Pylims Default Account Creation",
 	"version_major": 1,
 	"version_minor": 0,
 	"setup_options":{

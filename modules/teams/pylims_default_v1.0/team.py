@@ -9,6 +9,9 @@ import bcrypt
 current_directory = os.path.dirname(os.path.abspath(__file__))
 self = os.path.basename(current_directory)
 
+def test():
+    return 'worked?'
+
 def get_teams(params):
     response={}
     response['data']={}

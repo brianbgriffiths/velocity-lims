@@ -13,7 +13,7 @@ current_directory = os.path.dirname(os.path.abspath(__file__))
 self = os.path.basename(current_directory)
 scriptname = os.path.basename(__file__)
 
-def load_projects(params):
+def load_protocols(params):
     response={}
     
     if not 'userid' in params:
@@ -79,7 +79,7 @@ def load_projects(params):
     response['status']='success'
     return response
 
-def ajax_create_project(request):
+def ajax_create_protocol(request):
     response={}
     
     if not pylims.loggedin(request):
@@ -121,5 +121,5 @@ def ajax_create_project(request):
     
 
 urlpatterns=[
-    path('ajax_create_project/', ajax_create_project, name="ajax_create_project")
+    path('ajax_create_protocol/', ajax_create_protocol, name="ajax_create_protocol")
     ]

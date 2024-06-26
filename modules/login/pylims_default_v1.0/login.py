@@ -72,7 +72,7 @@ def submit(request):
             response['error']='Password not valid'
             return JsonResponse(response)
     # bcrypt.checkpw(input_password.encode('utf-8'), hashed_password)
-    request.session['userid']=result['userid'];
+    request.session['userid']=result['userid']
     
     
     
@@ -81,6 +81,7 @@ def submit(request):
         response['status']='success'
         response['msg_success']='Login successful'
     return JsonResponse(response)
+
 urlpatterns=[
     path('submit/', submit, name="submit"),
     ]

@@ -11,7 +11,7 @@
 	"templates": {
 		"logout.html": {"name":"Logout","display_link":true,"authentication":"loggedin"}
 	},
-	"title": "Pylims PostgreSQL",
+	"title": "Pylims Default Logout",
 	"version_major": 1,
 	"version_minor": 0,
 	"setup_options":{

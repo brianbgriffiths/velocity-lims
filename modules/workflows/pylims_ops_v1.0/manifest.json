@@ -1,0 +1,25 @@
+{
+	"type": "module",
+	"category": "spaces",
+	"author": "Brian Griffiths",
+	"author_email": "tech@pylims.com",
+	"authentication": "loggedin",
+	"scripts": [
+		"workflows.py", "workflows_admin.py"
+	],
+	"load_script_function": [0,"load_spaces",["user"]],
+	"templates": {
+		"steps.html": {"name":"Steps","display_link":true,"authentication":"loggedin"}
+		
+	},
+	"default_template": "spaces.html",
+	"admin_templates":{
+		"admin_create.html": {"name":"Create","display_link":true,"authentication":"loggedin","permission_needed":["organizations_create"]}
+	},
+	"title": "Pylims Default Spaces",
+	"version_major": 1,
+	"version_minor": 0,
+	"setup_options":{
+		
+	}
+}
