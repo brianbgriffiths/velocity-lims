@@ -98,6 +98,21 @@
 	.add_space_button {
 		vertical-align:top;
 	}
+	#wf_container {
+		display: flex;
+		flex-wrap: wrap;
+	}
+	
+	Workflow {
+		flex: 1 1 300px;
+		box-sizing: border-box;
+		border:solid 1px var(--accent1);
+		margin:5px;
+		display:block;
+	}
+	Step {
+		display:block;
+	}
 </style>
 {% endblock %}
 {% block centercontent %}
@@ -107,7 +122,7 @@
 
 
 <div>Run samples through automations.</div>
-
+<div id="wf_container"></div>
 </div>
 
 {% endblock %}
@@ -120,7 +135,30 @@ const urlprefix='{{url}}';
 const options={{ mod_options|safe }};
 const csrf = '{{ csrf_token }}';
 const mod_data = {{ mod_data|safe }};
+var workflows={}
+
 const main = document.getElementById('automations');
+const wf_container = document.getElementById('wf_container');
+
+const Workflow = class {
+	constructor(options) {
+		console.log('new wf',options)
+	}
+}
+
+
+for (let wf in mod_data.workflows) {
+	workflows[wf] = new Workflow(mod_data.workflows[wf])
+	const column = document.createElement('Workflow');
+	console.log(wf,mod_data.workflows[wf])
+	for (let step in mod_data.workflows[wf].steplist) {
+		console.log(step,mod_data.workflows[wf].steps[step])
+		const s = document.createElement('Step');
+		s.innerHTML = mod_data.workflows[wf].steplist[step]
+		column.appendChild(s)
+	}
+	wf_container.appendChild(column)
+}
 
 
 

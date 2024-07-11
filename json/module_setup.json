@@ -1,10 +1,18 @@
 {
     "setup": {
         "login": "pylims_default_v1.0",
-        "organization": "disabled",
+        "organization": "pylims_default_v1.0",
         "logout": "pylims_default_v1.0",
         "account_creation": "pylims_default_v1.0",
-        "departments": "pylims_default_v1.0"
+        "departments": "pylims_default_v1.0",
+        "teams": "disabled",
+        "projects": "pylims_default_v1.0",
+        "experiments": "disabled",
+        "goals": "disabled",
+        "protocols": "disabled",
+        "spaces": "disabled",
+        "steps": "disabled",
+        "automations": "pylims_default_v1.0"
     },
     "options": {
         "login": {
@@ -32,14 +40,78 @@
                 "password": "true",
                 "password_complex": "false"
             },
-            "disabled_message_v1.0": {}
+            "disabled_message_v1.0": {},
+            "cool_new_account": {
+                "username": "false",
+                "email": "true",
+                "firstname": "false",
+                "midname": "false",
+                "lastname": "false",
+                "password": "true",
+                "password_complex": "false",
+                "auto_login": "false"
+            }
         },
         "departments": {
             "pylims_default_v1.0": {
-                "auto_add_to_parent_organization": "false",
-                "show_teams": "true",
+                "auto_add_to_parent_organization": "true",
+                "show_teams": "false",
                 "show_people": "false"
             }
+        },
+        "teams": {
+            "pylims_default_v1.0": {
+                "auto_add_to_parent_organization": "false",
+                "auto_add_to_parent_department": "false",
+                "show_people": "true"
+            }
+        },
+        "projects": {
+            "pylims_default_v1.0": {}
+        },
+        "experiments": {
+            "pylims_default_v1.0": {}
+        },
+        "goals": {
+            "pylims_default_v1.0": {}
+        },
+        "protocols": {
+            "pylims_default_v1.0": {}
+        },
+        "inventory": {
+            "pylims_default_v1.0": {}
+        },
+        "spaces": {
+            "pylims_default_v1.0": {
+                "only_admins_add_spaces": "false",
+                "level_1_country": "false",
+                "level_2_state": "false",
+                "level_3_city": "false",
+                "level_4_campus": "false",
+                "level_5_building": "false",
+                "level_6_room": "false",
+                "level_6_lab": "true",
+                "level_7_equipment": "true",
+                "level_7_container": "true",
+                "level_7_shelf": "false",
+                "level_7_drawer": "false",
+                "level_7_bench": "false",
+                "level_8_box": "true",
+                "level_8_rack": "true",
+                "level_8_shelf": "false",
+                "level_8_tray": "false",
+                "level_8_kit": "false",
+                "level_9_subdivision": "false"
+            }
+        },
+        "workflows": {
+            "pylims_ops_v1.0": {}
+        },
+        "steps": {
+            "pylims_default_v1.0": {}
+        },
+        "automations": {
+            "pylims_default_v1.0": {}
         }
     }
 }

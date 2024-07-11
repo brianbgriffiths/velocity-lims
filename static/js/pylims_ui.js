@@ -1,36 +1,56 @@
 const dropdown = class {
-	constructor(id,target,defaultvalue=null) {
+	constructor(options) {
 		this.timeouts = null;
-		this.id = id;
-		this.dropdown = document.createElement("pylims_dropdown");
-		this.dropdown.id = id;
-		target.appendChild(this.dropdown);
-		this.ele = document.getElementById(id);
+		if (!options.id) {
+			options.id='NEWDROPDOWN'
+		}
+		this.id = options.id;
+		this.element = document.createElement("pylims_dropdown");
+		this.element.id = this.id;
 		this.optionList = document.createElement("pylims_dropdown_options_list");
-		this.ele.appendChild(this.optionList);
+		this.element.appendChild(this.optionList);
 		this.visible=false;
-		this.value=defaultvalue;
-		this.add_options({type:'default'});
-		this.default = this.ele.querySelector('pylims_dropdown_default');
+		this.value=options.value;
+		if (options.value) {
+			options.default=options.value;
+		} else {
+			this.value=options.default;
+			if (!options.default) {
+				options.default = 'Choose:'
+			}
+		}
+		this.add_options({type:'default',name:options.default, value:0});
+		this.optionValues=[];
+		//this.default = this.element.querySelector('pylims_dropdown_default');
 		this.add_options = this.add_options.bind(this);
 		this.dropdownhide = this.dropdownhide.bind(this);
         this.dropdownview = this.dropdownview.bind(this);
 		this.changeSelect = this.changeSelect.bind(this);
-		this.ele.addEventListener('click', this.dropdownview);
+		this.updateValue = this.updateValue.bind(this);
+		this.element.addEventListener('click', this.dropdownview);
+		if (options.display) {
+			this.element.style.display=options.display;
+		}
+		if (options.target) {
+			options.target.appendChild(this.element);
+		} else {
+			return this
+		}
 	}
 
 	add_options(options) {
 		// console.log('adding options to',this.id,this.optionList)
 		if (options.type=='default') {
-			const ddoption = document.createElement("pylims_dropdown_default");
-			ddoption.innerHTML = 'none';
-			ddoption.setAttribute('value',0);
-			this.optionList.appendChild(ddoption);
+			this.default = document.createElement("pylims_dropdown_default");
+			this.default.innerHTML = options.name;
+			this.default.setAttribute('value',options.value);
+			this.optionList.appendChild(this.default);
 		} else if (options.type=='dict') {
-			// console.log(options.dict)
+			this.optionValues={}
 			for (let x of options.dict) {
-				console.log('x',x)
-				console.log('options.keys',options.keys,x[options.keys])
+				this.optionValues[x.key]=x.value;
+				//console.log('x',x)
+				//console.log('options.keys',options.keys,x[options.keys])
 				const ddoption = document.createElement("pylims_dropdown_option");
 				ddoption.setAttribute("value", x[options.keys]);
 				if (options.img) {
@@ -49,7 +69,7 @@ const dropdown = class {
 	dropdownview() {
 		// console.log('viewing',this)
 		this.default.style.color='#9e9e9e';
-		this.ele.style.overflow='visible';
+		this.element.style.overflow='visible';
 		this.optionList.addEventListener('mouseleave', this.dropdownhide);
 		this.optionList.style.zIndex=300;
 		clearTimeout(this.timeouts);
@@ -57,7 +77,7 @@ const dropdown = class {
 
 	dropdownhide() {
 		// console.log('drowndown hide',this)
-		this.ele.style.overflow='hidden';
+		this.element.style.overflow='hidden';
 		this.default.style.color=null;
 		this.optionList.style.zIndex=200;
 	}
@@ -67,14 +87,138 @@ const dropdown = class {
 		event.preventDefault();
 		const value=event.target.getAttribute('value');
 		this.value=value;
-		this.ele.setAttribute('value',value);
+		this.element.setAttribute('value',value);
 		this.default.innerHTML=event.target.textContent;
-		this.ele.style.overflow='hidden';
+		this.element.style.overflow='hidden';
 		this.default.style.color=null;
-		const dropdownChangeEvent = new CustomEvent('dropdownchange');
-		this.ele.dispatchEvent(dropdownChangeEvent);
+		const dropdownChangeEvent = new CustomEvent('dropdownchange', {
+			detail: {
+				id: this.parentid
+			}
+		});
+		this.element.dispatchEvent(dropdownChangeEvent);
 	}
 
+	updateValue(value) {
+		this.value=value;
+		this.element.setAttribute('value',value);
+		this.default.innerHTML=this.optionValues[value]
+		this.element.style.overflow='hidden';
+		this.default.style.color=null;
+	}
+
+}
+
+const textbox = class {
+	constructor(options) {
+		if (!options.id) {
+			options.id='NEWTEXTBOX'
+		}
+		this.id = options.id;
+		this.value="";
+		this.element = document.createElement('input')
+		this.element.type="test";
+	}
+	updateValue(value) {
+		this.value=value;
+		this.element.setAttribute('value',value);
+		this.element.value=value
+	}
+
+}
+
+const multitoggle = class {
+	constructor(options) {
+		if (!options.id) {
+			options.id='NEWMULTITOGGLE';
+		}
+		this.value=null;
+		if (options && options.value) {
+			this.value=options.value;
+		}
+		this.element = document.createElement('multitoggle');
+		this.id= options.id;
+		this.element.id = options.id;
+		this.options = [];
+		this.optionKeys={};
+		this.optionElements={}
+		this.setOptions = this.setOptions.bind(this);
+		this.addOptions = this.addOptions.bind(this);
+		this.updateValue = this.updateValue.bind(this);
+		this.style=null;
+		if (options.style) {
+			this.style=options.style;
+			this.element.classList.add(this.style)
+		}
+		return this
+	}
+	setOptions(array) {
+		this.element.innerHTML=null;
+		this.addOptions(array);
+	}
+	addOptions(array) {
+		var offsetLeft=null
+		if (this.style) {
+			const styles = getComputedStyle(document.body);
+			const offsetLeftCheck = parseInt(styles.getPropertyValue(`--${this.style}-offset-left`).trim())
+			if (offsetLeftCheck) {
+				offsetLeft = offsetLeftCheck;
+			}	
+		}
+		// console.log('Offset Left:',offsetLeft)
+		for (let option of array) {
+			this.options.push(option);
+			this.optionKeys[option.value]=option;
+			let thisoption = document.createElement('mtoption');
+			thisoption.innerHTML = option.text;
+			thisoption.dataset.value = option.value;
+			thisoption.setAttribute('data-text',option.text);
+			if (option.disabled) {
+				thisoption.classList.add('mtdisabled');
+			}
+			if (option.selected) {
+				thisoption.classList.add('mtselected');
+			}
+			if (this.style) {
+				thisoption.classList.add(this.style)
+			}
+			this.element.appendChild(thisoption);
+			this.optionElements[option.value]=thisoption;
+			if (offsetLeft) {
+				// console.log('found elements',Object.keys(this.optionElements).length)
+				let thisleft = (Object.keys(this.optionElements).length*offsetLeft)+'px';
+				// console.log('thisleft',thisleft)
+				thisoption.style.left=thisleft;
+				thisoption.style.zIndex=100-Object.keys(this.optionElements).length;
+			}
+			thisoption.addEventListener('click',(event) => {
+				// console.log(event);
+				this.updateValue(event.target.dataset.value)
+				const multitoggleChangeEvent = new CustomEvent('multitogglechange', {
+					detail: {
+						id: this.parentid
+					}
+				});
+				this.element.dispatchEvent(multitoggleChangeEvent);
+			})
+			if (option.value == this.value) {
+				// console.log(this.parentid)
+				this.updateValue(this.value);
+			}
+		}
+
+	}
+	updateValue(value) {
+		this.value=value;
+		// console.log('update value',value,this.optionElements[value])
+		let mtwidth = this.optionElements[value].offsetWidth;
+		let mtleft = this.optionElements[value].offsetLeft+1;
+		// console.log(mtwidth,mtleft)
+		this.element.style.setProperty('--multitoggle-selection-width', `${mtwidth}px`);
+		this.element.style.setProperty('--multitoggle-selection-left', `${mtleft}px`);
+		this.element.style.setProperty('--multitoggle-selection-display', '1');
+		
+	}
 }
 
 const content_container = class {
@@ -83,7 +227,7 @@ const content_container = class {
 		this.div = document.createElement("div");
 		this.div.id = id;
 		target.appendChild(this.div);
-		this.ele = document.getElementById(id);
+		this.element = document.getElementById(id);
 		this.visible=true;
 		this.show = this.show.bind(this);
 		this.hide = this.hide.bind(this);
@@ -96,42 +240,42 @@ const content_container = class {
 	}
 	
 	show() {
-		this.ele.style.display='block';
+		this.element.style.display='block';
 		this.visible=true
 	}
 	
 	hide() {
-		this.ele.style.display='none';
+		this.element.style.display='none';
 		this.visible=false
 	}
 	
 	toggle() {
 		const tstate=['none','block'];
 		this.visible=!this.visible;
-		this.ele.style.display=tstate[this.visible*1];
+		this.element.style.display=tstate[this.visible*1];
 	}
 	
 	clear() {
-		this.ele.innerHTML=null;
+		this.element.innerHTML=null;
 		this.initialized=false;
 	}
 	
 	set(html) {
-		this.ele.innerHTML=html;
+		this.element.innerHTML=html;
 		this.initialized=true;
 	}
 	
 	add(ele) {
 		console.log('add',ele)
-		this.ele.appendChild(ele);
+		this.element.appendChild(ele);
 		this.initialized=true;
 	}
 }
 
 const pylims_setup_toggle = class {
 	constructor(setval,parent) {
-		this.ele=document.createElement('div');
-		this.ele.className='tf_container'
+		this.element=document.createElement('div');
+		this.element.className='tf_container'
 		this.tfball=document.createElement('div');
 		this.tfball.className='tf_ball'
 		if (setval=='true') {
@@ -141,8 +285,8 @@ const pylims_setup_toggle = class {
 			this.tfball.classList.add('tf_false');
 			this.state='false';
 		}
-		this.ele.appendChild(this.tfball);
-		parent.appendChild(this.ele)
+		this.element.appendChild(this.tfball);
+		parent.appendChild(this.element)
 		this.category=null;
 		this.module=null;
 		this.option=null;
@@ -168,9 +312,9 @@ const pylims_setup_toggle = class {
 }
 const pylims_setup_select = class {
 	constructor(options,value,parent) {
-		this.ele =document.createElement('select');
-		this.ele.className='pylimsui_select';
-		parent.append(this.ele)
+		this.element =document.createElement('select');
+		this.element.className='pylimsui_select';
+		parent.append(this.element)
 		this.value=value;
 		
 		for (let i=0;i<options.length;i++) {
@@ -180,7 +324,7 @@ const pylims_setup_select = class {
 			if (i==value) {
 				option.selected=true;
 			}
-			this.ele.appendChild(option);
+			this.element.appendChild(option);
 		}
 		this.category=null;
 		this.module=null;
@@ -189,7 +333,7 @@ const pylims_setup_select = class {
 	
 	select() {
 		console.log('select',this.id);
-		this.value=this.ele.value;
+		this.value=this.element.value;
 		return this.value;
 	}
 }

@@ -1,3 +1,11 @@
+:root {
+	--multitoggle-selection-width:100px;
+	--multitoggle-selection-left:0px;
+	--multitoggle-selection-display:0;
+	--multitoggle-transition:width .5s, left .5s, opacity .5s;
+	--flow-offset-left:-20;
+	--multitoggle-border-color:black;
+} 
 pylims_dropdown {
 	background-color: var(--inputbg);
     color: #000000;
@@ -100,4 +108,98 @@ pylims_dropdown:hover {
 pylims_dropdown {
 	border: inset 2px #8f8f8f;
 	font-size: 16px;
+}
+
+multitoggle {
+	border: solid 2px var(--accent5);
+    margin: 5px;
+    padding: 0px;
+	display: inline-block;
+    position: relative;
+	user-select:none;
+}
+multitoggle.flow {
+	border:none;
+	border-left: solid 2px var(--accent5);
+	overflow:hidden;
+}
+multitoggle::after {
+    position: absolute;
+    width: var(--multitoggle-selection-width);
+    height: 100%;
+    content: '';
+    top: 0px;
+    left: var(--multitoggle-selection-left);
+    background-color:var(--multitoggle-border-color);
+	transition:var(--multitoggle-transition);
+	pointer-events: none;
+	box-sizing:border-box;
+	opacity:var(--multitoggle-selection-display);  
+	z-index:101;
+}
+
+multitoggle.flow::after {
+	clip-path:  polygon(
+		8px 0, /* 1 */
+		calc(100% - 10px) 0, /* 2 */
+		100% 50%, /* 3 */
+		calc(100% - 10px) 100%, /* 4 */
+		8px 100%, /* 5 */
+		18px 50%,/*half way 6 */
+		8px 0, /* 7 */
+		11px 0, /* 8 */
+		21px 50%, /* 9 */
+		13px calc(100% - 3px), /* 10 */
+		calc(100% - 12px) calc(100% - 3px), /* 11 */
+		calc(100% - 3px) 50%, /* 12 */
+		calc(100% - 12px) 3px, /* 13 */
+		11px 3px) /* 14 */
+
+}
+
+mtoption {
+	padding: 10px;
+	border:solid 1px var(--accent7);
+    display: inline-block;
+    position: relative;
+	user-select:none;
+	
+}
+mtoption.flow {
+	border:none;
+	clip-path: polygon(
+		0 0, 
+		calc(100% - 10px) 0, 
+		100% 50%, 
+		calc(100% - 10px) 100%, 
+		0 100%
+	  );
+	padding:10px 20px 10px 35px;
+	border: solid 2px var(--accent5);
+    border-right: none;
+}
+mtoption.flow:nth-last-child(1) {
+	clip-path:none;
+	border-right: solid 2px var(--accent5);
+}
+
+
+mtoption.flow:nth-child(odd) {
+	background-color: #f0f0f0;
+}
+
+mtoption.flow:nth-child(even) {
+	background-color: #c0c0c0;
+}
+
+@media (prefers-reduced-motion) {
+	* {
+		transition: none !important;
+	  }
+	  *::after {
+		transition: none !important;
+	  }
+	  *::before {
+		transition: none !important;
+	  }
 }

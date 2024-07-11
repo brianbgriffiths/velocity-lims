@@ -144,7 +144,7 @@ function display_modules(expand_enabled=false) {
 						tf.category = m
 						tf.module = p
 						tf.option = o
-						tf.ele.addEventListener('click', function() {
+						tf.element.addEventListener('click', function() {
 							console.log(`${this.id} clicked!`);
 							settings.options[tf.category][tf.module][tf.option]=tf.toggle(this.id);
 							clear_msg_elements(true);
@@ -160,7 +160,7 @@ function display_modules(expand_enabled=false) {
 						select.category = m
 						select.module = p
 						select.option = o
-						select.ele.addEventListener('change', function() {
+						select.element.addEventListener('change', function() {
 							console.log(`${this.id} changed!`);
 							settings.options[select.category][select.module][select.option]=select.select();
 							clear_msg_elements(true);
@@ -229,7 +229,7 @@ function saveSetup() {
 		
 	}
 	data={"setup":settings.setup,"options":settings.options}
-	const pyoptions={data,csrf,urlprefix:'../',url:'setup_save',submit_mode:'save',submit_id:'save_setup'}
+	const pyoptions={data,csrf,urlprefix:'..',url:'setup_save',submit_mode:'save',submit_id:'save_setup'}
 	pylims_post(pyoptions).then(result => {
 		console.log(result)
 	

@@ -140,7 +140,7 @@ def mod_resolver(request, mod, page=False):
         adminlinks=''
         if 'admin_templates' in mods[mod][settings['setup'][mod]]:
             for adminlink in mods[mod][settings['setup'][mod]]['admin_templates']:
-                if pylims.adminauthmatch(context['admin'],mods[mod][settings['setup'][mod]]['admin_templates'][adminlink]['permission_needed']):
+                if pylims.adminauthmatch(context['admin'],mods[mod][settings['setup'][mod]]['admin_templates'][adminlink]['permission_needed']) and mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]['display_link']==True:
                     adminmod=mod
                     # if "module" in mods[mod][settings["setup"][mod]]["admin_templates"][adminlink]:
                     #     adminmod=adminlink

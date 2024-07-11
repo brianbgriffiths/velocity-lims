@@ -2,9 +2,11 @@
 {% load static %}
 {% block title %}pylims{% endblock %}
 {% block headdata %}
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
 <link rel="stylesheet" href="{% static 'css/automations_configure.css' %}">
+<script src="{% static 'js/pylims_popup.js' %}"></script>
 <script src="{% static 'js/pylims_request.js' %}"></script>
-
+<script src="{% static 'js/pylims_ui.js' %}"></script>
 <style>
 	
 
@@ -28,8 +30,17 @@
 				<div id="step_list"></div>
 			</div>
 		</div>
-		<div class="auto_column"><div class="auto_header">Ancestry</div> <div id="ancestry" class="auto_content"></div>	</div>
-		<div class="auto_column"><div class="auto_header">Workflows<div class="auto_add"></div></div><div id="workflows" class="auto_content"></div></div>
+		<div class="auto_column"><div class="auto_header" id="includes_header">Includes</div> <div id="includes" class="auto_content"></div>	</div>
+		<div class="auto_column" id="ac_workflows"><div class="auto_header">Workflows<div class="auto_add" onClick="add_new_workflow();"></div></div>
+			<div id="workflows" class="auto_content">
+				<div class="search_box"><input type="text"></div>
+				<div id="new_workflow">
+					<input id="new_workflow_input" type="text" placeholder="New Workflow Name">
+					<button id="create_new_workflow" class="auto_button1" onClick="create_new_workflow();">Create</button>
+				</div>
+				<div id="workflow_list"></div>
+
+			</div></div>
 	</div>
 	<div id="window_bar"></div>
 </div>
@@ -56,14 +67,18 @@ const urlprefix='{{url}}';
 const options={{ mod_options | safe }};
 const csrf = '{{ csrf_token }}';
 const mod_data = {{ mod_data | safe }};
-
-
+var is_fullscreen_editor=false;
+var is_edit_window_minimized=false;
 
 window.onload = function() {
     const pyoptions={data:{},csrf,urlprefix,url:'admin_list_automations',silent:true}
 	pylims_post(pyoptions).then(result => {
 		console.log('pylims post result:',result);
-		populate_step_list(result.data);
+		console.log(result.workflows)
+		populate_step_list(result.steps);
+		populate_workflow_list(result.workflows);
+		
+		
 	}).catch(error => {
 		console.error(error);
 	});

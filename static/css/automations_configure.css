@@ -1,3 +1,42 @@
+
+::-webkit-scrollbar {
+	width: 20px;
+	height: 20px;
+	padding: 2px;
+	cursor: url(../images/cursor_default.svg) 0 0, auto !important;
+  }
+  
+  
+  /* Handle */
+  
+  ::-webkit-scrollbar-thumb {
+	background-color: var(--accent7);
+	border-radius: 70px;
+	padding: 2px;
+	cursor: url(../images/cursor_default.svg) 0 0, auto !important;
+  }
+  
+  
+  /* Handle on hover */
+  
+  ::-webkit-scrollbar-thumb:hover {
+	background-color: var(--inputhover);
+	cursor: url(../images/cursor_default.svg) 0 0, auto !important;
+  }
+  
+  ::-webkit-scrollbar-track {
+	background-color: transparent;
+	cursor: url(../images/cursor_default.svg) 0 0, auto !important;
+  }
+  body, html {
+	cursor: url(../images/cursor_default.svg) 0 0, auto;
+	}
+	a, button {
+		cursor: pointer;
+	}
+	input[type="text"], textarea {
+		cursor: text;
+	}
 #center-content {
 		display: flex;
 		flex-direction: column;
@@ -7,7 +46,7 @@
 	}
 	#edit_window {
 		flex-grow:1;
-        padding: 45px 5px 5px 5px;
+        padding: 50px 5px 5px 5px;
 	}
 	#automations {
 		max-height: 300px;
@@ -20,7 +59,7 @@
 		height: 280px;
 	}
 	.auto_column {
-		flex-grow:1;
+		flex:1;
 		margin:5px;
 		border:solid 1px #000000;
 		background-color: #ececec;
@@ -137,7 +176,11 @@
 	.edit_window_minimized #edit_header::after {
 		content: 'Edit Step';
 	}
-	#new_step {
+    #save_icon {
+        font-size:16px;
+        display:inline-block;
+    }
+	#new_step, #new_workflow {
 		height:0px;
 		transition:height .5s;
 		overflow:hidden;
@@ -145,7 +188,7 @@
 		position: sticky;
 		top: 69px;
 	}
-	#new_step_input {
+	#new_step_input, #new_workflow_input {
 		width: -webkit-fill-available;
 		border: solid 2px var(--accent2);
 		border-radius: 7px;
@@ -153,7 +196,7 @@
 		flex-grow:1;
 		background-color: var(--accent4);
 	}
-	#new_step button  {
+	#new_step button, #new_workflow button  {
 		flex-grow:0;
 	}
 	.auto_button1 {
@@ -162,14 +205,16 @@
 	.auto_button1:hover {
 		background-color: var(--accent4);
 	}
-	.step_container {
+	.step_container, .workflow_container, .step_in_workflow, .workflows_with_step {
 		border-radius: 4px;
 		padding: 5px;
 		background-color: #dee4e7;
 		color: var(--accent1);
 		margin: 4px 0px;
+		user-select:none;
+		position:relative;
 	}
-	.step_container::before {
+	.step_container::before, .workflow_container::before, .step_in_workflow::before, .workflows_with_step::before {
 		font-family: "Font Awesome 6 Pro";
 		font-weight: 500;
 		content: '\f219';
@@ -177,7 +222,21 @@
 		margin-right: 20px;
 		color: #c42b74;
 	}
-	.step_container:hover {
+    .workflow_container::before, .workflows_with_step::before {
+        content: '\f013';
+        color:var(--green-med);
+    }
+	.step_in_workflow::after {
+		font-family: "Font Awesome 6 Pro";
+		font-weight: 500;
+		content: '\f013';
+        color:var(--green-med);
+		position:absolute;
+		left: 7px;
+		top: 7.5px;
+		font-size: 12px;
+	}
+	.step_container:hover, .workflow_container:hover,  .step_in_workflow:hover, .workflows_with_step:hover {
 		cursor:pointer;
 		background-color: var(--inputbg);
 	}
@@ -186,4 +245,17 @@
 	}
 	#ac_steps .auto_header {
 		background-color: var(--pink-med);
+	}
+
+    #ac_workflows, #ac_workflows .search_box, #ac_workflows #new_workflow {
+		background-color:var(--green-dark);
+	}
+	#ac_workflows .auto_header {
+		background-color: var(--green-med);
+	}
+	.add_step_to_workflow:hover {
+		cursor: url(../images/cursor_add_step.svg) 0 0, auto;
+	}
+	.remove_step_from_workflow:hover {
+		cursor: url(../images/cursor_remove_step.svg) 0 0, auto;
 	}
