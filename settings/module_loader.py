@@ -2,6 +2,8 @@ from django.template import TemplateDoesNotExist, TemplateSyntaxError, Template,
 from django.template.loaders.base import Loader
 from django.utils._os import safe_join
 import os
+import json
+import pylims
 
 class RecursiveDirectoryLoader(Loader):
     def __init__(self, engine):
@@ -26,7 +28,7 @@ class RecursiveDirectoryLoader(Loader):
                 tried.append((origin, "Source does not exist"))
                 continue
             else:
-                # print('fetch',origin.template_name)
+                print('fetch',origin.template_name)
                 return Template(
                     contents,
                     origin,
@@ -48,25 +50,21 @@ class RecursiveDirectoryLoader(Loader):
         An iterator that yields possible matching template paths for a
         template name.
         """ 
-        # print('\n looking for',template_name)
+        
         splitname=template_name.split('/')
         if len(splitname)<2:
             return
         folderpattern=splitname[0]
         template_name=splitname[1]
-        for root, dirs, files in os.walk('/home/dev/pylims/src/modules'):
-            if template_name in files:
-                folders = str(root).split('/')
-                modules_index = folders.index("modules")
-                if modules_index < len(folders) - 1:
-                    folder_after_modules = folders[modules_index + 1]
-                else:
-                    continue
-                if not folder_after_modules==folderpattern:
-                    continue
-                name = safe_join(root, template_name)
-                # print('\n\nLOADING TEMPLATE',name)
-                yield Origin(
+        settings=json.loads(pylims.get_setup_options())
+        mods = json.loads(pylims.build_module_dict())
+        # print(pylims.term(),'Project:',folderpattern,'template:',template_name)
+        # print(f'current mod for {folderpattern}: {settings['setup'][folderpattern]}')
+        file_name = os.path.join('/home/dev/pylims/src/modules',folderpattern,settings['setup'][folderpattern],template_name)
+        if os.path.exists(file_name):
+            name = safe_join(file_name)
+            # print('\n\nLOADING TEMPLATE',name)
+            yield Origin(
                     name=name,
                     template_name=template_name,
                     loader=self,
