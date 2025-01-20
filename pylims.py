@@ -134,8 +134,9 @@ def build_module_links(request):
     for m in setup['setup']:
         if setup['setup'][m]=='disabled':
             continue
+        active_mods[m]=modules[m][setup['setup'][m]]['title']
         # print(m)
-        # print(modules[m])
+        # print(modules[m]['title'])
         # print(modules[m][setup['setup'][m]])
         if modules[m][setup['setup'][m]]['type']=='error':
             print(term(),f'Not building {m} links for {setup["setup"][m]} due to error')

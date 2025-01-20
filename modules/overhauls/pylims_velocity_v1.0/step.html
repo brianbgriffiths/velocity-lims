@@ -1,0 +1,583 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}Velocity LIMS - Queue{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_common.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<style>
+    body {
+        counter-reset: sample;
+    }
+    breadcrumbs {
+        border:solid 1px #000000;
+        padding:3px;
+        display:block;
+        margin-bottom:15px;
+    }
+	protocol {
+		background-color:var(--accent1);
+		color:white;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+	}
+	queue {
+		background-color:var(--gray-lightest);
+		color:black;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+		margin-left:30px;
+		margin-bottom:2px;
+		margin-top:2px;
+		border:solid 1px var(--gray-med);
+		clear:both;
+	}
+	queue:hover {
+		background-color:var(--accent9);
+		cursor:pointer;
+	}
+	steporder {
+		display:inline-block;
+		width:60px;
+		font-size:12px;
+		font-weight:bold;
+	}
+	steporder::before {
+		content:'Step ';
+	}
+	steporder::after {
+		content:' »';
+	}
+	stepname {
+		display:inline-block;
+	}
+	samplecount, validationcount {
+		float:right;
+		position:relative;
+		box-sizing:border-box;
+		padding:1px;
+		top:-2px;
+		height:100%;
+		margin-left:10px;
+		font-size:16px;
+		font-weight:bold;
+		width:50px;
+		text-align:right;
+	}
+	samplecount {
+		color:var(--blue-dark);
+	}
+
+	protocolsamples {
+		float:right;
+
+	}
+	.button-hover-right {
+		position:relative;
+		width:fit-content;
+		border:solid 1px var(--accent5);
+		padding:10px;
+		padding-right:30px;
+	}
+	#arrowBox {
+	    position: absolute;
+		top: 0px;
+		right: 0px;
+		padding: 0px;
+		margin: 0px;
+		font-size: 20px;
+		background-color: var(--accent3);
+		height: 100%;
+		width: 20px;
+		line-height: 20px;
+	}
+
+	#arrowBox::after {
+		content: '';
+		position:absolute;
+		text-rendering: auto;
+		-webkit-font-smoothing: antialiased;
+		font: var(--fa-font-solid);
+		content: "\f0da";
+		top: calc(50% - 10px);
+		height: 20px;
+		width: 12px;
+		left: calc(50% - 6px);
+		
+	}
+
+	
+
+	#hoverBox {
+	  display: none;
+	  position: absolute;
+	  top: 10px;
+	  right: -183px; 
+	  background-color:var(--inputhover);
+	  padding: 10px 0px;
+	  width:180px;
+	  font-size:16px;
+	  border: solid 1px var(--accent7);
+	}
+
+	#hoverBox a {
+	  display: block;
+	  margin: 5px 0;
+	  padding:0px 10px;
+	}
+	
+	#hoverBox a:hover {
+		background-color:var(--accent3);
+		color:#ffffff;
+	}
+	#arrowBox:hover #hoverBox {
+		display:block;
+	}
+	.project {
+		height: 40px;
+		border-bottom: solid 1px #cccccc;
+		line-height: 40px;
+	}
+	#new_project_button {
+		margin:20px 0px;
+	}
+    .columns {
+        display: flex;
+        gap: 20px;
+        box-sizing:border-box;
+        width:100%;
+      }
+      
+      .column-75 {
+        flex: 0 0 calc(75% - 10px);
+        
+      }
+      
+      .column-25 {
+        flex: 0 0 calc(25% - 10px);
+      }
+      #queue-info {
+        border:solid 1px #000000;
+        border-radius:3px;
+        font-size:12px;
+        font-weight:bold;
+        padding:3px;
+        margin-bottom:5px;
+      }
+      #begin-step {
+        background-color:var(--green-med);
+        border:solid 1px var(--gray-med);
+        color:white;
+        font-size:16px;
+        border-radius:3px;
+        width:100%;
+        display:block;
+        cursor:pointer;
+        box-shadow: 1px 1px 4px 0px #0000006b;
+        margin-bottom:15px;
+      }
+      #begin-step:hover {
+        background-color:var(--highlight-green-med);
+      }
+      .reserved-box {
+        background-color:var(--gray-dark);
+        border-radius:3px;
+        padding:10px 5px;
+        border:solid 1px #2a2a2a;
+        margin:2px 0px;
+        text-align:center;
+      }
+      reserve, release {
+        background-color:var(--blue-med);
+        border-radius:2px;
+        position: absolute;
+        right: 2px;
+        top: 2px;
+        padding:2px 5px;
+        width:70px;
+        font-size:14px;
+        text-align:center;
+        color:white;
+        cursor:pointer;
+      }
+      release {
+        background-color:var(--gray-med);
+
+      }
+      reserve:hover {
+        cursor:pointer;
+        background-color:var(--blue-dark);
+      }
+      release:hover {
+        cursor:pointer;
+        background-color:var(--gray-dark);
+      }
+      #releaseall {
+        font-size:24px;
+        position:relative;
+      }
+      vhr {
+        width:100%;
+        background-color:var(--gray-med);
+        height:1px;
+        display:block;
+        border-bottom:solid 1px black;
+        border-top:var(--gray-dark);
+        margin:10px 0px;
+      }
+      queuedsample {
+        margin-left:0px;
+        padding:3px 0px;
+        width:100%;
+      }
+      samplenumber {
+        width:50px;
+        box-sizing:border-box;
+        display:inline-block;
+      }
+      samplenumber::before {
+        counter-increment: sample; 
+        content: counter(sample) ". "; 
+      }
+      
+
+      #tableheader {
+        border:solid 1px #000000;
+        border-radius:3px;
+        font-size:12px;
+        font-weight:bold;
+        padding:0px;
+        margin-bottom:5px;
+        background-color:var(--gray-light);
+        display:block;
+        position:relative;
+      }
+      headercontent {
+        line-height:20px;
+        display:inline-block;
+        height:20px;
+        padding:0px 10px;
+        vertical-align:top;
+        text-align:center;
+        box-sizing:border-box;
+      }
+      headerhandle {
+        height:20px;
+        width:1px;
+        background-color:white;
+        border-left:solid 1px var(--gray-med);
+        border-right:solid 1px var(--gray-light);
+        display:inline-block;
+        vertical-align:top;
+        cursor:ew-resize;
+      }
+      tablerow {
+
+      }
+      samplename {
+        width:150px;
+      }
+      #dragsamples {
+         font-size:28px;
+         color:white;
+      }
+
+      #containers {
+        width:100%;
+      }
+      pagelinks {
+        position:relative;
+        display:flex;
+      }
+      pages {
+        flex-grow:0;
+      }
+      page {
+        display:inline-block;
+        background-color:var(--gray-med);
+        padding:3px 10px;
+        border:solid 1px var(--gray-dark);
+        border-left:none;
+        color:white;
+        cursor:pointer;
+      }
+      page:nth-child(1) {
+        border-left:solid 1px #000000;
+        border-top-left-radius:15px;
+        border-bottom-left-radius:15px;
+      }
+      page:last-of-type {
+        border-top-right-radius: 15px;
+        border-bottom-right-radius: 15px;
+      }
+      page:hover {
+        background-color:var(--gray-dark);
+      }
+      .page-selected {
+        background-color:var(--blue-med);
+      }
+      .page-selected:hover {
+        background-color:var(--blue-dark);
+      }
+      pagebuttons {
+        display:inline-block;
+        text-align:right;
+        flex-grow:1;
+      }
+
+      pagebutton {
+        display:inline-block;
+        background-color:var(--gray-med);
+        padding:3px 10px;
+        border:solid 1px var(--gray-dark);
+        color:white;
+        cursor:pointer;
+        margin-left:20px;
+        border-radius:15px;
+      }
+      #abort-button:hover {
+        background-color:var(--pink-med);
+      }
+      #save-button:hover {
+        background-color:var(--blue-med);
+      }
+      #next-button:hover {
+        background-color:var(--green-med);
+      }
+      containerview {
+        display:flex;
+        gap:20px;
+        position:relative;
+      }
+      inputcontainer, outputcontainer {
+        flex: 1;
+        
+      }
+
+      container {
+        display:inline-block;
+        border:solid 1px #000000;
+        width:100%;
+        max-height:calc(360px + 80px);
+        max-width:540px;
+        position:relative;
+      }
+      containertitlebar {
+        display:block;
+        background-color:var(--accent1);
+        padding:5px;
+        height:30px;
+        box-sizing:border-box;
+      }
+      containername {
+        color:white;
+        font-weight:bold;
+      }
+      .containerborder {
+        padding-left: 50px;
+        padding-top: 50px;
+        padding-right: 5px;
+        padding-bottom: 5px;
+      }
+
+      .grid-container {
+        display: grid;
+        grid-template-columns: repeat(var(--n-columns), 1fr);
+        grid-template-rows: repeat(var(--n-rows), 1fr);
+        gap: 5px;
+        width:100%;
+        grid-auto-rows: 1fr;
+        grid-auto-columns: 1fr;
+        grid-auto-flow: column;
+        position:relative;
+        box-sizing: border-box;
+        
+      }
+      .grid-item {
+        aspect-ratio: 1 / 1; /* Keeps the items square */
+        background-color: #ccc;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius:100px;
+        min-width:25px;
+        background: radial-gradient(ellipse at 30% 30%, #fcf3ff 12%, #d2c4d8 57%);
+        border: solid 1px #f8f2fa;
+        z-index:1;
+        position:relative;
+      }
+      rmarker {
+        position:absolute;
+        left:-45px;
+        height:25px;
+        width:44px;
+        background-image: url('/static/themes/pylims_velocity_v1.0/rmarker.svg');
+        background-repeat:no-repeat;
+        line-height: 25px;
+        box-sizing: border-box;
+        padding-left: 14px;
+        text-align: left;
+        font-weight: bold;
+      }
+      vmarker {
+        position:absolute;
+        top:-45px;
+        height:44px;
+        width:25px;
+        background-image: url('/static/themes/pylims_velocity_v1.0/vmarker.svg');
+        background-repeat:no-repeat;
+        line-height: 44px;
+        box-sizing: border-box;
+        padding-left: 7px;
+        text-align: left;
+        font-weight: bold;
+      }
+      
+
+
+
+
+</style>
+{% endblock %}
+{% block centercontent %}
+<div id="queue" class="center-border">
+    <breadcrumbs> {{ config.protocol_name }} / Step # {{config.order_in_protocol}} / <b>{{ config.step_name }}</b></breadcrumbs>
+    <pagelinks><pages></pages><pagebuttons></pagebuttons></pagelinks>
+    <containerview><inputcontainer>input</inputcontainer><outputcontainer></outputcontainer></containerview>
+</div>
+
+{% endblock %}
+{% block javascript %}
+
+<script>
+const csrf = '{{ csrf_token }}';
+const step_config = {{ config | safe }};
+const velocity_step_io = {{ io | safe }};
+const velocity_containers = {{ containers | safe }};
+const inputcontainers = {{ inputcontainers | safe }};
+const outputcontainers = {{ outputcontainers | safe }};
+
+{% comment %} const velocity_containers = {{ containers | safe}}; {% endcomment %}
+const main = document.getElementById('queue');
+const pagelinks = document.querySelector('pagelinks');
+const pages = document.querySelector('pages');
+const pagebuttons = document.querySelector('pagebuttons');
+const outputcontainer = document.querySelector('outputcontainer');
+const inputcontainer = document.querySelector('inputcontainer');
+
+const check_for_pages = ['setup','pooling','placement','indexing','details','routing','confirmation']
+var i=0;
+for (let page of check_for_pages) {
+    if (step_config[`page_${page}`]) {
+        i++;
+        const pagelink = document.createElement('page');
+        pagelink.textContent=page;
+        pagelink.id=`page_${page}`;
+        pages.appendChild(pagelink);
+        if (i==1) {
+            pagelink.classList.add('page-selected');
+        }
+    }
+}
+
+
+
+const abort_button = document.createElement('pagebutton');
+abort_button.textContent = 'Abort Step';
+abort_button.id="abort-button";
+pagebuttons.appendChild(abort_button);
+
+const save_button = document.createElement('pagebutton');
+save_button.textContent = 'Save';
+save_button.id="save-button";
+pagebuttons.appendChild(save_button);
+
+const next_button = document.createElement('pagebutton');
+next_button.textContent = 'Next Step';
+next_button.id="next-button";
+pagebuttons.appendChild(next_button);
+
+function localerror(msg) {
+	error_element = document.getElementById('pylims_request_error');
+	error_element.textContent=msg;
+	error_element.style.display='block';
+}
+const rownames=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P'];
+
+class Container {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+		this.element = document.createElement('container');
+
+        this.titlebar = document.createElement('containertitlebar');
+        this.element.appendChild(this.titlebar);
+
+        this.containername = document.createElement('containername');
+        this.containername.textContent=this.type_name;
+        this.titlebar.appendChild(this.containername);
+
+        this.columnlabels = document.createElement('columnlabels');
+        this.rowlabels = document.createElement('rowlabels');
+
+        const nRows = this.rows;
+        const nColumns = this.columns;
+
+        
+        this.containerborder = document.createElement('div');
+        this.containerborder.className='containerborder';
+        this.element.appendChild(this.containerborder);    
+
+        this.gridcontainer = document.createElement('div');
+        this.gridcontainer.className = 'grid-container';
+        this.gridcontainer.style.setProperty('--n-rows', nRows);
+        this.gridcontainer.style.setProperty('--n-columns', nColumns);
+        this.containerborder.appendChild(this.gridcontainer);
+        for (let i = 0; i < this.rows; i++) {
+            const rmarker = document.createElement('rmarker');
+            rmarker.textContent=i;
+            rmarker.style.top=`${(i/this.rows)*100}%`;
+            //this.gridcontainer.appendChild(rmarker);
+        }
+        for (let i = 0; i < this.rows * this.columns; i++) {
+            const item = document.createElement('div');
+            item.className = 'grid-item';
+            //item.textContent = `${i + 1}`;
+            this.gridcontainer.appendChild(item);
+            if (i<4) {
+                const rmarker = document.createElement('rmarker');
+                rmarker.textContent=rownames[i];
+                item.appendChild(rmarker);
+            }
+            if (i%4==0) {
+                const vmarker = document.createElement('vmarker');
+                vmarker.textContent=i/4+1;
+                item.appendChild(vmarker);
+            }
+        }
+        
+
+    }
+
+}
+
+var containers = {}
+for (let container of velocity_containers) {
+    containers[container.conid]=new Container(container);
+}
+
+for (let container of outputcontainers) {
+    outputcontainer.appendChild(containers[container].element);
+
+}
+
+
+
+</script>{% endblock %}

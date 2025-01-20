@@ -1,7 +1,13 @@
+var popups={}
+
 const popup = class {
 	constructor(options) {
 		if (!options['id']) {
 			console.error('Give your popup an ID')
+		}
+		const already_exists = popups[options['id']]
+		if (already_exists) {
+			console.error('creating a popup that already exists.')
 		}
 		this.size=options['size'] || null;
 		if (!options['size'] || !['small', 'medium', 'large'].includes(options['size'])) {
@@ -10,9 +16,9 @@ const popup = class {
 		this.id = options['id'];
 		this.ele = document.createElement('div');
 		this.ele.id = this.id
-		if (this.size=='small') {
-			this.ele.classList.add('popup','popup_small');
-		}
+
+		this.ele.classList.add('popup',`popup_${this.size}`);
+
 		document.body.appendChild(this.ele);
 		if (options['title']) {
 			this.ele.dataset.title=options['title'];
@@ -54,6 +60,10 @@ const popup = class {
 	destroy() {
 		this.ele.remove()
 	}
+	clear() {
+		this.ele.innerHTML=null;
+		this.add_close();
+	}
 
 	html_content(content) {
 		this.ele.innerHTML=content;
@@ -62,5 +72,9 @@ const popup = class {
 
 	append(element) {
 		this.ele.appendChild(element);
+	}
+
+	append_html(content) {
+		this.ele.innerHTML+=content;
 	}
 }

@@ -1,0 +1,313 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}pylims/automations/queue{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_common.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+<script src="{% static 'js/pluralize.js' %}"></script>
+
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<style>
+	queuedsample {
+		display:flex;
+		position:relative;
+	}
+	samplenumber {
+		display:block;
+		position:absolute;
+		left:-35px;
+		width:30px;
+		text-align:right;
+	}
+	samplenumber::after {
+		content: '.';
+	}
+	sampleheader {
+		display:flex;
+		margin:2px 40px;
+	}
+	samplecolumn {
+		display:inline-block;
+		border-right:solid 1px var(--accent5);
+		background-color:var(--accent3);
+		padding:2px 10px;
+		flex:1;
+	}
+	sampledata {
+		display:inline-block;
+		border-right:solid 1px var(--accent5);
+		padding:2px 10px;
+		flex:1;
+	}
+	sampleheader samplecolumn:last-of-type, queuedsample sampledata:last-of-type {
+		border:none;
+	}
+	queueactions {
+		display:block;
+		position: relative;
+    	margin-right: 40px;
+	}
+	.inputerror {
+		border: solid 2px var(--pink-med) !important;
+		background-color: var(--pink-light) !important;
+		outline: none;
+	}
+	.sampleselected {
+		background-color:var(--accent2);
+	}
+	.sampleselected:hover {
+		background-color:var(--accent4);
+	}
+	#next {
+		background-color: var(--green-dark);
+		position: absolute;
+		right: 55px;
+		color: var(--green-light);
+		border-color: var(--green-med);
+	}
+	#next:hover {
+		background-color:var(--green-med);
+	}
+</style>
+{% endblock %}
+{% block centercontent %}
+
+<div id="automations" class="center-border">
+{{ adminlinks|safe }}
+<div id="queue-title" class="h1">queue</div>
+<div style="display:flex;">
+	<div id="queue" style="flex: 1;">
+		<queueactions>
+			<span class="h2">Queued</span>
+			<button onClick="selectAll();">Select All</button>
+			<button onClick="selectNone();">Select None</button>
+			<button onClick="reserveSelected();">Reserve Selected</button>
+			<input type="text" placeholder="Scan Barcode" id="scaninput">
+			<samplecount id="samplecount_queue">0</samplecount></queueactions>
+		<sampleheader><samplecolumn>Sample Name</samplecolumn><samplecolumn>Container Name</samplecolumn></sampleheader>
+	</div>
+	<div id="reserved" style="flex: 1;">
+		<queueactions><span class="h2">Reserved</span>
+			<button onClick="selectAllReserved();">Select All</button>
+			<button onClick="selectNoneReserved();">Select None</button>
+			<button onClick="queueSelected();">Return Selected</button>
+			<button id="next" onClick="queueSelected();">Next</button>
+			<samplecount id="samplecount_reserved">0</samplecount></queueactions>
+		<sampleheader><samplecolumn>Sample Name</samplecolumn><samplecolumn>Container Name</samplecolumn></sampleheader>
+	</div>
+	
+</div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+<script>
+const active_mods = {{ active_mods|safe }};
+const mod={{ mod|safe }};
+const urlprefix='{{url}}';
+const options={{ mod_options|safe }};
+const csrf = '{{ csrf_token }}';
+const mod_data = {{ mod_data|safe }};
+var workflows={}
+var steps={}
+
+const queue = document.getElementById('queue');
+const title = document.getElementById('queue-title');
+const reserved = document.getElementById('reserved');
+const QueuedSample = class {
+	constructor(options) {
+		for (const o in options) {
+			this[o]=options[o];
+		}
+		this.selected=false;
+		this.inlist='queue';
+		this.element = document.createElement('queuedsample');
+		this.element.addEventListener('click',()=> {
+			this.toggleselect()
+		})
+		this.number = Object.keys(queuedsamples).length+1;
+		this.num_display = document.createElement('samplenumber');
+		this.num_display.innerHTML = this.number;
+		this.element.appendChild(this.num_display);
+		const sample_name = document.createElement('sampledata');
+		sample_name.innerHTML = options.sample_name;
+		const sample_container = document.createElement('sampledata');
+		sample_container.innerHTML = options.container_name;
+		this.element.appendChild(sample_name);
+		this.element.appendChild(sample_container);
+	}
+	select() {
+		this.selected=true;
+		this.element.classList.add('sampleselected');
+	}
+	unselect() {
+		this.selected=false;
+		this.element.classList.remove('sampleselected');
+	}
+	toggleselect() {
+		this.selected=!this.selected;
+			if (this.selected) {
+				this.element.classList.add('sampleselected');
+			} else {
+				this.element.classList.remove('sampleselected');
+			}
+	}
+	update_number() {
+		console.log(this)
+		var parent = this.element.parentElement;
+		console.log('parent',parent.id)
+		// Get all child elements of the same type within the parent
+		var children = Array.prototype.filter.call(parent.children, (child)=> {
+			return child.tagName === this.element.tagName;
+		});
+		
+		// Find the index of the target element in this list
+		this.number = Array.prototype.indexOf.call(children, this.element)+1;
+		this.num_display.innerHTML = this.number;
+		return this.number;
+	}
+}
+
+function updateTotals() {
+	for (let qs2 in queuedsamples) {
+		queuedsamples[qs2].update_number();
+	}
+	const queued_total = document.querySelectorAll('#queue queuedsample').length;
+	document.getElementById('samplecount_queue').innerHTML=queued_total;
+
+	const reserved_total = document.querySelectorAll('#reserved queuedsample').length;
+	document.getElementById('samplecount_reserved').innerHTML=reserved_total;
+}
+
+function selectAll() {
+	for (let qs in queuedsamples) {
+		if (queuedsamples[qs].inlist=='queue') {
+			queuedsamples[qs].select();
+		}
+	}
+}
+function selectNone() {
+	for (let qs in queuedsamples) {
+		if (queuedsamples[qs].inlist=='queue') {
+			queuedsamples[qs].unselect();
+		}
+	}
+}
+
+function selectAllReserved() {
+	for (let qs in queuedsamples) {
+		if (queuedsamples[qs].inlist=='reserved') {
+			queuedsamples[qs].select();
+		}
+	}
+}
+function selectNoneReserved() {
+	for (let qs in queuedsamples) {
+		if (queuedsamples[qs].inlist=='reserved') {
+			queuedsamples[qs].unselect();
+		}
+	}
+}
+function queueSelected() {
+	var to_queue=[]
+	for (let qs in queuedsamples) {
+		if (queuedsamples[qs].selected==true && queuedsamples[qs].inlist=='reserved') {
+			to_queue.push(qs)
+		}
+	}
+	unreserve(to_queue);
+}
+
+function reserveSelected() {
+	var to_reserve=[]
+	for (let qs in queuedsamples) {
+		if (queuedsamples[qs].selected==true && queuedsamples[qs].inlist=='queue') {
+			to_reserve.push(qs)
+		}
+	}
+	reserve(to_reserve);
+}
+
+function reserve(samples) {
+	for (qs of samples) {
+		queuedsamples[qs].selected=false;
+		queuedsamples[qs].inlist='reserved';
+		queuedsamples[qs].element.classList.remove('sampleselected');
+		reserved.appendChild(queuedsamples[qs].element);
+	}
+	updateTotals();	
+	scaninput.value=null;
+	scaninput.classList.remove('inputerror');
+}
+
+function unreserve(samples) {
+	for (qs of samples) {
+		queuedsamples[qs].selected=false;
+		queuedsamples[qs].inlist='queue';
+		queuedsamples[qs].element.classList.remove('sampleselected');
+		queue.appendChild(queuedsamples[qs].element);
+	}
+	updateTotals();	
+}
+
+const scaninput = document.getElementById('scaninput');
+scaninput.addEventListener('keypress',(e)=> {
+	if(e.key=='Enter') {
+		const input=scaninput.value.trim();
+		var found_sample=false;
+		for (const qs in queuedsamples) {
+			if (queuedsamples[qs].container_name==input) {
+				console.log('yes')
+				found_sample=true;
+				reserve([qs]);
+			}
+		}
+		if (found_sample===false) {
+			scaninput.classList.add('inputerror');
+		}
+	}
+})
+scaninput.addEventListener('input',()=> {
+	if (!scaninput.value) {
+		scaninput.classList.remove('inputerror');
+	}
+})
+
+var samples;
+var queuedsamples={}
+var stepinfo;
+var nextinfo;
+
+function loadQueue() {
+	for (const s of samples) {
+		queuedsamples[s.ssid]=new QueuedSample(s);
+		queue.appendChild(queuedsamples[s.ssid].element)
+	}
+	updateTotals();
+}
+
+window.onload = function() {
+    const pyoptions={data:{id:'1'},csrf,urlprefix,url:'queue',silent:true}
+	pylims_post(pyoptions).then(result => {
+		console.log('pylims post result:',result);
+		console.log(result.samples)
+		samples=result.samples;
+		nextinfo=result.next;
+		if (!nextinfo) {
+			document.getElementById('next').innerHTML='Finish';
+		}
+		stepinfo=result.step;
+		title.innerHTML=stepinfo.workflow_name+' - '+stepinfo.step_name;
+		loadQueue();
+		
+	}).catch(error => {
+		console.error(error);
+	});
+};
+
+
+
+</script>
+{% endblock %}

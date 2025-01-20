@@ -77,12 +77,16 @@ window.onload = function() {
 		console.log(result.workflows)
 		populate_step_list(result.steps);
 		populate_workflow_list(result.workflows);
+		populate_function_list(result.functions);
+		populate_containers_list(result.containers);
 		
 		
 	}).catch(error => {
 		console.error(error);
 	});
 };
+
+
 
 </script>
 <script src="{% static 'js/automations_configure.js' %}"></script>

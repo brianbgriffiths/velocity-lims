@@ -32,6 +32,7 @@ urlpatterns = [
     path('', views.home, name="home"),
     path('setup/', views.setup, name="setup"),
     path('setup_save/', views.setup_save, name="setup_save"),
+    path('modules/<str:mod>/<str:page>/<str:query>', views.mod_resolver, name='mod_resolver'),
     path('modules/<str:mod>/<str:page>/', views.mod_resolver, name='mod_resolver'),
     path('modules/<str:mod>/', views.mod_resolver, name='mod_resolver'),
 ]
@@ -55,6 +56,7 @@ for mod in setup['setup']:
     if modules[mod][setup['setup'][mod]]['type']=='error':
         print(pylims.term(),f'initializing {mod}:{pylims.error("not found")}')
         continue
+    pylims.active_mods[mod]=modules[mod][setup['setup'][mod]]['title']
     print(pylims.term(),f"initializing {mod}: {pylims.info(setup['setup'][mod])}")    
     # print(mod, modules[mod][setup['setup'][mod]]['scripts'])
     folder_path = str(settings.BASE_DIR / f'modules/{mod}/{setup['setup'][mod]}')
@@ -68,9 +70,17 @@ for mod in setup['setup']:
             # print('urls',urls)
             for url in urls:
                 # print(pylims.term(),f'URL: mod_{mod}/' + str(url.pattern))
-                url.pattern._route = f'mod_{mod}/' + str(url.pattern)
+                if 'overhauls' in pylims.active_mods:
+                    url.pattern._route = str(url.pattern)
+                else:
+                    url.pattern._route = f'mod_{mod}/' + str(url.pattern)
             # print(f'urls for {script}:',urls)
             urlpatterns=urlpatterns+urls
+
+            if 'overhauls' in pylims.active_mods:
+                url(fr"^(?P<path>.*)$", static.serve, {'document_root': settings.BASE_DIR / f"modules/{mod}/{setup['setup'][mod]}"})
+                continue
+                
             url(fr"^modules/{mod}/{setup['setup'][mod]}/(?P<path>.*)$", static.serve, {'document_root': settings.BASE_DIR / f"modules/{mod}/{setup['setup'][mod]}"})
         except Exception as e:
             continue
@@ -79,4 +89,4 @@ for mod in setup['setup']:
         # script_module = importlib.util.module_from_spec(spec)
         # loaded_module = spec.loader.exec_module(script_module)    
        
-# print('all urls',urlpatterns)    
+# print('all urls',urlpatterns)   

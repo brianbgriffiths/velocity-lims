@@ -1,18 +1,21 @@
 {
     "setup": {
         "login": "pylims_default_v1.0",
-        "organization": "pylims_default_v1.0",
+        "organization": "disabled",
         "logout": "pylims_default_v1.0",
-        "account_creation": "pylims_default_v1.0",
-        "departments": "pylims_default_v1.0",
+        "account_creation": "disabled",
+        "departments": "disabled",
         "teams": "disabled",
-        "projects": "pylims_default_v1.0",
+        "projects": "disabled",
         "experiments": "disabled",
         "goals": "disabled",
         "protocols": "disabled",
         "spaces": "disabled",
         "steps": "disabled",
-        "automations": "pylims_default_v1.0"
+        "automations": "disabled",
+        "samples": "disabled",
+        "containers": "disabled",
+        "overhauls": "pylims_velocity_v1.0"
     },
     "options": {
         "login": {
@@ -67,7 +70,8 @@
             }
         },
         "projects": {
-            "pylims_default_v1.0": {}
+            "pylims_default_v1.0": {},
+            "pylims_automations_v1.0": {}
         },
         "experiments": {
             "pylims_default_v1.0": {}
@@ -112,6 +116,15 @@
         },
         "automations": {
             "pylims_default_v1.0": {}
+        },
+        "samples": {
+            "pylims_default_v1.0": {}
+        },
+        "containers": {
+            "pylims_default_v1.0": {}
+        },
+        "overhauls": {
+            "pylims_velocity_v1.0": {}
         }
     }
 }

@@ -13,7 +13,7 @@ from channels.sessions import SessionMiddlewareStack
 from django.core.asgi import get_asgi_application
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.urls import path
-from settings.channels import automation_configure
+from settings.channels import automation_configure, projects
 
 
 
@@ -25,6 +25,7 @@ application = ProtocolTypeRouter(
         "websocket":SessionMiddlewareStack( 
         URLRouter([
                 path("ws/automation/", automation_configure.as_asgi()),
+                path("ws/projects/", projects.as_asgi()),
             ]))
             ,
         })

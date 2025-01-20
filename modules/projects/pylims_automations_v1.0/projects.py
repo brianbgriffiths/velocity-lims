@@ -6,7 +6,7 @@ import psycopg
 from psycopg import sql
 from psycopg.rows import dict_row 
 from psycopg.pq import Escaping
-
+import importlib
 import bcrypt
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -15,7 +15,7 @@ scriptname = os.path.basename(__file__)
 
 def load_projects(params):
     response={}
-    
+    print('project automations')
     if not 'userid' in params:
         response['error']='no userid'
         response['status']='failed'
@@ -28,52 +28,58 @@ def load_projects(params):
     
     if 'query' in params and 'id' in params['query']:
         cursor.execute("SELECT * FROM projects WHERE pid=%s LIMIT 1", (int(params['query']['id']),))
-        temp_project = cursor.fetchall()
+        temp_project = cursor.fetchone()
         if temp_project==[]:
             response['error']='Project not found'
             response['status']='failed'
             return response
-        if temp_project[0]['project_group_type']=='teams':
-            print('is team',params['userid'],int(params['query']['id']))
-            cursor.execute("SELECT * FROM user_teams AS ut JOIN teams ON teams.teamid=ut.team WHERE ut.user=%s AND ut.team=%s LIMIT 1", (params['userid'],int(temp_project[0]['project_group_id'])))
-            temp_team = cursor.fetchall()
-            temp_team[0]['owner']=temp_team[0]['team_name']
-            if temp_team==[]:
-                response['error']='Not a member of team'
-                response['status']='failed'
-                return response
-
-            response['projects']=[temp_project[0] | temp_team[0]]
-        elif temp_project[0]['project_group_type']=='self':
-            if not temp_project[0]['project_group_id']==params['userid']:
-                response['error']='This is a private project'
-                response['status']='failed'
-                return response
-            response['projects']=temp_project
-            response['projects'][0]['owner']='Private Project'
-            
-        if 'experiments' in params['active_mods']:
-            pass
-        
-            
+        response['projects']=[temp_project]  
         cursor.close()
         conn.close()
         response['status']='success'
         return response
-        
+
+    response['project_types']=['Production','Development','Validation','Test']    
+    
+    cursor.execute("SELECT * FROM projects ORDER BY pid DESC limit 100;")
+    temp_projects = cursor.fetchall()
+    if temp_projects == []:
+        response['error']='No projects found'
+        response['status']='failed'
+        return response       
     
     
-    if 'teams' in params['active_mods']:
-        cursor.execute("SELECT * FROM user_teams JOIN teams ON teamid=user_teams.team WHERE user_teams.user = %s::integer;", (int(params['userid']),))
-        response['teams'] = cursor.fetchall()
-    
-    if 'departments' in params['active_mods']:
-        cursor.execute("SELECT * FROM user_departments JOIN departments ON deptid=user_departments.dept WHERE user_departments.user = %s::integer;", (int(params['userid']),))
-        response['departments'] = cursor.fetchall()
-        
-    if 'organization' in params['active_mods']:
-        cursor.execute("SELECT * FROM user_organization JOIN organizations ON oid=user_organization.org WHERE user_organization.user = %s::integer;", (int(params['userid']),))
-        response['organization'] = cursor.fetchall()
+    project_ids = []
+    response['projects']={}
+    for project in temp_projects:
+        project_ids.append(project["pid"])
+        project['sample_count']=0
+        project['samples']=[]
+        response['projects'][project["pid"]]=project
+
+    # print(pylims.term(),'PROJECT IDS',project_ids)
+    settings=json.loads(pylims.get_setup_options())
+    mods = json.loads(pylims.build_module_dict())
+
+    module_to_import = importlib.import_module(mods['automations'][settings['setup']['automations']]['scripts'][0])
+    function_to_call = getattr(module_to_import, 'load_automations')
+
+    response['automations']=function_to_call({})
+
+    module_to_import = importlib.import_module(mods['containers'][settings['setup']['containers']]['scripts'][0])
+    function_to_call2 = getattr(module_to_import, 'load_containers')
+
+    response['containers']=function_to_call2(params)
+
+    module_to_import = importlib.import_module(mods['samples'][settings['setup']['samples']]['scripts'][0])
+    function_to_call3 = getattr(module_to_import, 'load_samples')
+    # params['query']={'project':}
+    temp_samples=function_to_call3(params)
+    for sample in temp_samples['samples']:
+        if sample['in_project'] in project_ids:
+            response['projects'][sample['in_project']]['sample_count']+=1
+            response['projects'][sample['in_project']]['samples'].append(sample)
+
     cursor.close()
     conn.close()
     response['status']='success'

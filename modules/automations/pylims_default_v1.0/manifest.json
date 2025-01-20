@@ -9,7 +9,8 @@
 	],
 	"load_script_function": [0,"load_automations",["user"]],
 	"templates": {
-		"automations.html": {"name":"Workflows","display_link":true,"authentication":"loggedin"}
+		"automations.html": {"name":"Workflows","display_link":true,"authentication":"loggedin"},
+		"queue.html": {"name":"Queue","display_link":false,"authentication":"loggedin"}
 		
 	},
 	"default_template": "automations.html",

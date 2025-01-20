@@ -11,15 +11,7 @@ const dropdown = class {
 		this.element.appendChild(this.optionList);
 		this.visible=false;
 		this.value=options.value;
-		if (options.value) {
-			options.default=options.value;
-		} else {
-			this.value=options.default;
-			if (!options.default) {
-				options.default = 'Choose:'
-			}
-		}
-		this.add_options({type:'default',name:options.default, value:0});
+		this.add_options({type:'default',name:'Choose:', value:options.default});
 		this.optionValues=[];
 		//this.default = this.element.querySelector('pylims_dropdown_default');
 		this.add_options = this.add_options.bind(this);
@@ -48,7 +40,11 @@ const dropdown = class {
 		} else if (options.type=='dict') {
 			this.optionValues={}
 			for (let x of options.dict) {
-				this.optionValues[x.key]=x.value;
+				// console.log(this.value,x[options.keys])
+				if (x[options.keys]==this.value) {
+					this.default.innerHTML=x[options.values];
+				}
+				this.optionValues[x[options.keys]]=x[options.values];
 				//console.log('x',x)
 				//console.log('options.keys',options.keys,x[options.keys])
 				const ddoption = document.createElement("pylims_dropdown_option");
@@ -93,7 +89,17 @@ const dropdown = class {
 		this.default.style.color=null;
 		const dropdownChangeEvent = new CustomEvent('dropdownchange', {
 			detail: {
-				id: this.parentid
+				id: this.parentid,
+				value: this.value
+			}
+		});
+		this.element.dispatchEvent(dropdownChangeEvent);
+	}
+	triggerSelection(event) {
+		const dropdownChangeEvent = new CustomEvent('dropdownchange', {
+			detail: {
+				id: this.parentid,
+				value: this.value
 			}
 		});
 		this.element.dispatchEvent(dropdownChangeEvent);
@@ -117,7 +123,8 @@ const textbox = class {
 		this.id = options.id;
 		this.value="";
 		this.element = document.createElement('input')
-		this.element.type="test";
+		this.element.id=options.id;
+		this.element.type="text";
 	}
 	updateValue(value) {
 		this.value=value;
@@ -266,7 +273,7 @@ const content_container = class {
 	}
 	
 	add(ele) {
-		console.log('add',ele)
+		// console.log('add',ele)
 		this.element.appendChild(ele);
 		this.initialized=true;
 	}
@@ -335,6 +342,18 @@ const pylims_setup_select = class {
 		console.log('select',this.id);
 		this.value=this.element.value;
 		return this.value;
+	}
+}
+
+const label_container = class {
+	constructor(options) {
+		const container = document.createElement('labelcontainer')
+		const label_c = document.createElement('label')
+		label_c.style.width=`${options.width}px`;
+		label_c.textContent=options.name;
+		container.appendChild(label_c)
+		container.appendChild(options.input);
+		return container
 	}
 }
 

@@ -1,117 +1,56 @@
-{% extends 'index.html' %}
-{% load static %}
-{% block title %}pylims{% endblock %}
-{% block headdata %}
-<script src="{% static 'js/pylims_common.js' %}"></script>
-<script src="{% static 'js/pylims_request.js' %}"></script>
-<script src="{% static 'js/pylims_ui.js' %}"></script>
-<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
-<style>
-	.button-hover-right {
-		position:relative;
-		width:fit-content;
-		border:solid 1px var(--accent5);
-		padding:10px;
-		padding-right:30px;
-	}
-	#arrowBox {
-	    position: absolute;
-		top: 0px;
-		right: 0px;
-		padding: 0px;
-		margin: 0px;
-		font-size: 20px;
-		background-color: var(--accent3);
-		height: 100%;
-		width: 20px;
-		line-height: 20px;
+
+var projects={}
+
+const Project = class {
+	constructor(options) {
+		console.log('new project',options)
+        for (let x in options) {
+            this[x]=options[x];
+        }
+        this.samples_displayed=false
+        this.element = document.createElement('project')
+        this.samplecount_element=document.createElement('samplecount');
+        this.samplecount_element.textContent = options['sample_count'];
+        let newSample = document.createElement('newsample');
+        newSample.innerHTML='<i class="fa-regular fa-vial"></i>+';
+        this.element.appendChild(newSample);
+        newSample.addEventListener('click',()=>{ newSamplePopup(this.pid); });     
+        const project_name = document.createElement("projecttitle");
+		project_name.textContent = this.project_name;
+        this.element.appendChild(project_name)
+        this.element.appendChild(this.samplecount_element);
+        this.samplelist_element = document.createElement('samplelist');
+        this.element.appendChild(this.samplelist_element);
+        this.toggle_samples = this.toggle_samples.bind(this);
+        this.samplecount_element.addEventListener('click',this.toggle_samples)
+        
+
+        
 	}
 
-	#arrowBox::after {
-		content: '';
-		position:absolute;
-		text-rendering: auto;
-		-webkit-font-smoothing: antialiased;
-		font: var(--fa-font-solid);
-		content: "\f0da";
-		top: calc(50% - 10px);
-		height: 20px;
-		width: 12px;
-		left: calc(50% - 6px);
-		
-	}
-	
+    toggle_samples() {
+        this.samples_displayed=!this.samples_displayed;
+        if (this.samples_displayed) {
+            console.log('show',this.samples,this)
+            for (let sample of this.samples) {
+                let s = document.createElement('sample');
+                s.innerHTML='<i class="fa-light fa-vial-circle-check"></i> '+sample.sample_name;
+                this.samplelist_element.appendChild(s)
+                let workflow_element = document.createElement('sampleworkflow');
+                workflow_element.innerHTML = workflows[sample.workflow].name+'<i class="fa-regular fa-clock"></i>';
+                s.appendChild(workflow_element)
+            }
+        } else {
+            console.log('hide');
+            this.samplelist_element.innerHTML=null;
+        }
+    }
 
-	#hoverBox {
-	  display: none;
-	  position: absolute;
-	  top: 10px;
-	  right: -183px; 
-	  background-color:var(--inputhover);
-	  padding: 10px 0px;
-	  width:180px;
-	  font-size:16px;
-	  border: solid 1px var(--accent7);
-	}
+    setSampleCount(val) {
+        this.samplecount_element.innerHTML=val;
+    }
 
-	#hoverBox a {
-	  display: block;
-	  margin: 5px 0;
-	  padding:0px 10px;
-	}
-	
-	#hoverBox a:hover {
-		background-color:var(--accent3);
-		color:#ffffff;
-	}
-	#arrowBox:hover #hoverBox {
-		display:block;
-	}
-	.project {
-		height: 40px;
-		border-bottom: solid 1px #cccccc;
-		line-height: 40px;
-	}
-	#new_project_button {
-		margin:20px 0px;
-	}
-	.project_owner {
-		font-size: 14px;
-		border: solid 1px #306998;
-		padding: 2px 5px;
-		border-radius: 13px;
-		background-color: #f7f7f7;
-		color: #306998;
-		width: fit-content;
-	}
-</style>
-{% endblock %}
-{% block centercontent %}
-
-<div id="projects" class="center-border">
-	<div>Projects are folders that can contain experiments and track progress. ?</div>
-	<button id="new_project_button" class="button-hover-right" onClick="newProject();"><div><i class="fa-regular fa-folder-plus"></i> New Project</div>
-	<!--<div id="arrowBox"><div id="hoverBox"><a href="#">From Template</a></div></div>-->
-	</button>
-</div>
-
-{% endblock %}
-
-{% block javascript %}
-
-<script>
-const active_mods = {{ active_mods|safe }};
-const mod={{ mod|safe }};
-const urlprefix='{{url}}';
-const options={{ mod_options|safe }};
-const csrf = '{{ csrf_token }}';
-const mod_data = {{ mod_data|safe }};
-const main = document.getElementById('account_logout');
-
-const project_container=document.getElementById('projects');
-
-const projectlist = new content_container('project_list',project_container)
-const newproject = new content_container('newproject',project_container)
+}
 
 function load_projects() {
 	newproject.hide();
@@ -125,56 +64,18 @@ function load_projects() {
 	}
 	
 	if (mod_data['projects']) {
-		for (const p of mod_data['projects']) {
-			const header_name = document.createElement("div");
-			header_name.textContent = p['project_name'];
-			header_name.classList.add('h1');
-			projectlist.add(header_name);
-			
-			const owner = document.createElement("div");
-			owner.innerHTML='<i class="fa-solid fa-lock"></i> '+p['owner'];
-			owner.classList.add('project_owner');
-			projectlist.add(owner);
+		for (const project in mod_data['projects']) {
+            const p = mod_data['projects'][project];
+            projects[p.pid]=new Project(p)
+			projectlist.add(projects[p.pid].element);
+        }
 
-		}
-		if (mod_data['projects'].length>1) {
-			return false;
-		}
-		const project_dashboard = document.createElement("div");
-		project_dashboard.id='project_dashboard';
-		project_dashboard.textContent='More dashboard stuff available through other modules/plugins in the future.';
-		projectlist.add(project_dashboard);
-		
-		const button_container = document.createElement("div");
-		button_container.classList.add('button_container');
-		projectlist.add(button_container);
-		
-		const share_button = document.createElement('button');
-		share_button.id="new_experiment_button";
-		share_button.classList.add("button-hover-right")
-		share_button.innerHTML='<i class="fa-regular fa-user-group"></i> Sharing';
-		share_button.addEventListener('click',shareExperiment);
-		button_container.append(share_button);
-		
-	
-		if (active_mods['experiments']) {
-			const new_experiment_button = document.createElement('button');
-			new_experiment_button.id="new_experiment_button";
-			new_experiment_button.classList.add("button-hover-right")
-			new_experiment_button.innerHTML='<i class="fa-regular fa-flask"></i> Add Experiment';
-			new_experiment_button.addEventListener('click',newExperiment);
-			button_container.append(new_experiment_button);
-		}
-		if (active_mods['goals']) {
-			const new_goal_button = document.createElement('button');
-			new_goal_button.id="new_goal_button";
-			new_goal_button.classList.add("button-hover-right")
-			new_goal_button.innerHTML='<i class="fa-regular fa-flag"></i> Add Goal';
-			new_goal_button.addEventListener('click',newGoal);
-			button_container.append(new_goal_button);
-		}
 	}
 	projectlist.show();
+}
+
+function shareExperiment() {
+	
 }
 
 function newExperiment() {
@@ -187,21 +88,6 @@ function newExperiment() {
 		return false;
 	}
 	window.location.href=`https://${window.location.hostname}/modules/experiments?new=${mod_data['projects'][0].pid}`;
-}
-
-function newGoal() {
-	if (!active_mods['goals']) {
-		const load_error = document.createElement('div');
-		load_error.classList.add('localerror');
-		load_error.textContent='Goals Module not enabled';
-		load_error.style.display='block';
-		projectlist.add(load_error);
-		return false;
-	}
-}
-
-function shareExperiment() {
-	
 }
 
 function newProject() {
@@ -347,6 +233,3 @@ function localerror(msg) {
 	error_element.style.display='block';
 }
 
-load_projects()
-
-</script>{% endblock %}

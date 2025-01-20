@@ -79,7 +79,7 @@ def setup_save(request):
     response['status']='success';
     return JsonResponse(response)
 
-def mod_resolver(request, mod, page=False):
+def mod_resolver(request, mod, page=False, query=False):
     import importlib
     
     context={}

@@ -4,15 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    <title>{% block title %}pylims{% endblock %}</title>
-	<link rel="stylesheet" type="text/css" href="{% static 'css/default.css' %}">
+    <title>{% block title %}Velocity LIMS{% endblock %}</title>
+	<link rel="stylesheet" type="text/css" href="{% static 'themes/pylims_velocity_v1.0/default.css' %}">
 	<link rel="stylesheet" type="text/css" href="{% static 'fontawesome/css/all.min.css' %}">
-	<link rel="icon" href="{% static 'images/crab.svg' %}" type="image/svg+xml">
+	<link rel="icon" href="{% static 'themes/pylims_velocity_v1.0/icon.svg' %}" type="image/svg+xml">
 	{% csrf_token %}
 	{% block headdata %}{% endblock %}
 </head>
 <body>
-	<div id="login-pylims-logo"><a href="{% url 'home' %}"><img  src="{% static 'images/pylims.svg' %}" alt="pylims logo"></a></div>
+	<div id="login-pylims-logo"><a href="{% url 'home' %}"><img  src="{% static 'themes/pylims_velocity_v1.0/logo.svg' %}" alt="pylims logo"></a></div>
 	<div id="header">{% for link in links %}
             <span class="header_link"><a href="/modules/{{ link.0 }}/{{ link.2 }}">{{ link.1 }}</a></span>
         {% endfor %}
@@ -33,7 +33,7 @@
 {% endif %}
 		
 	</div>
-<div id="footer">&copy; 2023 - 2024 pylims, MIT License</div>	
+<div id="footer">Velocity LIMS&trade; &copy; 2023 - 2025 pylims, MIT License</div>	
 </body>
 {% block javascript %}{% endblock %}
 

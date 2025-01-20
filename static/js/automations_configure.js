@@ -6,7 +6,7 @@ const edit_maximize = document.getElementById('edit_maximize');
 const edit_windowed = document.getElementById('edit_windowed');
 const edit_minimize = document.getElementById('edit_minimize');
 const includes = document.getElementById('includes')
-const new_step = document.getElementById('workflow');
+const new_step = document.getElementById('new_step');
 const step_list = document.getElementById('step_list');
 const new_workflow = document.getElementById('new_workflow');
 const workflow_list = document.getElementById('workflow_list');
@@ -14,6 +14,8 @@ var editing_step = null;
 var editing_workflow = null;
 var steps={}
 var workflows={}
+var functions = {}
+var containers = {}
 
 const Workflow = class {
     constructor(options) {
@@ -69,15 +71,25 @@ const Workflow = class {
         includes.innerHTML=null;
         for (let step of this.steps) {
             let sc = document.createElement('div')
-            sc.classList.add('step_in_workflow');
+            sc.classList.add('step_in_workflow','draggable');
             sc.innerHTML = steps[step].name;
+            sc.dataset.stepid=step;
+            sc.setAttribute('draggable',"true");
             includes.appendChild(sc);
             sc.addEventListener('click',(e)=> {
-                const steps = Array.from(document.getElementsByClassName('step_in_workflow'));
-                const index = steps.indexOf(e.target);
-                ws.send(JSON.stringify({ 'message': {type: 'remove_step_from_workflow', message: 'removing step from workflow', data:{wf:this.id, step:this.steps[index], pos:index} } }));
+                if (e.ctrlKey) {
+                    const steps = Array.from(document.getElementsByClassName('step_in_workflow'));
+                    const index = steps.indexOf(e.target);
+                    ws.send(JSON.stringify({ 'message': {type: 'remove_step_from_workflow', message: 'removing step from workflow', data:{wf:this.id, step:this.steps[index], pos:index} } }));
+                }
             })
         }
+        // const ph = document.createElement('div')
+        // ph.classList.add('step_in_workflow_placeholder')
+        // ph.id='step_in_workflow_placeholder';
+        // ph.style.display='none';
+        // includes.appendChild(ph);
+        setupDragging(document.getElementById('includes'))
     }
     editWorkflow(event) {
 		ws.send(JSON.stringify({ 'message': {type: 'edit_workflow', message: 'editing workflow', data:{id:this.id} } }));
@@ -136,12 +148,13 @@ const Workflow = class {
 
     }
     typeOptions() {
+        console.log('looking for wf type options',this.type)
         this.subtypes.innerHTML=null;
         if (this.type=='Queue') {
             let limit_container = document.createElement('div')
             limit_container.innerHTML='limit'
             this.subtypes.appendChild(limit_container)
-        }
+        } 
         const edit_content = document.getElementById('edit_content');
         edit_content.appendChild(this.subtypes);
     }
@@ -164,22 +177,132 @@ const Workflow = class {
     }
 }
 
+var currentList = null;
+
+function setupDragging(list) {
+    if (currentList) {
+        // Remove existing event listeners if a list is already set up
+        currentList.removeEventListener('dragstart', handleDragStart);
+        currentList.removeEventListener('dragend', handleDragEnd);
+        currentList.removeEventListener('dragover', handleDragOver);
+        currentList.removeEventListener('drop', handleDrop);
+    }
+
+    // Set up the new list
+    currentList = list;
+    currentList.addEventListener('dragstart', handleDragStart);
+    currentList.addEventListener('dragend', handleDragEnd);
+    currentList.addEventListener('dragover', handleDragOver);
+    currentList.addEventListener('drop', handleDrop);
+}
+
+let draggedItem = null;
+const placeholder = document.createElement('div');
+placeholder.id = 'step_in_workflow_placeholder';
+placeholder.className = 'step_in_workflow_placeholder';
+placeholder.innerHTML="&nbsp;";
+placeholder.style.display = 'none';
+document.body.appendChild(placeholder);
+
+function handleDragStart(e) {
+    if (e.target.classList.contains('draggable')) {
+        draggedItem = e.target;
+        setTimeout(() => {
+            e.target.style.display = 'none';
+        }, 0);
+    }
+}
+
+function handleDragEnd(e) {
+    if (e.target.classList.contains('draggable')) {
+        setTimeout(() => {
+            e.target.style.display = 'block';
+            draggedItem = null;
+            placeholder.style.display = 'none';
+        }, 0);
+    }
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+    const afterElement = getDragAfterElement(currentList, e.clientY);
+    placeholder.style.display = 'block';
+    if (afterElement === null) {
+        if (placeholder.nextSibling !== null) {
+            currentList.appendChild(placeholder);
+        }
+    } else {
+        if (placeholder.nextSibling !== afterElement) {
+            currentList.insertBefore(placeholder, afterElement);
+        }
+    }
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    if (draggedItem) {
+        currentList.insertBefore(draggedItem, placeholder);
+        placeholder.style.display = 'none';
+        var step_order=[]
+        for (ele of document.getElementsByClassName('step_in_workflow'))
+        {
+            step_order.push(parseInt(ele.dataset.stepid))
+        }
+        console.log('new step order',step_order)
+        const step_order_str = JSON.stringify(step_order)
+        ws.send(JSON.stringify({ 'message': {type: 'save_workflow', message: 'saving workflow step order', data:{id:editing_workflow,key:'steps',value:step_order_str} } }));
+    }
+}
+
+function getDragAfterElement(list, y) {
+    const draggableElements = [...list.querySelectorAll('.draggable:not(.step_in_workflow_placeholder):not([style*="display: none"])')];
+
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+// Example usage with a dynamically loaded list
+document.addEventListener('DOMContentLoaded', () => {
+    const list1 = document.getElementById('drag-list');
+    setupDragging(list1);
+
+    // Simulate loading a new list dynamically
+    setTimeout(() => {
+        const newList = document.createElement('div');
+        newList.id = 'new-drag-list';
+        newList.innerHTML = `
+            <div class="draggable" draggable="true">New Item 1</div>
+            <div class="draggable" draggable="true">New Item 2</div>
+            <div class="draggable" draggable="true">New Item 3</div>
+        `;
+        document.body.appendChild(newList);
+        setupDragging(newList);
+    }, 5000);
+});
+
 const Step = class {
     constructor(options) {
-        if (!options || !options['id']) {
+        if (!options || (!options.asid && !options.id)) {
             console.error('No Id')
             return false;
+        }
+        for (const o in options) {
+            this[o]=options[o];
         }
         if (!options.status) {
             options.status='design';
         }
         this.element = document.createElement('div')
-        this.id = options.id;
-		this.name = options.name;
-        this.type = options.type;
-        this.status = options.status;
-        this.version = options.version;
-		this.element.id = this.id
+        this.id=options.asid || options.id;
+		this.data=JSON.parse(options.data);
+        this.element.id = this.id;
 		this.element.classList.add('step_container');
 		this.element.innerHTML = this.name;
         if (step_list) {
@@ -204,11 +327,12 @@ const Step = class {
         this.workflows=[];
         if (options.workflows) {
             setTimeout( ()=> {
-                for (let wf of options.workflows) {
+                for (let wf of JSON.parse(options.workflows)) {
                     this.workflows.push(wf)
                 }
             },100)
         }
+        
         this.initOptions();
     }
 
@@ -293,13 +417,130 @@ const Step = class {
     }
     typeOptions() {
         this.subtypes.innerHTML=null;
+        console.log('looking for step type options',this.type)
         if (this.type=='Queue') {
             let limit_container = document.createElement('div')
             limit_container.innerHTML='limit'
             this.subtypes.appendChild(limit_container)
+        } else if (this.type=='Function') {
+            var loadedvalue=this.data.function||0;
+            const function_dd = new dropdown({id:'function', value:loadedvalue});
+            var options_convert = []
+            for (let f in functions) {
+                options_convert.push({id:functions[f].afid, name:functions[f].function_name, prompt:functions[f].prompt})
+            }
+            this.subtypes.appendChild(function_dd.element);
+            this.typeprompt=document.createElement('typeprompt');
+            this.subtypes.appendChild(this.typeprompt);
+            this.details=document.createElement('details');
+            this.subtypes.appendChild(this.details);
+            this.typedetails=document.createElement('typedetails');
+            this.details.appendChild(this.typedetails);
+            
+            function_dd.add_options({type:'dict',dict:options_convert,keys:'id',values:'name'});
+            function_dd.element.addEventListener('dropdownchange', (event)=> {
+                console.log('function update',event,event.detail.value)
+                this.data.function=event.detail.value;
+                //const datastring=JSON.stringify(this.data)
+                ws.send(JSON.stringify({ 'message': {type: 'save_step', message: 'saving step data', data:{id:this.id,key:'data',value:this.data} } }));
+                let prompt=functions[event.detail.value].prompt;
+                const pattern = /\{([A-Z]+)\|([A-Z]+)\}/g;
+
+                const results = [];
+                let lastIndex = 0;
+
+                prompt.replace(pattern, (match, p1, p2, offset) => {
+                    if (offset > lastIndex) {
+                        results.push(prompt.slice(lastIndex, offset));
+                    }
+                    results.push(`${p1}|${p2}`);
+                    lastIndex = offset + match.length;
+                });
+
+                // Push any remaining text after the last match
+                if (lastIndex < prompt.length) {
+                    results.push(prompt.slice(lastIndex));
+                }
+                console.log('matches',results)
+                for (let input of results) {
+                    let info = input.split('|');
+                    let id=info[0];
+                    let type=info[1];
+                    if (!type) {
+                        this.typeprompt.appendChild(document.createTextNode(id));
+                        continue
+                    }
+                    console.log(id,type)
+                    var output="ERROR";
+                    if (type=='PVALUEOW') {
+                        let odd = new dropdown({id:'function_'+id})
+                        this.typeprompt.appendChild(odd.element)
+                    } else if (type=='TEXTINPUT') {
+                        let textinput = document.createElement('input');
+                        textinput.classList.add('functiontextinput');
+                        textinput.id=id;
+                        textinput.type='text';
+                        textinput.value=this.data[id] || "";
+                        this.typeprompt.appendChild(textinput);
+                        textinput.addEventListener('input',(e)=> {
+                            console.log('changed function data',e);
+                            this.updateStepData(e.target.id,e.target.value)
+                        })
+                    } else if (type=='PVALUE') {
+                        let textinput = document.createElement('input');
+                        textinput.id=id;
+                        textinput.type='text';
+                        textinput.placeholder='Persistent Run Value';
+                        textinput.value=this.data[id] || "";
+                        this.typeprompt.appendChild(textinput);
+                        textinput.addEventListener('input',(e)=> {
+                            console.log('changed function data',e);
+                            this.updateStepData(e.target.id,e.target.value)
+                        })
+                    } else if (type=='N') {
+                        let numberinput = document.createElement('input');
+                        numberinput.id=id;
+                        numberinput.type='number';
+                        numberinput.classList.add('functionnumberinput');
+                        numberinput.value=this.data[id] || 1;
+                        this.typeprompt.appendChild(numberinput);
+                        numberinput.addEventListener('input',(e)=> {
+                            console.log('changed function data',e);
+                            this.updateStepData(e.target.id,e.target.value)
+                        })
+                    } else if (type=='CONTAINERTYPES') {
+                        let odd = new dropdown({id:'function_'+id})
+                        let container_array = []
+                        for (let c in containers) {
+                            container_array.push(containers[c]);
+                        }
+                        odd.add_options({type:'dict',dict:container_array, keys:'cid', values:'container_name'});
+                        this.typeprompt.appendChild(odd.element)
+                    }
+                }
+                this.typeprompt=prompt;
+                var no=[]
+                no.push('<functiondetail>{N} N / of created containers</functiondetail>');
+                no.push('<functiondetail>{NABC} N / of created containers as alphabetical character (upper)</functiondetail>');
+                no.push('<functiondetail>{Nabc} N / of created containers as alphabetical character (lower)</functiondetail>');
+                no.push('<functiondetail>{YYYYMMDD} ISO 8601 e basic</functiondetail>');
+                no.push('<functiondetail>{YYYY-MM-DD} ISO 8601 extended format</functiondetail>');
+                no.push('<functiondetail>{OSV|name} A value defined in the previous step</functiondetail>');
+                no.push('<functiondetail>{PRV|name} A value defined in the current run</functiondetail>');
+                no.push('<functiondetail>{SWV|name} A value defined system-wide</functiondetail>');
+                this.typedetails.innerHTML = no.join('');
+            });
+            if (this.data.function) {
+                function_dd.triggerSelection();
+            }
         }
         const edit_content = document.getElementById('edit_content');
         edit_content.appendChild(this.subtypes);
+    }
+
+    updateStepData(id,value) {
+        this.data[id]=value;
+        ws.send(JSON.stringify({ 'message': {type: 'save_step', message: 'saving step data', data:{id:this.id,key:'data',value:this.data} } }));
     }
 
     displayOptions() {
@@ -320,11 +561,41 @@ const Step = class {
     }
 }
 
+const Function = class {
+    constructor(options) {
+        for (let o in options) {
+            this[o]=options[o];
+        }
+    }
+}
+
+const Container = class {
+    constructor(options) {
+        for (let o in options) {
+            this[o]=options[o];
+        }
+    }
+}
+
 const edit_content = document.getElementById('edit_content');
 const edit_header = document.getElementById('edit_header');
 const includes_header = document.getElementById('includes_header');
 const title = document.getElementById('edit_header_title');
 
+
+function populate_function_list(data) {
+	for (let f of data) {
+        f.id=f.afid;
+		functions[f.afid] = new Function(f);
+	}
+}
+
+function populate_containers_list(data) {
+	for (let c of data) {
+        c.id=c.cid;
+		containers[c.cid] = new Container(c);
+	}
+}
 
 function edit_step(id) {
     editing_step = id;
@@ -587,7 +858,7 @@ function sendMessage(type,msg,data) {
 
 function populate_step_list(data) {
 	for (let s of data) {
-		steps[s.asid] = new Step({'id':s.asid, 'name':s.name, 'type':s.type, 'status':s.status, 'version':s.version, 'workflows':JSON.parse(s.workflows)})
+		steps[s.asid] = new Step(s)
 	}
 }
 function populate_workflow_list(data) {

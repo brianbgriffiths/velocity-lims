@@ -39,6 +39,16 @@ def admin_list_automations(request):
     print('workflow count:',len(results))
     response['workflows']=results
 
+    cursor.execute("SELECT * FROM automation_functions ORDER BY function_name ASC")
+    
+    results = cursor.fetchall()
+    print('function count:',len(results))
+    response['functions']=results
+
+    cursor.execute("SELECT * FROM container_types;")
+    results = cursor.fetchall()
+    response['containers']=results
+
     cursor.close()
     conn.close()
 
@@ -74,7 +84,7 @@ def create_new_step(request):
 
     
 
-    cursor.execute("INSERT INTO automation_step (name,status,version) VALUES (%s, '1','0.0.1') RETURNING asid;",(data['new_step_name'],))
+    cursor.execute(f"INSERT INTO automation_step (name,status,version,workflows,data,type) VALUES (%s, '1','0.0.1','[]','{{}}','Records') RETURNING asid;",(data['new_step_name'],))
     response['new_id'] = cursor.fetchone()['asid']
     response['new_name'] = data['new_step_name']
     conn.commit()
@@ -113,7 +123,7 @@ def create_new_workflow(request):
 
     
 
-    cursor.execute("INSERT INTO automation_workflow (name,status,version) VALUES (%s, '1','0.0.1') RETURNING wfid;",(data['new_workflow_name'],))
+    cursor.execute("INSERT INTO automation_workflow (name,status,version,steps) VALUES (%s, '1','0.0.1', '[]') RETURNING wfid;",(data['new_workflow_name'],))
     response['new_id'] = cursor.fetchone()['wfid']
     response['new_name'] = data['new_workflow_name']
     conn.commit()

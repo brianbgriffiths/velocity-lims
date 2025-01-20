@@ -75,23 +75,17 @@
 	#new_project_button {
 		margin:20px 0px;
 	}
-	.project_owner {
-		font-size: 14px;
-		border: solid 1px #306998;
-		padding: 2px 5px;
-		border-radius: 13px;
-		background-color: #f7f7f7;
-		color: #306998;
-		width: fit-content;
-	}
 </style>
 {% endblock %}
 {% block centercontent %}
 
 <div id="projects" class="center-border">
-	<div>Projects are folders that can contain experiments and track progress. ?</div>
+	<div>Projects are folders that can contain experiments and track progress.</div>
 	<button id="new_project_button" class="button-hover-right" onClick="newProject();"><div><i class="fa-regular fa-folder-plus"></i> New Project</div>
-	<!--<div id="arrowBox"><div id="hoverBox"><a href="#">From Template</a></div></div>-->
+	<div id="arrowBox"><div id="hoverBox">
+	  <a href="#">From Template</a>
+	</div></div>
+	
 	</button>
 </div>
 
@@ -123,85 +117,16 @@ function load_projects() {
 		load_error.style.display='block';
 		projectlist.add(load_error);
 	}
-	
 	if (mod_data['projects']) {
 		for (const p of mod_data['projects']) {
 			const header_name = document.createElement("div");
 			header_name.textContent = p['project_name'];
 			header_name.classList.add('h1');
 			projectlist.add(header_name);
-			
-			const owner = document.createElement("div");
-			owner.innerHTML='<i class="fa-solid fa-lock"></i> '+p['owner'];
-			owner.classList.add('project_owner');
-			projectlist.add(owner);
 
-		}
-		if (mod_data['projects'].length>1) {
-			return false;
-		}
-		const project_dashboard = document.createElement("div");
-		project_dashboard.id='project_dashboard';
-		project_dashboard.textContent='More dashboard stuff available through other modules/plugins in the future.';
-		projectlist.add(project_dashboard);
-		
-		const button_container = document.createElement("div");
-		button_container.classList.add('button_container');
-		projectlist.add(button_container);
-		
-		const share_button = document.createElement('button');
-		share_button.id="new_experiment_button";
-		share_button.classList.add("button-hover-right")
-		share_button.innerHTML='<i class="fa-regular fa-user-group"></i> Sharing';
-		share_button.addEventListener('click',shareExperiment);
-		button_container.append(share_button);
-		
-	
-		if (active_mods['experiments']) {
-			const new_experiment_button = document.createElement('button');
-			new_experiment_button.id="new_experiment_button";
-			new_experiment_button.classList.add("button-hover-right")
-			new_experiment_button.innerHTML='<i class="fa-regular fa-flask"></i> Add Experiment';
-			new_experiment_button.addEventListener('click',newExperiment);
-			button_container.append(new_experiment_button);
-		}
-		if (active_mods['goals']) {
-			const new_goal_button = document.createElement('button');
-			new_goal_button.id="new_goal_button";
-			new_goal_button.classList.add("button-hover-right")
-			new_goal_button.innerHTML='<i class="fa-regular fa-flag"></i> Add Goal';
-			new_goal_button.addEventListener('click',newGoal);
-			button_container.append(new_goal_button);
 		}
 	}
 	projectlist.show();
-}
-
-function newExperiment() {
-	if (!active_mods['experiments']) {
-		const load_error = document.createElement('div');
-		load_error.classList.add('localerror');
-		load_error.textContent='Experiments Module not enabled';
-		load_error.style.display='block';
-		projectlist.add(load_error);
-		return false;
-	}
-	window.location.href=`https://${window.location.hostname}/modules/experiments?new=${mod_data['projects'][0].pid}`;
-}
-
-function newGoal() {
-	if (!active_mods['goals']) {
-		const load_error = document.createElement('div');
-		load_error.classList.add('localerror');
-		load_error.textContent='Goals Module not enabled';
-		load_error.style.display='block';
-		projectlist.add(load_error);
-		return false;
-	}
-}
-
-function shareExperiment() {
-	
 }
 
 function newProject() {

@@ -11,7 +11,9 @@ def save_step(id,col,value):
     print(pylims.term(),f'Updating Step',id,col,value)
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
     cursor = conn.cursor()
-
+    if not type(value)=='String':
+        print('updating step value',type(value),value)
+        value = json.dumps(value)
     cursor.execute(
         sql.SQL("UPDATE automation_step SET {} = %s WHERE asid = %s").format(sql.Identifier(col)),
         [value, id]
@@ -24,12 +26,6 @@ def save_workflow(id,col,value):
     print(pylims.term(),f'Updating Workflow',id,col,value)
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
     cursor = conn.cursor()
-
-    if col == "steps" and value<0: #this is remove step from workflow
-        print(pylims.term(),f'removing step',value)
-        cursor.execute("SELECT steps FROM automation_workflow WHERE wfid = %s",(id,))
-        result = cursor.fetchone()
-        steps = json.loads(result['steps'])
 
     cursor.execute(
         sql.SQL("UPDATE automation_workflow SET {} = %s WHERE wfid = %s").format(sql.Identifier(col)),
@@ -62,9 +58,9 @@ class automation_configure(AsyncWebsocketConsumer):
     async def receive(self, text_data):
         # Broadcast the received message to all listeners on the channel
         current_session_data = await sync_to_async ( self.scope["session"].load) ()
-        print('CURRENT SESSION DATA',current_session_data)
+        # print('CURRENT SESSION DATA',current_session_data)
         json_data = json.loads(text_data)
-        print('json data',json_data)
+        # print('json data',json_data)
         json_data['message']['data']['op_id'] = current_session_data['userid']
         sd = json_data['message']['data']
 
@@ -137,27 +133,56 @@ class automation_configure(AsyncWebsocketConsumer):
                 "message": json_string,
             },
         )
-    
-    # async def receive(self, text_data):
-    #     # Broadcast the received message to all listeners on the channel
-    #     print('text_data',text_data)
-    #     data = json.loads(text_data)
-    #     message_type = data.get('type')
-    #     message_content = data.get('message')
-    #     additional_data = data.get('data', {})
-    #     await self.channel_layer.group_send(
-    #         "automation",  # Replace "channel_name" with the desired channel name
-    #         {
-    #             "type": "message",
-    #             "message_type": message_type,
-    #             "message_content": message_content,
-    #             "additional_data": additional_data,
-    #         },
-    #     )
 
     async def message(self, event):
         # Send the message to the WebSocket client
         await self.send(text_data=event["message"])
+
+class projects(AsyncWebsocketConsumer):
+    async def connect(self):
+        # Check if the user is authenticated
+
+        await self.accept()
+        
+
+        # Add the WebSocket connection to a channel group
+        await self.channel_layer.group_add(
+            "projects",  # Replace "channel_name" with the desired channel name
+            self.channel_name,
+        )
+
+    async def disconnect(self, close_code):
+        # Remove the WebSocket connection from the channel group
+        await self.channel_layer.group_discard(
+            "projects",  # Replace "channel_name" with the desired channel name
+            self.channel_name,
+        )
+
+    async def receive(self, text_data):
+        # Broadcast the received message to all listeners on the channel
+        current_session_data = await sync_to_async ( self.scope["session"].load) ()
+        json_data = json.loads(text_data)
+        json_data['message']['data']['op_id'] = current_session_data['userid']
+        sd = json_data['message']['data']
+
+        # if json_data['message']['type'] == 'save_step_type' or json_data['message']['type'] == 'save_step':
+        #     save_step(sd['id'],sd['key'],sd['value'])
+        
+
+        json_string = json.dumps(json_data)
+        await self.channel_layer.group_send(
+            "projects",  # Replace "channel_name" with the desired channel name
+            {
+                "type": "message",
+                "message": json_string,
+            },
+        )
+
+    async def message(self, event):
+        # Send the message to the WebSocket client
+        await self.send(text_data=event["message"])
+
+
 
 
 

@@ -1,6 +1,6 @@
 {% extends 'index.html' %}
 {% load static %}
-{% block title %}pylims/organization{% endblock %}
+{% block title %}pylims/automations{% endblock %}
 {% block headdata %}
 <script src="{% static 'js/pylims_common.js' %}"></script>
 <script src="{% static 'js/pylims_request.js' %}"></script>
@@ -9,110 +9,7 @@
 
 <link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
 <style>
-	.button-hover-right {
-		position:relative;
-		width:fit-content;
-		border:solid 1px var(--accent5);
-		padding:10px;
-		padding-right:30px;
-	}
-	#arrowBox {
-	    position: absolute;
-		top: 0px;
-		right: 0px;
-		padding: 0px;
-		margin: 0px;
-		font-size: 20px;
-		background-color: var(--accent3);
-		height: 100%;
-		width: 20px;
-		line-height: 20px;
-	}
-
-	#arrowBox::after {
-		content: '';
-		position:absolute;
-		text-rendering: auto;
-		-webkit-font-smoothing: antialiased;
-		font: var(--fa-font-solid);
-		content: "\f0da";
-		top: calc(50% - 10px);
-		height: 20px;
-		width: 12px;
-		left: calc(50% - 6px);
-		
-	}
 	
-
-	#hoverBox {
-	  display: none;
-	  position: absolute;
-	  top: 10px;
-	  right: -183px; 
-	  background-color:var(--inputhover);
-	  padding: 10px 0px;
-	  width:180px;
-	  font-size:16px;
-	  border: solid 1px var(--accent7);
-	}
-
-	#hoverBox a {
-	  display: block;
-	  margin: 5px 0;
-	  padding:0px 10px;
-	}
-	
-	#hoverBox a:hover {
-		background-color:var(--accent3);
-		color:#ffffff;
-	}
-	#arrowBox:hover #hoverBox {
-		display:block;
-	}
-	.project {
-		height: 40px;
-		border-bottom: solid 1px #cccccc;
-		line-height: 40px;
-	}
-	#new_space_button {
-		margin:20px 0px;
-	}
-	.project_owner {
-		font-size: 14px;
-		border: solid 1px #306998;
-		padding: 2px 5px;
-		border-radius: 13px;
-		background-color: #f7f7f7;
-		color: #306998;
-		width: fit-content;
-	}
-	.space_level {
-		position:relative;
-		box-sizing:border-box;
-		
-	}
-	details {
-		display:inline-block;
-		vertical-align:top;
-	}
-	.add_space_button {
-		vertical-align:top;
-	}
-	#wf_container {
-		display: flex;
-		flex-wrap: wrap;
-	}
-	
-	Workflow {
-		flex: 1 1 300px;
-		box-sizing: border-box;
-		border:solid 1px var(--accent1);
-		margin:5px;
-		display:block;
-	}
-	Step {
-		display:block;
-	}
 </style>
 {% endblock %}
 {% block centercontent %}
@@ -136,29 +33,70 @@ const options={{ mod_options|safe }};
 const csrf = '{{ csrf_token }}';
 const mod_data = {{ mod_data|safe }};
 var workflows={}
+var steps={}
+
+const Step = class {
+	constructor(options) {
+		for (let x in options) {
+			this[x]=options[x];
+		}
+	}
+}
+
+console.log('md steps',mod_data.steps)
+for (let step in mod_data.steps) {
+	console.log('new step',step);
+	steps[step] = new Step(mod_data.steps[step]);
+}
 
 const main = document.getElementById('automations');
 const wf_container = document.getElementById('wf_container');
 
 const Workflow = class {
 	constructor(options) {
+		for (let x in options) {
+			this[x]=options[x];
+		}
 		console.log('new wf',options)
+		this.element = document.createElement('workflow');
+		const title = document.createElement('wftitle');
+		title.innerHTML=options.name;
+		this.element.appendChild(title);
+		for (let step in options.steplist) {
+			const s = document.createElement('step');
+			console.log(step)
+			console.log(options.steplist[step]['asid'])
+			console.log(steps[options.steplist[step]['asid']]['type'])
+			const stepinfo = steps[options.steplist[step]['asid']]
+
+			if (stepinfo['type']=='Function') {
+				continue;
+			}
+			if (options.steplist[step]['count']>0) {
+				const link=document.createElement('a');
+				link.href=`/modules/automations/queue/${options.steplist[step]['queue']}`
+				link.innerHTML=options.steplist[step]['name'];
+				s.appendChild(link)
+			} else {
+				s.innerHTML = options.steplist[step]['name'];
+			}
+			this.element.appendChild(s)
+			let samplecount_element=document.createElement('samplecount');
+        	samplecount_element.textContent = options.steplist[step]['count'];
+			s.appendChild(samplecount_element)
+		}
 	}
 }
-
 
 for (let wf in mod_data.workflows) {
-	workflows[wf] = new Workflow(mod_data.workflows[wf])
-	const column = document.createElement('Workflow');
-	console.log(wf,mod_data.workflows[wf])
-	for (let step in mod_data.workflows[wf].steplist) {
-		console.log(step,mod_data.workflows[wf].steps[step])
-		const s = document.createElement('Step');
-		s.innerHTML = mod_data.workflows[wf].steplist[step]
-		column.appendChild(s)
-	}
-	wf_container.appendChild(column)
+	workflows[wf] = new Workflow(mod_data.workflows[wf]);
+	wf_container.appendChild(workflows[wf].element);
 }
+
+
+
+
+
 
 
 

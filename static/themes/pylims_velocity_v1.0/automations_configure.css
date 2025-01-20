@@ -1,0 +1,340 @@
+::-webkit-scrollbar {
+	width: 20px;
+	height: 20px;
+	padding: 2px;
+	cursor: url(../images/cursor_default.svg) 0 0, auto !important;
+}
+
+
+/* Handle */
+
+::-webkit-scrollbar-thumb {
+	background-color: var(--accent7);
+	border-radius: 70px;
+	padding: 2px;
+	cursor: url(../images/cursor_default.svg) 0 0, auto !important;
+}
+
+
+/* Handle on hover */
+
+::-webkit-scrollbar-thumb:hover {
+	background-color: var(--inputhover);
+	cursor: url(../images/cursor_default.svg) 0 0, auto !important;
+}
+
+::-webkit-scrollbar-track {
+	background-color: transparent;
+	cursor: url(../images/cursor_default.svg) 0 0, auto !important;
+}
+
+body, html {
+	cursor: url(../images/cursor_default.svg) 0 0, auto;
+}
+
+a, button {
+	cursor: pointer;
+}
+
+input[type="text"], textarea {
+	cursor: text;
+}
+
+#center-content {
+	display: flex;
+	flex-direction: column;
+}
+
+.center-border {
+	margin: 5px 50px;
+}
+
+#edit_window {
+	flex-grow: 1;
+	padding: 50px 5px 5px 5px;
+}
+
+#automations {
+	max-height: 300px;
+	overflow: hidden;
+}
+
+#automation_container {
+	display: flex;
+	flex-direction: columns;
+	vertical-align: top;
+	height: 280px;
+}
+
+.auto_column {
+	flex: 1;
+	margin: 5px;
+	border: solid 1px #000000;
+	background-color: #ececec;
+	min-height: 50px;
+	overflow-y: scroll;
+}
+
+.auto_header {
+	background-color: var(--accent3);
+	color: white;
+	padding: 5px;
+	position: sticky;
+	top: 0px;
+	z-index: 10;
+	font-size: 20px;
+}
+
+.auto_content {
+	padding: 0px 5px 10px 5px;
+}
+
+.auto_add, .fa_button {
+	float: right;
+}
+
+.auto_add::after {
+	font-family: "Font Awesome 6 Pro";
+	font-weight: 900;
+	content: '\f0fe';
+}
+
+.auto_add:hover::after {
+	color: var(--accent2);
+	cursor: pointer;
+}
+
+.search_box {
+	position: sticky;
+	top: 34px;
+}
+
+.search_box input {
+	padding-left: 30px;
+	width: 100%;
+	left: -2px;
+	position: relative;
+}
+
+.search_box::before {
+	font-family: "Font Awesome 6 Pro";
+	font-weight: 900;
+	content: '\f002';
+	position: absolute;
+	left: 7px;
+	top: 6px;
+	font-size: 20px;
+	color: var(--accent6);
+	z-index: 10;
+}
+
+#window_bar {
+	position: absolute;
+	left: 0px;
+	bottom: 0px;
+	width: 100%;
+	background-color: var(--accent7);
+	cursor: ns-resize;
+	height: 5px;
+}
+
+#window_bar:hover {
+	background-color: var(--accent6);
+}
+
+#edit_header {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	background-color: var(--accent1);
+	width: 100%;
+	padding: 5px;
+	color: white;
+	box-sizing: border-box;
+	font-size: 20px;
+	height: 45px;
+}
+
+.fa_button {
+	margin-right: 15px;
+}
+
+.fa_button:hover {
+	color: var(--accent2);
+	cursor: pointer;
+}
+
+.automations_maximized {
+	max-height: initial !important;
+	flex-grow: 1;
+}
+
+.automation_container_maximized {
+	height: 100% !important;
+}
+
+.edit_window_maximized {
+	position: absolute;
+	height: calc(100% - 110px);
+	width: calc(100% - 12px);
+	top: 46px;
+	left: -45px;
+	box-sizing: border-box;
+	z-index: 11;
+}
+
+.edit_window_minimized {
+	position: absolute;
+	right: -41px;
+	bottom: -11px;
+	width: 241px;
+	box-sizing: border-box;
+}
+
+#edit_header_title {
+	display: inline-block;
+}
+
+.edit_window_minimized #edit_header_title {
+	display: none;
+}
+
+.edit_window_minimized #edit_header::after {
+	content: 'Edit Step';
+}
+
+#save_icon {
+	font-size: 16px;
+	display: inline-block;
+}
+
+#new_step, #new_workflow {
+	height: 0px;
+	transition: height .5s;
+	overflow: hidden;
+	display: flex;
+	position: sticky;
+	top: 69px;
+}
+
+#new_step_input, #new_workflow_input {
+	width: -webkit-fill-available;
+	border: solid 2px var(--accent2);
+	border-radius: 7px;
+	outline: none;
+	flex-grow: 1;
+	background-color: var(--accent4);
+}
+
+#new_step button, #new_workflow button {
+	flex-grow: 0;
+}
+
+.auto_button1 {
+	background-color: var(--accent2);
+}
+
+.auto_button1:hover {
+	background-color: var(--accent4);
+}
+
+.step_container, .workflow_container, .step_in_workflow, .workflows_with_step, .step_in_workflow_placeholder {
+	border-radius: 4px;
+	padding: 5px;
+	background-color: #dee4e7;
+	color: var(--accent1);
+	margin: 4px 0px;
+	user-select: none;
+	position: relative;
+}
+
+.step_container::before, .workflow_container::before, .step_in_workflow::before, .workflows_with_step::before {
+	font-family: "Font Awesome 6 Pro";
+	font-weight: 500;
+	content: '\f219';
+	display: inline-block;
+	margin-right: 20px;
+	color: #c42b74;
+}
+
+.workflow_container::before, .workflows_with_step::before {
+	content: '\f013';
+	color: var(--green-med);
+}
+
+.step_in_workflow::after {
+	font-family: "Font Awesome 6 Pro";
+	font-weight: 500;
+	content: '\f013';
+	color: var(--green-med);
+	position: absolute;
+	left: 7px;
+	top: 7.5px;
+	font-size: 12px;
+}
+
+.step_container:hover, .workflow_container:hover, .step_in_workflow:hover, .workflows_with_step:hover {
+	cursor: pointer;
+	background-color: var(--inputbg);
+}
+
+#ac_steps, #ac_steps .search_box, #ac_steps #new_step {
+	background-color: var(--pink-dark);
+}
+
+#ac_steps .auto_header {
+	background-color: var(--pink-med);
+}
+
+#ac_workflows, #ac_workflows .search_box, #ac_workflows #new_workflow {
+	background-color: var(--green-dark);
+}
+
+#ac_workflows .auto_header {
+	background-color: var(--green-med);
+}
+
+.add_step_to_workflow:hover {
+	cursor: url(../images/cursor_add_step.svg) 0 0, auto;
+}
+
+.remove_step_from_workflow:hover {
+	cursor: url(../images/cursor_remove_step.svg) 0 0, auto;
+}
+
+typeprompt {
+	display: block;
+	margin: 10px;
+	padding: 10px;
+	font-size: 18px;
+}
+
+typedetails {
+	display: flex;
+	margin: 10px;
+	padding: 10px;
+	font-size: 18px;
+	flex-wrap: wrap;
+}
+
+functiondetail {
+	display: block;
+	width: 300px;
+	border: solid 1px var(--gray-med);
+	background-color: var(--gray-lightest);
+	padding: 5px;
+	margin: 3px;
+}
+
+.functiontextinput {
+	width: 400px;
+}
+
+.functionnumberinput {
+	width: 75px;
+	text-align: right;
+}
+
+.step_in_workflow_placeholder {
+	background-color: var(--green-light);
+}
