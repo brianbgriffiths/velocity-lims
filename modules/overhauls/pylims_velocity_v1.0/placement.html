@@ -280,7 +280,12 @@
 
       }
       samplename {
-        width:150px;
+        display:inline-block;
+        width:203px;
+      }
+      sampletablecolumn.well {
+        text-align:center;
+        width:50px;
       }
       #dragsamples {
          font-size:28px;
@@ -347,7 +352,16 @@
         background-color:var(--blue-med);
       }
       #next-button:hover {
+        background-color:var(--pink-med);
+        cursor:not-allowed;
+      }
+      #next-button.next-button-active {
         background-color:var(--green-med);
+        
+      }
+      #next-button.next-button-active:hover {
+        background-color:var(--green-dark);
+        cursor:pointer;
       }
       containerview {
         display:flex;
@@ -363,7 +377,6 @@
         display:inline-block;
         width:100%;
         max-height:calc(360px + 80px);
-        max-width:540px;
         position:relative;
         background-color:white;
       }
@@ -384,6 +397,8 @@
         padding-top: 50px;
         padding-right: 5px;
         padding-bottom: 5px;
+        max-width:440px;
+        margin:auto;
       }
 
       .grid-container {
@@ -468,7 +483,39 @@
       .potential-drop-well {
         box-shadow: inset 0px 0px 8px 4px var(--accent1);
       }
-      
+      .no-drop-well {
+        box-shadow: inset 0px 0px 8px 4px red;
+      }
+      .filled-well {
+        background: radial-gradient(ellipse at 30% 30%, var(--accent3) 12%, var(--accent1) 57%);
+      }
+      .filled-well:hover {
+        background: radial-gradient(ellipse at 30% 30%, var(--accent8) 12%, var(--accent1) 57%);
+      }
+      selectedsamples, placedsamples {
+         display:block;
+         position:relative;
+         background-color:var(--gray-light);
+         padding:3px 10px;
+         font-size:16px;
+         height:25px;
+         line-height:25px;
+         font-weight:bold;
+         border:solid 1px var(--gray-med);
+         border-radius:3px;
+         margin:5px 0px;
+      }
+      #footerbar {
+        height:35px;
+        text-align:center;
+      }
+      #footerbar > pagebutton {
+            margin:0px 5px;
+      }
+      .pagelink-locked:hover {
+        background-color:var(--pink-med);
+        cursor:not-allowed;
+     }
 
 
 
@@ -483,12 +530,18 @@
         <inputs>
             <sectiontitle>Input Samples</sectiontitle>
             <inputcontainer></inputcontainer>
-            <inputsampleinfo><selectedsamples></selectedsamples></inputsampleinfo>
+            <inputsampleinfo><selectedsamples>0 Selected</selectedsamples></inputsampleinfo>
             <inputsamples></inputsamples>
         </inputs>
         <outputs>
             <sectiontitle>Output Samples</sectiontitle>
             <outputcontainer></outputcontainer>
+            <outputsampleinfo><placedsamples>0 Placed</placedsamples></outputsampleinfo>
+            <div id="tableheader" style="">
+                <headercontent style="width:50px;">#</headercontent><headerhandle></headerhandle>
+                <headercontent style="width:200px;">Sample</headercontent><headerhandle></headerhandle>
+                <headercontent>Well</headercontent><headerhandle></headerhandle>
+            </div>
             <outputsamples></outputsamples>
         </outputs>
     </containerview>
@@ -500,8 +553,6 @@
 {% block javascript %}
 
 <script>
-const csrf = '{{ csrf_token }}';
-const step_config = {{ config | safe }};
 const velocity_step_io = {{ io | safe }};
 const velocity_containers = {{ containers | safe }};
 const inputcontainers = {{ inputcontainers | safe }};
@@ -509,47 +560,17 @@ const outputcontainers = {{ outputcontainers | safe }};
 
 {% comment %} const velocity_containers = {{ containers | safe}}; {% endcomment %}
 const main = document.getElementById('queue');
-const pagelinks = document.querySelector('pagelinks');
-const pages = document.querySelector('pages');
-const pagebuttons = document.querySelector('pagebuttons');
 const outputcontainer = document.querySelector('outputcontainer');
 const inputcontainer = document.querySelector('inputcontainer');
 const inputsamples = document.querySelector('inputsamples');
 const outputsamples = document.querySelector('outputsamples');
 const selectedsamples = document.querySelector('selectedsamples');
+const placedsamples = document.querySelector('placedsamples');
 const dragsamplecount = document.querySelector('dragsamplecount');
 
-const check_for_pages = ['setup','pooling','placement','indexing','details','routing','confirmation']
-var i=0;
-for (let page of check_for_pages) {
-    if (step_config[`page_${page}`]) {
-        i++;
-        const pagelink = document.createElement('page');
-        pagelink.textContent=page;
-        pagelink.id=`page_${page}`;
-        pages.appendChild(pagelink);
-        if (i==1) {
-            pagelink.classList.add('page-selected');
-        }
-    }
-}
-
-
-
-const abort_button = document.createElement('pagebutton');
-abort_button.textContent = 'Abort Step';
-abort_button.id="abort-button";
-pagebuttons.appendChild(abort_button);
-
-const save_button = document.createElement('pagebutton');
-save_button.textContent = 'Save';
-save_button.id="save-button";
-pagebuttons.appendChild(save_button);
-
-const next_button = document.createElement('pagebutton');
-next_button.textContent = 'Next Step';
-next_button.id="next-button";
-pagebuttons.appendChild(next_button);
+var invalid_drop = false;
+var placed_samples = [];
+var selected_samples = [];
 
 function localerror(msg) {
 	error_element = document.getElementById('pylims_request_error');
@@ -557,6 +578,8 @@ function localerror(msg) {
 	error_element.style.display='block';
 }
 const rownames=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P'];
+
+
 
 class Container {
 	constructor(data) {
@@ -574,10 +597,6 @@ class Container {
 
         this.columnlabels = document.createElement('columnlabels');
         this.rowlabels = document.createElement('rowlabels');
-
-        const nRows = this.rows;
-        const nColumns = this.columns;
-
         
         this.containerborder = document.createElement('div');
         this.containerborder.className='containerborder';
@@ -585,9 +604,13 @@ class Container {
 
         this.gridcontainer = document.createElement('div');
         this.gridcontainer.className = 'grid-container';
-        this.gridcontainer.style.setProperty('--n-rows', nRows);
-        this.gridcontainer.style.setProperty('--n-columns', nColumns);
+        this.gridcontainer.style.setProperty('--n-rows', this.rows);
+        this.gridcontainer.style.setProperty('--n-columns', this.columns);
         this.containerborder.appendChild(this.gridcontainer);
+
+        this.wells = []
+        
+
         for (let i = 0; i < this.rows; i++) {
             const rmarker = document.createElement('rmarker');
             rmarker.textContent=i;
@@ -595,21 +618,22 @@ class Container {
             //this.gridcontainer.appendChild(rmarker);
         }
         for (let i = 0; i < this.rows * this.columns; i++) {
-            const item = document.createElement('div');
-            item.className = 'grid-item';
+            this.wells.push(document.createElement('div'));
+            this.wells[i].className = 'grid-item';
+            this.wells[i].container=this;
             //item.textContent = `${i + 1}`;
-            this.gridcontainer.appendChild(item);
+            this.gridcontainer.appendChild(this.wells[i]);
             if (i<4) {
                 const rmarker = document.createElement('rmarker');
                 rmarker.textContent=rownames[i];
-                item.appendChild(rmarker);
+                this.wells[i].appendChild(rmarker);
             }
             if (i%4==0) {
                 const vmarker = document.createElement('vmarker');
                 vmarker.textContent=i/4+1;
-                item.appendChild(vmarker);
+                this.wells[i].appendChild(vmarker);
             }
-            item.addEventListener('mouseenter', function() {
+            this.wells[i].addEventListener('mouseenter', function() {
                 if (dragging===2) {
                     reset_potential_drops();
                     console.log('mouseover')
@@ -617,26 +641,128 @@ class Container {
                         sibling.classList.contains('grid-item')
                     );
                     const index = siblings.indexOf(this);
-
+                    invalid_drop=false;
+                    if (index + selected_samples.length > this.container.rows*this.container.columns) {
+                        invalid_drop=true;
+                    }
                     if (index !== -1) {
                         for (let i = index; i < index + selected_samples.length && i < siblings.length; i++) {
+                            if (siblings[i].classList.contains('filled-well') || invalid_drop===true) {
+                                siblings[i].classList.add('no-drop-well');
+                                dragsamplecount.style.backgroundColor='red';
+                                invalid_drop=true;
+                                continue;
+                            }
+                            
                             siblings[i].classList.add('potential-drop-well');
                         }
+                    }
+                    
+                }
+            })
+            this.wells[i].addEventListener('mouseup',function() {
+                if (dragging===2) {
+                    if (invalid_drop) {
+                        reset_potential_drops();
+                        return false;
+                    }
+                    console.log('drop samples here');
+                    const siblings = Array.from(this.parentNode.children).filter(sibling =>
+                        sibling.classList.contains('grid-item')
+                    );
+                    const index = siblings.indexOf(this);
+
+                    var drop_index = []
+                    if (index !== -1) {
+                        for (let i = index; i < index + selected_samples.length && i < siblings.length; i++) {
+                            siblings[i].classList.add('filled-well');
+                            drop_index.push(i);
+                        }
+                    }
+                    for (let i=0; i<selected_samples.length;i++) {
+                        let sample = selected_samples[i]
+                        outputsamples.appendChild(samples[sample].element);
+                        samples[sample].element.classList.remove('selectedsample')
+                        samples[sample].selected=false;
+                        samples[sample].placed=true;
+                        samples[sample].placed_index = drop_index[i];
+                        samples[sample].well.textContent = this.container.index_to_grid(drop_index[i]);
+                        siblings[drop_index[i]].dataset.sample=selected_samples[i];
+                        samples[sample].well.style.display='inline-block';
+                        update_placed_sample('add',sample);
+                    }
+                    selected_samples=[];
+                    selectedsamples.textContent = `${selected_samples.length} Selected`;
+                    placedsamples.textContent = `${placed_samples.length} Placed`;
+                    if (placed_samples.length==velocity_step_io.length) {
+                        console.log('all placed');
+                        next_button.classList.add('next-button-active');
                     }
                 }
             })
         }
-        
+        this.footerbar = document.createElement('containertitlebar');
+        this.footerbar.id="footerbar";
 
+        this.newcontainer = document.createElement('pagebutton');
+        this.newcontainer.textContent = 'Add Container';
+        this.footerbar.appendChild(this.newcontainer);
+
+        this.emptycontainer = document.createElement('pagebutton');
+        this.emptycontainer.textContent = 'Empty';
+        this.footerbar.appendChild(this.emptycontainer);
+
+        this.deletecontainer = document.createElement('pagebutton');
+        this.deletecontainer.textContent = 'Delete';
+        this.footerbar.appendChild(this.deletecontainer);
+        
+        this.element.appendChild(this.footerbar);
+        
+        this.emptycontainer.addEventListener('click',()=> {
+            console.log('Empty Container');
+            for (let well of this.wells) {
+                console.log(well)
+                if (well.classList.contains('filled-well')) {
+                    let sample = well.dataset.sample;
+                    well.classList.remove('filled-well');
+                    samples[sample].well.style.display='none';
+                    inputsamples.appendChild(samples[sample].element);
+                    well.removeAttribute('data-sample');
+                }
+                
+            }
+            next_button.classList.remove('next-button-active');
+            placed_samples = [];
+            placedsamples.textContent = `0 Placed`;
+        })
+
+    }
+    index_to_grid(index) {
+        const row_index = index % this.rows;
+        const col_index = Math.floor(index / this.rows);
+        return `${rownames[row_index]}:${col_index+1}`;
     }
 
 }
 
+function empty_placed_samples() {
+
+}
+
+document.addEventListener('mouseup', (event) => {
+    console.log('stop drag');
+    dragging = null;
+    document.body.style.userSelect = '';
+    dragsamplecount.style.display='none';
+    reset_potential_drops();
+});
+
 function reset_potential_drops() {
     const wells = document.querySelectorAll('.grid-item');
     for (let well of wells) {
-        well.classList.remove('potential-drop-well');
+        well.classList.remove('potential-drop-well','no-drop-well');
     }
+    dragsamplecount.style.backgroundColor='var(--accent1)';
 }
 
 var containers = {}
@@ -648,8 +774,7 @@ for (let container of outputcontainers) {
     outputcontainer.appendChild(containers[container].element);
 }
 
-var placed_samples = [];
-var selected_samples = [];
+
 
 function clicksample(sample,event) {
     const siblings = document.querySelectorAll('inputsample');
@@ -727,6 +852,24 @@ function update_selected_samples(action,sampleid) {
     }
     selectedsamples.textContent = `${selected_samples.length} Selected`;
 }
+function update_placed_sample(action,sampleid) {
+    console.log(action,sampleid)
+    sampleid = parseInt(sampleid);
+    if (action=='add') {
+        const index = placed_samples.indexOf(sampleid);
+        if (index == -1) {
+            placed_samples.push(sampleid);
+        }
+    } else {
+        const index = placed_samples.indexOf(sampleid);
+        console.log(index)
+        if (index > -1) {
+            console.log('splicing')
+            placed_samples.splice(index, 1);
+        }
+    }
+    
+}
 
 var dragging=null;
 
@@ -738,15 +881,21 @@ class Sample {
 		this.element = document.createElement('inputsample');
         this.number = document.createElement('samplenumber');
         this.element.appendChild(this.number);
-        this.did = this.input_id;
-        this.element.dataset.did=this.input_id;
+        this.did = this.output_id;
+        this.element.dataset.did=this.output_id;
 
         this.samplename = document.createElement('samplename');
         this.samplename.textContent = this.sample_name;
         this.element.appendChild(this.samplename);
 
+        this.well = document.createElement('sampletablecolumn');
+        this.well.className='well';
+        this.well.style.display='none';
+        this.element.appendChild(this.well);
 
-        this.placed_status = false;
+
+        this.placed = false;
+        this.placed_index = null;
         this.selected = false;
 
         console.log('creating sample',data)
@@ -765,9 +914,7 @@ class Sample {
             }
             console.log('startdrag');
             document.body.style.userSelect = 'none';
-            dragging=1;
-            
-            
+            dragging=1;   
         })
 
         this.element.addEventListener('click',(event)=> {
@@ -804,17 +951,11 @@ var io_inputs = {}
 var io_outputs = {}
 
 for (let io of velocity_step_io) {
-    samples[io.input_id]=new Sample(io);
-    inputsamples.appendChild(samples[io.input_id].element)
+    samples[io.output_id]=new Sample(io);
+    inputsamples.appendChild(samples[io.output_id].element)
 }
 
-document.addEventListener('mouseup', (event) => {
-    console.log('stop drag');
-    dragging = null;
-    document.body.style.userSelect = '';
-    dragsamplecount.style.display='none';
-    reset_potential_drops();
-}, true);
+
 document.addEventListener('mousemove',(event)=> {
     if (dragging===2) {
         event.preventDefault();
@@ -823,4 +964,37 @@ document.addEventListener('mousemove',(event)=> {
         
     }
 })
+document.getElementById('next-button').addEventListener('click',()=>{
+    if (placed_samples.length < velocity_step_io.length) {
+        console.error('not all samples are placed');
+        return false;
+    }
+
+    var placements = {}
+    for (let c in containers) {
+        const container = containers[c];
+        for (let w in container.wells) {
+            const well = container.wells[w];
+            const placement_id = `${c}-${w}`
+            if (placements[placement_id]) {
+                log.error('something already placed in container',c,'well',w,':',placements[placement_id]);
+                return false
+            }
+            placements[placement_id]={container:c,well:w,derivative:well.dataset.sample}
+        }
+    }
+    console.log(placements);
+
+    const data={"step":step_config.stepid,"placements":placements}
+    const pyoptions={data,csrf,urlprefix:'..',url:'step/nextstep',submit_mode:'silent'}
+    pylims_post(pyoptions).then(result => {
+        if (result.status=='success') {
+            window.location.href=`/step/${step_config.stepid}`;
+        }
+        
+    }).catch(error => {
+        console.error(error);
+    }); 
+    return false;
+  })
 </script>{% endblock %}

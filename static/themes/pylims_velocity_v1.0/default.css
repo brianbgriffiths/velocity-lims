@@ -49,14 +49,14 @@ body {
 	background-color:var(--accent8);
 }
 
-input, textarea, button {
+input, textarea, button, select {
 	font-family: 'Chivo-ExtraLight', sans-serif;
 	padding:5px;
 	font-size:16px;
     border-radius: 3px;
 	margin:2px;
 }
-input, textarea {
+input, textarea, select {
 	border: inset 1px #cccccc;
 	background-color: var(--inputbg);
 	box-sizing: border-box;

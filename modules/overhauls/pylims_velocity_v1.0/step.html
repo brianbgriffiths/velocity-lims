@@ -1,6 +1,6 @@
 {% extends 'index.html' %}
 {% load static %}
-{% block title %}Velocity LIMS - Queue{% endblock %}
+{% block title %}Velocity LIMS - Step{% endblock %}
 {% block headdata %}
 <script src="{% static 'js/pylims_common.js' %}"></script>
 <script src="{% static 'js/pylims_request.js' %}"></script>
@@ -453,41 +453,44 @@
 </div>
 
 {% endblock %}
-{% block javascript %}
-
+{% block javascriptcommon %}
 <script>
-const csrf = '{{ csrf_token }}';
-const step_config = {{ config | safe }};
-const velocity_step_io = {{ io | safe }};
-const velocity_containers = {{ containers | safe }};
-const inputcontainers = {{ inputcontainers | safe }};
-const outputcontainers = {{ outputcontainers | safe }};
+  const csrf = '{{ csrf_token }}';
+  const step_config = {{ config | safe }};
+  const pages = {{ pages | safe }};
 
-{% comment %} const velocity_containers = {{ containers | safe}}; {% endcomment %}
-const main = document.getElementById('queue');
-const pagelinks = document.querySelector('pagelinks');
-const pages = document.querySelector('pages');
-const pagebuttons = document.querySelector('pagebuttons');
-const outputcontainer = document.querySelector('outputcontainer');
-const inputcontainer = document.querySelector('inputcontainer');
+  const pagelinks = document.querySelector('pagelinks');
+  const pagecontainer = document.querySelector('pages');
+  const pagebuttons = document.querySelector('pagebuttons');
+  
 
-const check_for_pages = ['setup','pooling','placement','indexing','details','routing','confirmation']
-var i=0;
-for (let page of check_for_pages) {
-    if (step_config[`page_${page}`]) {
-        i++;
-        const pagelink = document.createElement('page');
-        pagelink.textContent=page;
-        pagelink.id=`page_${page}`;
-        pages.appendChild(pagelink);
-        if (i==1) {
-            pagelink.classList.add('page-selected');
-        }
+var locked=false;
+
+for (let page of step_config.pages) {
+    const index = step_config.pages.indexOf(page)
+    const pagelink = document.createElement('page');
+    pagelink.textContent=pages[page].page;
+    pagelink.id=`page_${page}`;
+    pagecontainer.appendChild(pagelink);
+    if (pages[page].page=='{{ loaded_page }}') {
+        pagelink.classList.add('page-selected');
     }
-}
-
-
-
+    if (locked) {
+        pagelink.classList.add('pagelink-locked');
+        pagelink.addEventListener('click',()=> {
+            alert(`You cannot navigate directly to ${pages[page].page} until you've finished with ${pages[step_config.pages[index-1]].page}.`)
+        })
+        continue;
+    }
+    pagelink.addEventListener('click',()=> {
+      window.location.href=`/step/${step_config.stepid}/${pages[page].page}`;
+    })
+    if (page==step_config.on_page) {
+        locked=true;
+    }
+    
+  }
+  
 const abort_button = document.createElement('pagebutton');
 abort_button.textContent = 'Abort Step';
 abort_button.id="abort-button";
@@ -502,82 +505,7 @@ const next_button = document.createElement('pagebutton');
 next_button.textContent = 'Next Step';
 next_button.id="next-button";
 pagebuttons.appendChild(next_button);
-
-function localerror(msg) {
-	error_element = document.getElementById('pylims_request_error');
-	error_element.textContent=msg;
-	error_element.style.display='block';
-}
-const rownames=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P'];
-
-class Container {
-	constructor(data) {
-		for (let datum in data) {
-			this[datum] = data[datum]
-		}
-		this.element = document.createElement('container');
-
-        this.titlebar = document.createElement('containertitlebar');
-        this.element.appendChild(this.titlebar);
-
-        this.containername = document.createElement('containername');
-        this.containername.textContent=this.type_name;
-        this.titlebar.appendChild(this.containername);
-
-        this.columnlabels = document.createElement('columnlabels');
-        this.rowlabels = document.createElement('rowlabels');
-
-        const nRows = this.rows;
-        const nColumns = this.columns;
-
-        
-        this.containerborder = document.createElement('div');
-        this.containerborder.className='containerborder';
-        this.element.appendChild(this.containerborder);    
-
-        this.gridcontainer = document.createElement('div');
-        this.gridcontainer.className = 'grid-container';
-        this.gridcontainer.style.setProperty('--n-rows', nRows);
-        this.gridcontainer.style.setProperty('--n-columns', nColumns);
-        this.containerborder.appendChild(this.gridcontainer);
-        for (let i = 0; i < this.rows; i++) {
-            const rmarker = document.createElement('rmarker');
-            rmarker.textContent=i;
-            rmarker.style.top=`${(i/this.rows)*100}%`;
-            //this.gridcontainer.appendChild(rmarker);
-        }
-        for (let i = 0; i < this.rows * this.columns; i++) {
-            const item = document.createElement('div');
-            item.className = 'grid-item';
-            //item.textContent = `${i + 1}`;
-            this.gridcontainer.appendChild(item);
-            if (i<4) {
-                const rmarker = document.createElement('rmarker');
-                rmarker.textContent=rownames[i];
-                item.appendChild(rmarker);
-            }
-            if (i%4==0) {
-                const vmarker = document.createElement('vmarker');
-                vmarker.textContent=i/4+1;
-                item.appendChild(vmarker);
-            }
-        }
-        
-
-    }
-
-}
-
-var containers = {}
-for (let container of velocity_containers) {
-    containers[container.conid]=new Container(container);
-}
-
-for (let container of outputcontainers) {
-    outputcontainer.appendChild(containers[container].element);
-
-}
-
-
-
-</script>{% endblock %}
+</script>
+{% endblock %}
+{% block javascript %}
+{% endblock %}

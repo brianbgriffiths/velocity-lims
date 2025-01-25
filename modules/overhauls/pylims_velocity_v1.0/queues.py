@@ -17,10 +17,10 @@ def handlePost(request):
     if request.method == 'POST':
         try:
             json_data = json.loads(request.body)
-            return 200
+            return [200,None]
         except json.JSONDecodeError as e:
-            return 400
-    return 405
+            return [400,e]
+    return [405,None]
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 self = os.path.basename(current_directory)
@@ -118,10 +118,10 @@ def display_reserved(request,reserved):
 
 def reserve_sample(request):
     response_code = handlePost(request)
-    if response_code==400:
-        response_data = {'error': 'Invalid JSON data', 'message': str(e)}
+    if response_code[0]==400:
+        response_data = {'error': 'Invalid JSON data', 'message': str(response_code[1])}
         return JsonResponse(response_data, status=400)
-    elif response_code==405:
+    elif response_code[0]==405:
         response_data = {'error': 'Invalid request method', 'message': 'Method not allowed'}
         return JsonResponse(response_data, status=405)
     json_data = json.loads(request.body)
@@ -139,10 +139,10 @@ def reserve_sample(request):
 
 def release_sample(request):
     response_code = handlePost(request)
-    if response_code==400:
-        response_data = {'error': 'Invalid JSON data', 'message': str(e)}
+    if response_code[0]==400:
+        response_data = {'error': 'Invalid JSON data', 'message': str(response_code[1])}
         return JsonResponse(response_data, status=400)
-    elif response_code==405:
+    elif response_code[0]==405:
         response_data = {'error': 'Invalid request method', 'message': 'Method not allowed'}
         return JsonResponse(response_data, status=405)
     json_data = json.loads(request.body)
@@ -160,10 +160,10 @@ def release_sample(request):
 
 def release_all_samples(request):
     response_code = handlePost(request)
-    if response_code==400:
-        response_data = {'error': 'Invalid JSON data', 'message': str(e)}
+    if response_code[0]==400:
+        response_data = {'error': 'Invalid JSON data', 'message': str(response_code[1])}
         return JsonResponse(response_data, status=400)
-    elif response_code==405:
+    elif response_code[0]==405:
         response_data = {'error': 'Invalid request method', 'message': 'Method not allowed'}
         return JsonResponse(response_data, status=405)
     json_data = json.loads(request.body)
@@ -180,10 +180,10 @@ def release_all_samples(request):
 
 def add_control(request):
     response_code = handlePost(request)
-    if response_code==400:
-        response_data = {'error': 'Invalid JSON data', 'message': str(e)}
+    if response_code[0]==400:
+        response_data = {'error': 'Invalid JSON data', 'message': str(response_code[1])}
         return JsonResponse(response_data, status=400)
-    elif response_code==405:
+    elif response_code[0]==405:
         response_data = {'error': 'Invalid request method', 'message': 'Method not allowed'}
         return JsonResponse(response_data, status=405)
     json_data = json.loads(request.body)
@@ -240,10 +240,10 @@ def add_all_controls(request):
 
 def remove_controls(request):
     response_code = handlePost(request)
-    if response_code==400:
-        response_data = {'error': 'Invalid JSON data', 'message': str(e)}
+    if response_code[0]==400:
+        response_data = {'error': 'Invalid JSON data', 'message': str(response_code[1])}
         return JsonResponse(response_data, status=400)
-    elif response_code==405:
+    elif response_code[0]==405:
         response_data = {'error': 'Invalid request method', 'message': 'Method not allowed'}
         return JsonResponse(response_data, status=405)
     json_data = json.loads(request.body)

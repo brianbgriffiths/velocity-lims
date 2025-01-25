@@ -42,6 +42,7 @@ def home(request):
     # if 'account_creation' in setup and not setup['account_creation']=='disabled':
         # print('default template',modules["account_creation"][setup["account_creation"]]["templates"][modules["account_creation"][setup["account_creation"]]["default_template"]][1])
         # return render(request, f'account_creation/{modules["account_creation"][setup["account_creation"]]["templates"][modules["account_creation"][setup["account_creation"]]["default_template"]][1]}', context)
+    return redirect('display_queues')
     return render(request, 'index.html', context)
 
 def setup(request):
@@ -156,10 +157,12 @@ def mod_resolver(request, mod, page=False, query=False):
         # print('match=',match)
         if match==False:
             print(pylims.term(),page,pylims.error('Authentication not granted.'))
+            conn.close()
             return redirect('home')
     elif f'{page}.html' in mods[mod][settings['setup'][mod]]['admin_templates']:
         if 'admin' in context and len(context['admin']) == 0:
             print(pylims.term(),page,pylims.error('User is not an admin.'))
+            conn.close()
             return redirect('home')
         # print(pylims.term(),pylims.info('requested admin template:'),page)
         template = mods[mod][settings['setup'][mod]]['admin_templates'][f'{page}.html']
@@ -170,6 +173,7 @@ def mod_resolver(request, mod, page=False, query=False):
             return redirect('home')
     else:
         print(pylims.term(),page,pylims.error('Template not found.'))
+        conn.close()
         return redirect('home')
     
     
@@ -207,6 +211,7 @@ def mod_resolver(request, mod, page=False, query=False):
     
     print(pylims.term(),pylims.info('Loading page'),context)
     print(pylims.term(),pylims.info('Loading page'),f'{mod}/{page}.html')
+    conn.close()
     return render(request, f'{mod}/{page}.html', context)
     
 def login_password_reset(request):

@@ -73,6 +73,9 @@ function pylims_post(options) {
 				success_element.style.display='none';
 				submitbutton.disabled = false;
 				reject("pylims.post did not complete [5]");
+			} else if (data.status && data.status=='error') {
+				console.warn('Pylims completed with a caught error')
+				resolve(data);
 			} else {
 				console.error('unknown status')
 			}
