@@ -164,17 +164,61 @@
 		color:white;
 		font-size:14px;
 	}
+    .searchtype {
+        flex:1;
+    }
+    details {
+        display: block;
+        background-color: var(--accent8);
+        width: 200px;
+        margin: 5px;
+        
+        border: solid 1px var(--accent7);
+        border-radius: 3px;
+        
+    }
+    summary {
+        padding: 5px;
+    }
+    summary:hover {
+        
+        cursor: pointer;
+        background-color:var(--accent9);
+    }
+    reqsample {
+        width: 100%;
+        display: block;
+        margin-left: 30px;
+    }
+    assay {
+        display: block;
+        border: solid 2px var(--green-med);
+        margin: 10px 0px;
+        padding: 20px;
+        background-color: var(--green-light);
+    }
 </style>
 {% endblock %}
 {% block centercontent %}
-<inprogresssteps></inprogresssteps>
-
-<div id="queues" class="center-border">
-	<div style="position:relative;margin-bottom:10px;height:22px;">
-		{% comment %} <validationcount style="width:auto;"># Validations</validationcount> {% endcomment %}
-		<samplecount style="width:auto;"># Samples</samplecount>
-		
-		</div>
+<div class="center-border" style="display:flex;">
+	<div class="searchtype"> Find a Requisition:
+        <br><input type="text"></div>
+    <div class="searchtype"> Find a Sample:
+        <br><input type="text"></div>
+    <div class="searchtype"> Find a Container:
+        <br><input type="text"></div>
+    <div class="searchtype"> Find a Batch:
+        <br><input type="text"></div>
+</div>
+<div style="display:flex">
+    <div class="center-border">
+        <div>Latest Requisitions:</div>
+        <div id="requisitions"></div>
+    </div>
+    <div class="center-border">
+        <div>Active Assays:</div>
+        <div id="active_assays"></div>
+    </div>
 </div>
 
 {% endblock %}
@@ -183,33 +227,51 @@
 
 <script>
 const csrf = '{{ csrf_token }}';
-const queues= {{queues | safe}}
+const default_reqs = {{ last_20 | safe }};
+const default_samples = {{ samples | safe }};
 const main = document.getElementById('queues');
-const inprogress_steps = document.querySelector('inprogresssteps')
-const velocity_inprogress = {{ inprogress | safe }};
+const requisitions = document.getElementById('requisitions');
+const velocity_assays = {{ assays | safe }};
+const active_assays = document.getElementById('active_assays');
 
-
-class Step {
+for (let req of default_reqs) {
+    let req_details = document.createElement('details');
+    req_details.id='req_'+req.reqid;
+    let req_summary = document.createElement('summary');
+    req_details.appendChild(req_summary);
+    req_summary.innerHTML+=req.req_name;
+    requisitions.appendChild(req_details)
+}
+class Sample {
 	constructor(data) {
 		for (let datum in data) {
 			this[datum] = data[datum]
 		}
-		this.element = document.createElement('step');
-		let wfname = document.createElement('workflowname');
-		wfname.textContent = this.assay_name;
-		this.element.appendChild(wfname);
-		this.link = document.createElement('a')
-		this.link.href = `/step/${this.step}`;
-		this.link.textContent = `Step 1 » ${this.step_name}`;
-		this.element.appendChild(this.link)
-	}
+		this.element = document.createElement('reqsample');
+        this.element.textContent=data.sample_name;
+    }
+}
+var samples = {}
+for (let sample of default_samples) {
+    samples[sample.smid] = new Sample(sample)
+    const sample_req = document.getElementById('req_'+sample.req)
+    sample_req.appendChild(samples[sample.smid].element)
 }
 
-var steps={}
+class Assay {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+		this.element = document.createElement('assay');
+        this.element.textContent=data.assay_name;
+    }
+}
 
-for (let ip of velocity_inprogress) {
-	steps[ip.step] = new Step(ip);
-	inprogress_steps.appendChild(steps[ip.step].element)
+var assays = {}
+for (const assay of velocity_assays) {
+    assays[assay.assayid] = new Assay(assay)
+    active_assays.appendChild(assays[assay.assayid].element)
 }
 
 function localerror(msg) {
@@ -217,75 +279,6 @@ function localerror(msg) {
 	error_element.textContent=msg;
 	error_element.style.display='block';
 }
-
-class Queue {
-	constructor(data) {
-		for (let datum in data) {
-			this[datum] = data[datum]
-		}
-		this.element = document.createElement('queue');
-
-		this.step_order = document.createElement('steporder');
-		this.step_order.textContent = this.order;
-		this.element.appendChild(this.step_order);
-
-		this.protocol_step_name = document.createElement('stepname')
-		this.protocol_step_name.textContent = this.step_name;
-		this.element.appendChild(this.protocol_step_name);
-
-		{% comment %} this.validation_count = document.createElement('validationcount')
-		this.validation_count.textContent = this.validations;
-		this.element.appendChild(this.validation_count); {% endcomment %}
-
-		this.sample_count = document.createElement('samplecount')
-		this.sample_count.textContent = this.samples;
-		this.element.appendChild(this.sample_count);
-
-		
-	}
-}
-
-class Protocol {
-	constructor(data) {
-		for (let datum in data) {
-			this[datum] = data[datum]
-		}
-		this.samplecount=0;
-		this.element = document.createElement('protocol');
-		this.element.textContent = this.pid;
-
-		this.sample_count_display = document.createElement('protocolsamples');
-		this.sample_count_display.textContent = this.samplecount;
-		this.element.appendChild(this.sample_count_display);
-	}
-	add_samples(samples_to_add) {
-		this.samplecount+=parseInt(samples_to_add);
-		this.sample_count_display.textContent = this.samplecount;
-	}
-}
-  
-var last_protocol = null;
-var protocols={}
-var order = 0;
-for (let queue of queues) {
-	if (queue.protocol != last_protocol) {
-		protocols[queue.protocol] = new Protocol({pid:queue.protocol_name});
-		main.appendChild(protocols[queue.protocol].element)
-		order=0;
-	}
-	order++;
-	last_protocol = queue.protocol;
-	queue.order=order;
-	protocols[queue.protocol].add_samples(queue.samples);
-	const queue_row = new Queue(queue);
-	main.appendChild(queue_row.element);
-	queue_row.element.addEventListener('click',()=> {
-		window.location.href = `/queue/${queue.sid}`;
-
-	})
-
-}
-
 
 
 </script>{% endblock %}

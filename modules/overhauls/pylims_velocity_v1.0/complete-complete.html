@@ -1,4 +1,4 @@
-{% extends 'overhauls/step.html' %}
+{% extends 'overhauls/step_complete.html' %}
 {% load static %}
 {% block title %}Velocity LIMS - Step Details{% endblock %}
 {% block headdata %}
@@ -302,6 +302,7 @@
       pagelinks {
         position:relative;
         display:flex;
+        margin-bottom:15px;
       }
       pages {
         flex-grow:0;
@@ -592,17 +593,16 @@
         }
         .verification-error {
             background-color:var(--pink-med);
-            color:white;
         }
         .verification-error:hover {
             background-color:var(--pink-light);
-            color:black;
         }
         sampletablecolumn {
             display:inline-block;
             margin-left:3px;
             padding:0px 5px;
             box-sizing:border-box;
+            vertical-align: top;
         }
         scriptbuttons {
             display:flex;
@@ -631,16 +631,67 @@
             border:outset 1px var(--gray-dark);
             cursor:not-allowed;
         }
-
-
-
+        details {
+            width:100%;
+        }
+        summary {
+            background-color:var(--gray-dark);
+            color:white;
+            font-weight:bold;
+            font-size:18px;
+            padding:5px;
+        }
+        .routing-select {
+            border-radius: 15px;
+            border: solid 1px var(--gray-med);
+            padding: 2px 10px;
+            display:block;
+            position:relative;
+            margin: 2px 0px;
+            line-height: 21px;
+        }
+        .routing-display {
+            border-radius: 15px;
+            border: solid 1px var(--gray-med);
+            padding: 2px 13px;
+            display:block;
+            position:relative;
+            background-color:var(--gray-lightest);
+            margin: 2px 0px;
+            height:21px;
+            line-height: 21px;
+        }
+        routecancel {
+            position:absolute;
+            background-color:var(--gray-light);
+            color: var(--gray-dark);
+            padding:2px;
+            font-size:12px;
+            border-radius:15px;
+            height:15px;
+            width:15px;
+            right:3px;
+            top:3px;
+            text-align:center;
+            line-height:15px;
+            cursor:pointer;
+            font-weight: bold;
+        }
+        routecancel:hover {
+            background-color:var(--pink-med);
+            color:white;
+        }
+        routecancel::after {
+            content:'x';
+        }
+        
 
 </style>
 {% endblock %}
 {% block centercontent %}
 <div style="padding:0px 50px;text-align:left;">
     <scriptdetails><scriptoutput class="scriptoutput-inactive">No scripts run yet.</scriptoutput></scriptdetails>
-    <stepdetails></stepdetails>
+    <details><summary>Step Details</summary><stepdetails></stepdetails></details>
     <scriptbuttons></scriptbuttons>
     <sampledetails>
         <sampleheader><headercontent style="width:50px;">#</headercontent><headerhandle></headerhandle></sampleheader>
@@ -657,6 +708,8 @@ const velocity_containers = {{ containers | safe }};
 const inputcontainers = {{ inputcontainers | safe }};
 const outputcontainers = {{ outputcontainers | safe }};
 const step_data = {{ step_data | safe }};
+const step_names = {{ step_names | safe }};
+const assay_names = {{ assay_names | safe }};
 const output_data = {{ output_data | safe }};
 const data_config = {{ data_config | safe }};
 const velocity_scripts = {{ scripts | safe }};
@@ -666,6 +719,7 @@ const velocity_script_runs = {{ script_runs | safe }};
 {% comment %} const velocity_containers = {{ containers | safe}}; {% endcomment %}
 const main = document.getElementById('queue');
 const stepdetails = document.querySelector('stepdetails');
+const scriptdetails = document.querySelector('scriptdetails');
 const scriptoutput = document.querySelector('scriptoutput');
 const sampledetails = document.querySelector('sampledetails');
 const sampleheader = document.querySelector('sampleheader');
@@ -676,16 +730,7 @@ var invalid_drop = false;
 var placed_samples = [];
 var selected_samples = [];
 
-
-var next_step_active = {}
-function set_next_step() {
-    if (Object.values(next_step_active).every(value => value === true)) {
-        next_button.classList.add('next-button-active');
-    } else {
-        next_button.classList.remove('next-button-active');
-    }
-}
-
+next_button.classList.add('next-button-active');
 
 function localerror(msg) {
 	error_element = document.getElementById('pylims_request_error');
@@ -707,41 +752,12 @@ class StepData {
         this.displaytext.textContent = this.display_text;
         this.element.appendChild(this.displaytext);
 
-        if (this.type=='Text') {
-            if (this.read_only) {
-                this.input=document.createElement('readonly');
-                this.input.textContent = this.value || this.value_default;
-                this.input.value=this.textContent;
-            } else {
-                this.input = document.createElement('input');
-                this.input.type='text';
-                this.input.value = this.value || this.value_default;
-            }
+        if (this.type=='Text' || this.type=='Verification' || this.type=="Select") {
+            this.input=document.createElement('readonly');
+            this.input.textContent = this.value || this.value_default;
+            this.input.value=this.textContent;
             this.element.appendChild(this.input);
-        } else if (this.type=="Select") {
-            this.input = document.createElement('select');
-            const options = JSON.parse(this.value_options);
-            for (let optionvalue of options) {
-                const option = document.createElement('option');
-                option.value=optionvalue;
-                option.textContent=optionvalue;
-                if (this.value==optionvalue) {
-                    option.selected=true;
-                }
-                this.input.appendChild(option);
-            }
-            this.element.appendChild(this.input);
-        } else if (this.type=='Verification') {
-            this.input = document.createElement('input');
-            this.input.type='text';
-            this.input.value = this.value || this.value_default;
-            this.element.appendChild(this.input);
-            this.verify_input();
-            this.element.appendChild(this.input);
-            this.element.addEventListener('input',()=> {
-                this.verify_input();
-            })
-        }
+        } 
     }
     verify_input() {
         if (this.input.value==this.accepted_value) {
@@ -769,10 +785,6 @@ for (let data of data_config) {
 }
 
 for (let column of step_config.derivative_data) {
-  if (table_headers[column].key=='routing') {
-    //save this for the routing page.  
-    continue;
-  }
     let header = document.createElement('headercontent');
     header.textContent=table_headers[column].display_text;
     header.style.width=table_headers[column].default_width+'px';
@@ -780,6 +792,18 @@ for (let column of step_config.derivative_data) {
     let handle = document.createElement('headerhandle');
     sampleheader.appendChild(handle);
     //<headercontent style="width:50px;">#</headercontent><headerhandle></headerhandle>
+}
+
+class Route {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+        this.element = document.createElement('route');
+        this.element.textContent = `${assay_names[this.assay]} - ${step_names[this.step]}`;
+        this.cancel = document.createElement('routecancel');
+        this.element.appendChild(this.cancel);
+    }
 }
 
 class Sample {
@@ -792,48 +816,41 @@ class Sample {
         this.element.appendChild(this.number);
         this.did = this.output_id;
         this.element.dataset.did=this.output_id;
+        this.routing_table = []
 
         this.data={}
         for (let dataid of step_config.derivative_data) {
-            if (table_headers[dataid].key=='routing') {
-              //save this for the routing page.  
-              continue;
-            }
             this.data[dataid]={}
-            const existing_data = output_data[this.did][dataid] || '';
-            this.data[dataid].element=document.createElement('sampletablecolumn')
-            this.data[dataid].datatype=table_headers[dataid].value_type;
-            this.data[dataid].readonly=table_headers[dataid].read_only;
-            
-            if (!table_headers[dataid].read_only) {
-                if (table_headers[dataid].value_type==2) {
-                    this.data[dataid].input = document.createElement('input');
-                    this.data[dataid].input.type = 'text';
-                    this.data[dataid].input.value=existing_data;
-                    this.data[dataid].element.appendChild(this.data[dataid].input);
-                } else if (table_headers[dataid].value_type==7) {
-                    this.data[dataid].input = document.createElement('select');
-                    for (let options of JSON.parse(table_headers[dataid].value_options)) {
-                        let option = document.createElement('option');
-                        option.value=options;
-                        console.log(options,output_data[this.did][dataid])
-                        if (options==output_data[this.did][dataid]) {
-                            option.selected=true;
-                        }
-                        option.textContent=options;
-                        this.data[dataid].input.appendChild(option);
-                    }
-                    this.data[dataid].element.appendChild(this.data[dataid].input);
-                }
-            } else {
-
-                this.data[dataid].element.textContent=existing_data;
-                this.data[dataid].input={}
-                this.data[dataid].input.value=existing_data;
-
-            }
+            this.data[dataid].element=document.createElement('sampletablecolumn');
             this.data[dataid].element.style.width=table_headers[dataid].default_width+'px';
             this.data[dataid].element.style.textAlign=table_headers[dataid].alignment;
+            const existing_data = output_data[this.did][dataid] || '';
+            this.data[dataid].datatype=table_headers[dataid].value_type;
+            this.data[dataid].readonly=table_headers[dataid].read_only;
+                
+            if (table_headers[dataid].key=='routing') {
+                // get current step index
+                const current_index = this.output_steps.indexOf(step_config.step_type)
+                const next_step = step_names[this.output_steps[current_index+1]]
+                const current_routing_info = JSON.parse(existing_data)
+                console.log('CURRENT',current_routing_info[0].step,existing_data)
+                
+                
+                this.element.appendChild(this.data[dataid].element)
+                if (current_routing_info[0].step > 0) {
+                    this.data[dataid].element.textContent=step_names[current_routing_info[0].step];
+                } else {
+                    for (let option of options) {
+                        if (option.id*-1 == current_routing_info[0].step) {
+                            this.data[dataid].element.textContent=option.text;
+                        }
+                    }
+                }
+                continue
+            }
+            
+            
+            this.data[dataid].element.textContent=existing_data;
             this.element.appendChild(this.data[dataid].element)
         }
 
@@ -876,8 +893,6 @@ for (let io of velocity_step_io) {
     sampledetails.appendChild(samples[io.output_id].element)
 }
 
-
-
 class Script {
 	constructor(data) {
 		for (let datum in data) {
@@ -914,14 +929,9 @@ class Script {
                     if (result.script_updates.outputs) {
                         for (let update of result.script_updates.outputs) {
                             console.log('update',update)
-                            
-                            if (update[1]==3) {
-                              // skip routing, save for routing page
-                              continue;
-                            }
                             samples[update[0]].data[update[1]].value=update[2];
                             if (!table_headers[update[1]].read_only) {
-                              samples[update[0]].data[update[1]].input.value=update[2]
+
                             } else {
                                 samples[update[0]].data[update[1]].element.textContent=update[2];
                             }
@@ -935,61 +945,37 @@ class Script {
     }
 }
 
-var scripts = {}
-for (let script of velocity_scripts) {
-    scripts[script.scid] = new Script(script);
-    scriptbuttons.appendChild(scripts[script.scid].element)
-}
 
-if (velocity_script_runs.length > 0) {
-    if (velocity_script_runs[0].status==2) {
-        scriptoutput.classList.add('scriptoutput-successful');
-        scriptoutput.innerHTML=`<b>Finished running script ${scripts[velocity_script_runs[0].script].title}:</b><br>${velocity_script_runs[0].message}`;
-    } else if (velocity_script_runs[0].status==3) {
-        scriptoutput.classList.add('scriptoutput-unsuccessful');
-        scriptoutput.innerHTML=`<b>Failed to run script ${scripts[velocity_script_runs[0].script].title}:</b><br>${velocity_script_runs[0].message}`;
-    }
-}
 
-async function saveData() {
-    var details = [];
-    for (let data in stepdata) {
-        const detail = stepdata[data];
-        console.log(detail.sdcid, detail.sdid, detail.input.value);
-        details.push([step_config.stepid, detail.sdcid, detail.input.value]);
+
+if (velocity_scripts.length==0) {
+    scriptdetails.style.display='none';
+} else {
+    var scripts = {}
+    for (let script of velocity_scripts) {
+        scripts[script.scid] = new Script(script);
+        scriptbuttons.appendChild(scripts[script.scid].element)
     }
-    var outputs = [];
-    for (let sample in samples) {
-        for (let data in samples[sample].data) {
-            if (table_headers[data].value_type == 2 || table_headers[data].value_type == 7) {
-                outputs.push([samples[sample].did, table_headers[data].ddcid, samples[sample].data[data].input.value]);
-            }
+    if (velocity_script_runs.length > 0) {
+        if (velocity_script_runs[0].status==2) {
+            scriptoutput.classList.add('scriptoutput-successful');
+            scriptoutput.innerHTML=`<b>Finished running script ${scripts[velocity_script_runs[0].script].title}:</b><br>${velocity_script_runs[0].message}`;
+        } else if (velocity_script_runs[0].status==3) {
+            scriptoutput.classList.add('scriptoutput-unsuccessful');
+            scriptoutput.innerHTML=`<b>Failed to run script ${scripts[velocity_script_runs[0].script].title}:</b><br>${velocity_script_runs[0].message}`;
         }
     }
-    console.log('save data', outputs);
-    const data = { step: step_config.stepid, details, outputs };
-    const pyoptions = { data, csrf, urlprefix: '..', url: 'step/save', submit_mode: 'silent' };
-    
-    try {
-        await pylims_post(pyoptions);
-        console.log('save function')
-    } catch (error) {
-        console.error(error);
-    }
 }
+
+
 async function nextStep() {
-    await saveData()
-    console.log('save done!')
-    if (!Object.values(next_step_active).every(value => value === true)) {
-        return false;
-    }
     const data = { step: step_config.stepid };
     const pyoptions = { data, csrf, urlprefix: '..', url: 'step/nextstep', submit_mode: 'silent' };
 
     try {
         const result = await pylims_post(pyoptions);
         if (result.status === 'success') {
-          window.location.href=`/step/${step_config.stepid}`;
+            window.location.href=`/step/${step_config.stepid}/complete`;
         }
     } catch (error) {
         console.error(error);

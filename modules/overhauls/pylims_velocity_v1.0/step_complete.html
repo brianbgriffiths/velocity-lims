@@ -60,6 +60,9 @@ function cap(string) {
 }
 
 for (let page of step_config.pages) {
+    if (step_config.status==2 && pages[page].show_after_complete==false) {
+        continue
+    }
     const index = step_config.pages.indexOf(page)
     const pagelink = document.createElement('page');
     pagelink.textContent=cap(pages[page].page);
@@ -83,21 +86,11 @@ for (let page of step_config.pages) {
     }
     
   }
-  
-const abort_button = document.createElement('pagebutton');
-abort_button.textContent = 'Abort Step';
-abort_button.id="abort-button";
-pagebuttons.appendChild(abort_button);
-
-const save_button = document.createElement('pagebutton');
-save_button.textContent = 'Save';
-save_button.id="save-button";
-pagebuttons.appendChild(save_button);
-
-const next_button = document.createElement('pagebutton');
-next_button.textContent = 'Next Step';
-next_button.id="next-button";
-pagebuttons.appendChild(next_button);
+ 
+const back_button = document.createElement('pagebutton');
+back_button.textContent = 'Queues';
+back_button.id="back-button";
+pagebuttons.appendChild(back_button);
 </script>
 
 {% block javascript %}

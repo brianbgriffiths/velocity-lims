@@ -359,7 +359,7 @@
     <breadcrumbs><a href="{% url 'display_queues' %}">Queues</a> / {{ queue.protocol_name }} / <b>{{ queue.step_name }} Queue</b></breadcrumbs>
     <div class="columns">
         <div class="column-75">
-            <div id="queue-info">Queue ({{queue.samples}} samples)<sampleoptions><span id="selectedsamples">0 Selected</span><div>Remove from Queue</div><div>Move to Next Step</div></sampleoptions></div>
+            <div id="queue-info">Queue ({{queue.samples}} samples)<sampleoptions><span id="selectedsamples">0 Selected</span><div onClick="reserveSelected();">Reserve</div><div>Release</div><div>Remove from Queue</div><div>Move to Next Step</div></sampleoptions></div>
             <div id="tableheader" style="">
                 <headercontent style="width:50px;">#</headercontent><headerhandle></headerhandle>
                 <headercontent style="width:150px;">Sample</headercontent><headerhandle></headerhandle>
@@ -526,6 +526,39 @@ function releaseSample(sample, displayOnly=false) {
         }
         return false;
     } 
+}
+
+function reserveSelected(displayOnly=false) {
+    for (let sample_id of selected_samples) {
+        let sample = samples[sample_id];
+
+        let index = reserved_samples.indexOf(sample.did);
+        if (reserved_samples.indexOf(sample.did) == -1) {
+            reserved_samples.push(sample.did);
+            sample.reserve.style.display='none';
+            sample.release.style.display='block';
+            
+        }
+        sample.selected=false;
+        sample.element.classList.remove('selectedsample');
+    }
+    dragsamples.textContent = reserved_samples.length;
+    if (!displayOnly) {
+        console.log('commit')
+        const data={"step":queue.sid, "samples":selected_samples}
+        const pyoptions={data,csrf,urlprefix:'..',url:'reserve_samples',submit_mode:'silent'}
+        pylims_post(pyoptions).then(result => {
+            for (let i = selected_samples.length - 1; i >= 0; i--) {
+                let sample_id = selected_samples[i];
+                let sample = samples[sample_id];
+
+                update_selected_samples('remove',sample_id)
+            }
+        }).catch(error => {
+            console.error(error);
+        }); 
+    }
+    return false;   
 }
 
 document.addEventListener('keydown', (event) => {

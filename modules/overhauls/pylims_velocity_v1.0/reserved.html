@@ -441,7 +441,7 @@ container_select.id='containers';
 for (let container of velocity_containers) {
     const option = document.createElement('option');
     option.value = container.cid;
-    option.textContent =container.container_name;
+    option.textContent =container.type_name;
     container_select.appendChild(option);
 }
 containerselect.appendChild(container_select);

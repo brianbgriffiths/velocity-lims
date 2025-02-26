@@ -26,7 +26,7 @@
   --gray-dark: #636363; --gray-med: #979797; --gray-light: #d3d3d3; --gray-lightest: #f0f0f0;
   --pink-dark: 	#6d0637;	--pink-med:	#c42b74;	--pink-light: #f7b3d3;
   --green-dark: #488248;	--green-med: #5aab5a;	--green-light: #e2eee2;
-  --purple-med: #BF9ACA;
+  --purple-med: #BF9ACA; --purple-light: #f6d5fd; 
   --purple-med-hover: #d4ace0;
   
   --inputbg: #eef3f6; /* light gray blue */

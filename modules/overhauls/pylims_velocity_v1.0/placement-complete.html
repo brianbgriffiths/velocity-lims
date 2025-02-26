@@ -1,4 +1,4 @@
-{% extends 'overhauls/step.html' %}
+{% extends 'overhauls/step_complete.html' %}
 {% load static %}
 {% block title %}Velocity LIMS - Queue{% endblock %}
 {% block headdata %}
@@ -405,7 +405,7 @@
         display: grid;
         grid-template-columns: repeat(var(--n-columns), 1fr);
         grid-template-rows: repeat(var(--n-rows), 1fr);
-        /* gap: 5px; */
+        gap: 5px;
         width:100%;
         grid-auto-rows: 1fr;
         grid-auto-columns: 1fr;
@@ -422,17 +422,16 @@
         align-items: center;
         justify-content: center;
         border-radius:100px;
-        min-width:15px;
+        min-width:25px;
         background: radial-gradient(ellipse at 30% 30%, #fcf3ff 12%, #d2c4d8 57%);
         border: solid 1px #f8f2fa;
         z-index:1;
         position:relative;
-        container-type: size;
       }
       rmarker {
         position:absolute;
         left:-33px;
-        height:100%;
+        height:25px;
         width:27px;
         background-image: url('/static/themes/pylims_velocity_v1.0/rmarker-small.svg');
         background-repeat:no-repeat;
@@ -443,13 +442,12 @@
         font-weight: bold;
         color:var(--gray-dark);
         text-shadow: 1px 1px 4px white;
-        font-size:100%;
       }
       vmarker {
         position:absolute;
         top:-33px;
         height:27px;
-        width:100%;
+        width:25px;
         background-image: url('/static/themes/pylims_velocity_v1.0/vmarker-small.svg');
         background-repeat:no-repeat;
         line-height: 22px;
@@ -458,32 +456,6 @@
         font-weight: bold;
         color: var(--gray-dark);
         text-shadow: 1px 1px 4px white;
-        container-type: inline-size;
-      }
-      
-      @container (max-width: 20px) {
-        vmarker {
-              font-size: 10px;
-              line-height: 16px;
-          }
-          rmarker {
-            height:100%;
-            font-size:10px;
-            line-height: 19px;
-            padding-right: 13px;
-          }
-      }
-      
-      @container (min-width: 20px) and (max-width: 25px) {
-        vmarker {
-              font-size: 14px;
-          }
-      }
-      
-      @container (min-width: 25px) {
-        vmarker {
-              font-size: 16px;
-          }
       }
       sectiontitle {
         font-size:24px;
@@ -1035,19 +1007,6 @@ document.getElementById('save-button').addEventListener('click',()=>{
   }); 
   return false;
 })
-
-document.addEventListener('keydown', (event) => {
-  if (event.key === 'a' && event.ctrlKey) {
-    event.preventDefault(); // Prevent the default "select all" behavior
-    console.log('Ctrl+A was pressed');
-    const siblings = document.querySelectorAll('inputsample');
-    for (let sample of siblings) {
-          samples[sample.dataset.did].selected=true;
-          samples[sample.dataset.did].element.classList.add('selectedsample');
-          update_selected_samples('add',sample.dataset.did);
-    }
-  }
-});
 
 document.getElementById('next-button').addEventListener('click',()=>{
     if (placed_samples.length < velocity_step_io.length) {

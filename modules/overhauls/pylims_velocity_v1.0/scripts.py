@@ -9,6 +9,7 @@ from psycopg import sql
 from psycopg.rows import dict_row 
 from psycopg.pq import Escaping
 import importlib
+import traceback
 import time
 
 import sys
@@ -67,8 +68,10 @@ def run_script(request):
         response['run_status'], response['script_message'], response['script_updates'] = instance.run()
         cursor.execute("UPDATE velocity.script_runs SET status=%s, message=%s WHERE srid = %s;",(response['run_status'],response['script_message'],script_run_id['srid']))
     except Exception as e:
+        tb = traceback.format_exc()
         response['status']='error'
         response['run_status']=3
+        # response['script_message']=f'script error: {e} <pre>{tb}</pre>'
         response['script_message']=f'script error: {e}'
         response['script_updates']=None
         cursor.execute("UPDATE velocity.script_runs SET status=3, message=%s WHERE srid = %s;",(f'Error: {e}', script_run_id['srid']))

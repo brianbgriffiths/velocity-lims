@@ -602,6 +602,7 @@
             margin-left:3px;
             padding:0px 5px;
             box-sizing:border-box;
+            vertical-align: top;
         }
         scriptbuttons {
             display:flex;
@@ -640,13 +641,55 @@
             font-size:18px;
             padding:5px;
         }
+        .routing-select {
+            border-radius: 15px;
+            border: solid 1px var(--gray-med);
+            padding: 2px 10px;
+            display:block;
+            position:relative;
+            margin: 2px 0px;
+            line-height: 21px;
+        }
+        .routing-display {
+            border-radius: 15px;
+            border: solid 1px var(--gray-med);
+            padding: 2px 13px;
+            display:block;
+            position:relative;
+            background-color:var(--gray-lightest);
+            margin: 2px 0px;
+            height:21px;
+            line-height: 21px;
+        }
+        routecancel {
+            position:absolute;
+            background-color:var(--gray-light);
+            color: var(--gray-dark);
+            padding:2px;
+            font-size:12px;
+            border-radius:15px;
+            height:15px;
+            width:15px;
+            right:3px;
+            top:3px;
+            text-align:center;
+            line-height:15px;
+            cursor:pointer;
+            font-weight: bold;
+        }
+        routecancel:hover {
+            background-color:var(--pink-med);
+            color:white;
+        }
+        routecancel::after {
+            content:'x';
+        }
+        
 
 </style>
 {% endblock %}
 {% block centercontent %}
 <div style="padding:0px 50px;text-align:left;">
-    <breadcrumbs> {{ config.protocol_name }} / Step # {{config.order_in_protocol}} / <b>{{ config.step_name }}</b></breadcrumbs>
-    <pagelinks><pages></pages><pagebuttons></pagebuttons></pagelinks>
     <scriptdetails><scriptoutput class="scriptoutput-inactive">No scripts run yet.</scriptoutput></scriptdetails>
     <details><summary>Step Details</summary><stepdetails></stepdetails></details>
     <scriptbuttons></scriptbuttons>
@@ -665,6 +708,8 @@ const velocity_containers = {{ containers | safe }};
 const inputcontainers = {{ inputcontainers | safe }};
 const outputcontainers = {{ outputcontainers | safe }};
 const step_data = {{ step_data | safe }};
+const step_names = {{ step_names | safe }};
+const assay_names = {{ assay_names | safe }};
 const output_data = {{ output_data | safe }};
 const data_config = {{ data_config | safe }};
 const velocity_scripts = {{ scripts | safe }};
@@ -688,11 +733,16 @@ var selected_samples = [];
 
 var next_step_active = {}
 function set_next_step() {
-    if (Object.values(next_step_active).every(value => value === true)) {
-        next_button.classList.add('next-button-active');
-    } else {
-        next_button.classList.remove('next-button-active');
+  const routes = document.querySelectorAll('.routing-select');
+  for (let route of routes) {
+    if (route.value==0) {
+      next_button.classList.remove('next-button-active');
+      return false
     }
+  }
+    
+  next_button.classList.add('next-button-active');
+  return true;
 }
 
 
@@ -758,6 +808,20 @@ for (let column of step_config.derivative_data) {
     //<headercontent style="width:50px;">#</headercontent><headerhandle></headerhandle>
 }
 
+const options=[{id:0, text:'Set Sample Routing'}, {id:1, text:'Next Step:'},{id:2, text:'Remove from Workflow'},{id:3, text:'Repeat this step'},{id:4, text:'Requeue to Previous Step'},{id:5, text:'Complete Protocol'},{id:6, text:'Complete Workflow'}, {id:7, text:'Queue to Workflow'}, {id:8, text:'Queue to Step'}]
+
+class Route {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+        this.element = document.createElement('route');
+        this.element.textContent = `${assay_names[this.assay]} - ${step_names[this.step]}`;
+        this.cancel = document.createElement('routecancel');
+        this.element.appendChild(this.cancel);
+    }
+}
+
 class Sample {
 	constructor(data) {
 		for (let datum in data) {
@@ -768,6 +832,7 @@ class Sample {
         this.element.appendChild(this.number);
         this.did = this.output_id;
         this.element.dataset.did=this.output_id;
+        this.routing_table = []
 
         this.data={}
         for (let dataid of step_config.derivative_data) {
@@ -775,18 +840,67 @@ class Sample {
             this.data[dataid].element=document.createElement('sampletablecolumn');
             this.data[dataid].element.style.width=table_headers[dataid].default_width+'px';
             this.data[dataid].element.style.textAlign=table_headers[dataid].alignment;
-            if (table_headers[dataid].key=='routing') {
-                this.data[dataid].input=document.createElement('select')
-                this.data[dataid].element.appendChild(this.data[dataid].input)
-                this.element.appendChild(this.data[dataid].element)
-                continue
-            }
             const existing_data = output_data[this.did][dataid] || '';
             this.data[dataid].datatype=table_headers[dataid].value_type;
             this.data[dataid].readonly=table_headers[dataid].read_only;
-                this.data[dataid].element.textContent=existing_data;
-                this.data[dataid].input={}
-                this.data[dataid].input.value=existing_data;
+                
+            if (table_headers[dataid].key=='routing') {
+                // get current step index
+                const current_index = this.output_steps.indexOf(step_config.step_type)
+                const next_step = step_names[this.output_steps[current_index+1]]
+                const current_routing_info = JSON.parse(existing_data)
+                console.log('CURRENT',current_routing_info[0].step)
+                this.data[dataid].input=document.createElement('select')
+                this.data[dataid].input.className = 'routing-select';
+                this.data[dataid].element.appendChild(this.data[dataid].input);
+
+                
+                this.element.appendChild(this.data[dataid].element)
+                const this_options = JSON.parse(JSON.stringify(options))
+                for (let option of this_options) {
+                    let newoption = document.createElement('option');
+                    if (option.text=='Next Step:') {
+                        console.log('update next step')
+                        option.text+=` ${next_step}`;
+                        newoption.value = this.output_steps[current_index+1];
+                    } else {
+                        newoption.value = option.id*-1;
+                    }
+                    
+                    newoption.textContent = option.text;
+                    
+                    this.data[dataid].input.appendChild(newoption)
+                    
+                }
+                for (let i=current_index+2;i<this.output_steps.length; i++) {
+                    
+                    const skip_step = this.output_steps[i];
+                    let newoption = document.createElement('option');
+                    newoption.textContent=`Skip to Step: ${step_names[skip_step]}`;
+                    newoption.value=skip_step;
+                    this.data[dataid].input.appendChild(newoption)
+                }
+
+                for (let route of this.routing) {
+                    if (route.assay=="current") {
+                        continue;
+                    }
+                    let thisroute = new Route(route);
+                    this.routing_table.push(thisroute);
+                    thisroute.element.classList.add('routing-display')
+                    this.data[dataid].element.appendChild(thisroute.element);
+                }
+                console.log('setting value to',current_routing_info[0].step)
+                this.data[dataid].input.value=current_routing_info[0].step;
+                this.data[dataid].input.addEventListener('change',()=> {
+                  set_next_step();
+                })
+                continue
+            }
+            this.data[dataid].element.textContent=existing_data;
+            this.data[dataid].input={}
+            this.data[dataid].input.value=existing_data;
+            
             
             this.element.appendChild(this.data[dataid].element)
         }
@@ -943,7 +1057,7 @@ async function nextStep() {
     try {
         const result = await pylims_post(pyoptions);
         if (result.status === 'success') {
-            
+          window.location.href=`/step/${step_config.stepid}`;
         }
     } catch (error) {
         console.error(error);
@@ -958,4 +1072,6 @@ document.getElementById('next-button').addEventListener('click',()=>{
     
     nextStep()
   })
+
+  set_next_step()
 </script>{% endblock %}

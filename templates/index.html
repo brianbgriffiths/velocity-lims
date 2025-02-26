@@ -18,8 +18,10 @@
         {% endfor %}
 	</div>
 	<div id="center-content">
+	{% block stepbreadcrumbs %}{% endblock %}
+	{% block centercontent %}
 	
-	{% block centercontent %}{{ adminlinks|safe }}
+	{{ adminlinks|safe }}
 	<div class="center-border">
 	<p>Welcome to your locally installed pylims server. Login as the default account to begin setup.</p><table>
 		{% for stat in info %}
