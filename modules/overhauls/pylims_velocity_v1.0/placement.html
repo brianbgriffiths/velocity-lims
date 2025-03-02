@@ -433,6 +433,7 @@
         position:absolute;
         left:-33px;
         height:100%;
+        max-height: 25px;
         width:27px;
         background-image: url('/static/themes/pylims_velocity_v1.0/rmarker-small.svg');
         background-repeat:no-repeat;
@@ -450,6 +451,7 @@
         top:-33px;
         height:27px;
         width:100%;
+        max-width: 25px;
         background-image: url('/static/themes/pylims_velocity_v1.0/vmarker-small.svg');
         background-repeat:no-repeat;
         line-height: 22px;
@@ -648,6 +650,7 @@ class Container {
             rmarker.style.top=`${(i/this.rows)*100}%`;
             //this.gridcontainer.appendChild(rmarker);
         }
+        placedsamples.innerHTML = `${this.placements.length} Placed`;
         for (let i = 0; i < this.rows * this.columns; i++) {
             this.wells.push(document.createElement('div'));
             this.wells[i].className = 'grid-item';
@@ -768,7 +771,7 @@ class Container {
             }
             next_button.classList.remove('next-button-active');
             placed_samples = [];
-            placedsamples.textContent = `0 Placed`;
+            placedsamples.textContent = `${this.placements.length} Placed`;
         })
 
     }

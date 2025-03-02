@@ -13,7 +13,7 @@
 </head>
 <body>
 	<div id="login-pylims-logo"><a href="{% url 'home' %}"><img  src="{% static 'themes/pylims_velocity_v1.0/logo.svg' %}" alt="pylims logo"></a></div>
-	<div id="header">{% for link in links %}
+	<div id="header"><a href="/queues">Lab Queues</a> | <a href="/samples">Samples</a>{% for link in links %}
             <span class="header_link"><a href="/modules/{{ link.0 }}/{{ link.2 }}">{{ link.1 }}</a></span>
         {% endfor %}
 	</div>

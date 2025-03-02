@@ -678,13 +678,7 @@ var selected_samples = [];
 
 
 var next_step_active = {}
-function set_next_step() {
-    if (Object.values(next_step_active).every(value => value === true)) {
-        next_button.classList.add('next-button-active');
-    } else {
-        next_button.classList.remove('next-button-active');
-    }
-}
+
 
 
 function localerror(msg) {

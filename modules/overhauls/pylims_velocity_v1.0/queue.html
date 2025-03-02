@@ -359,7 +359,7 @@
     <breadcrumbs><a href="{% url 'display_queues' %}">Queues</a> / {{ queue.protocol_name }} / <b>{{ queue.step_name }} Queue</b></breadcrumbs>
     <div class="columns">
         <div class="column-75">
-            <div id="queue-info">Queue ({{queue.samples}} samples)<sampleoptions><span id="selectedsamples">0 Selected</span><div onClick="reserveSelected();">Reserve</div><div>Release</div><div>Remove from Queue</div><div>Move to Next Step</div></sampleoptions></div>
+            <div id="queue-info">Queue ({{queue.samples}} samples)<sampleoptions><span id="selectedsamples">0 Selected</span><div onClick="reserveSelected();">Reserve</div><div>Release</div><div onClick="removeFromQueue();">Remove from Queue</div><div>Move to Next Step</div></sampleoptions></div>
             <div id="tableheader" style="">
                 <headercontent style="width:50px;">#</headercontent><headerhandle></headerhandle>
                 <headercontent style="width:150px;">Sample</headercontent><headerhandle></headerhandle>
@@ -528,6 +528,24 @@ function releaseSample(sample, displayOnly=false) {
     } 
 }
 
+function removeFromQueue() {
+    const data={"step":queue.sid, "samples":selected_samples}
+    const pyoptions={data,csrf,urlprefix:'..',url:'remove_samples',submit_mode:'silent'}
+    pylims_post(pyoptions).then(result => {
+        for (let i = selected_samples.length - 1; i >= 0; i--) {
+            let sample_id = selected_samples[i];
+            update_selected_samples('remove',sample_id)
+            let sample = samples[sample_id];
+            sample.element.parentNode.removeChild(sample.element);
+            delete samples[sample_id];
+
+            
+        }
+    }).catch(error => {
+        console.error(error);
+    }); 
+}
+
 function reserveSelected(displayOnly=false) {
     for (let sample_id of selected_samples) {
         let sample = samples[sample_id];
@@ -569,6 +587,7 @@ document.addEventListener('keydown', (event) => {
       for (let sample of siblings) {
             samples[sample.dataset.did].selected=true;
             samples[sample.dataset.did].element.classList.add('selectedsample');
+            update_selected_samples('add',sample.dataset.did)
       }
     }
   });

@@ -62,7 +62,7 @@ def begin_step(request):
     samples = cursor.fetchall()
     response['samples'] = json.dumps(samples)
     response['reserved']=len(samples)
-    unique_wfids = list({row["derivative_wf"] for row in samples})
+    unique_wfids = list({row["derivative_wf"] for row in samples if row["derivative_wf"] is not None and row["derivative_wf"] != "null"})
     print('Derivative workflows:',unique_wfids)
 
     if response['reserved']==0:

@@ -200,6 +200,33 @@ def reserve_samples(request):
     conn.close()
     return JsonResponse(response)
 
+def remove_samples(request):
+    response_code = handlePost(request)
+    if response_code[0]==400:
+        response_data = {'error': 'Invalid JSON data', 'message': str(response_code[1])}
+        return JsonResponse(response_data, status=400)
+    elif response_code[0]==405:
+        response_data = {'error': 'Invalid request method', 'message': 'Method not allowed'}
+        return JsonResponse(response_data, status=405)
+    json_data = json.loads(request.body)
+    print('loaded json',json_data)
+
+    conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "DELETE FROM velocity.queued_derivatives WHERE queue = %s AND derivative = ANY(%s);",
+        (json_data['step'], json_data['samples'])
+    )
+    conn.commit()
+
+    print(json_data['samples'])
+
+    response={}
+    response['status']='success'
+    conn.close()
+    return JsonResponse(response)
+
 def release_sample(request):
     response_code = handlePost(request)
     if response_code[0]==400:
@@ -351,6 +378,7 @@ urlpatterns=[
    path('reserved/<str:reserved>', display_reserved, name='display_reserved'),
    path('reserve/',reserve_sample, name='reserve_sample'),
    path('reserve_samples/',reserve_samples, name='reserve_samples'),
+   path('remove_samples/',remove_samples, name='remove_samples'),
    path('release/',release_sample, name='release_sample'),
    path('releaseall/',release_all_samples, name='release_all_samples'),
    path('addcontrol/',add_control, name='add_control'),
