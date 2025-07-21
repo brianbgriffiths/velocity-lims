@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-s_3=93^z#n(&*!q7l@mzllmr1d=#u%)2n1iyj4$vv*8%m1w9(5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [".pylims.com","127.0.0.1"]
+ALLOWED_HOSTS = [".pylims.com","127.0.0.1", "*.velocitylims.com","demo.velocitylims.com","54.177.169.3"]
 
 
 # Application definition
@@ -62,7 +62,7 @@ ROOT_URLCONF = 'settings.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': ['/home/dev/pylims/src/templates'],
+        'DIRS': ['/home/ubuntu/velocity/pylims/templates'],
         'APP_DIRS': False,
         'OPTIONS': {
             'context_processors': [
@@ -99,9 +99,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'pylims',
         'USER': 'dbroot',
-        'PASSWORD': 'pylims2023',
-        'HOST': 'localhost',  # Set to the appropriate host if PostgreSQL is running on a different machine
-        'PORT': '5432',       # Default PostgreSQL port
+        'PASSWORD': 'pylims2023!@#klj2j3ljl#$2nm00G#kjlajknDHS',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
     }
 }
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
@@ -122,10 +122,10 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-CSRF_TRUSTED_ORIGINS = ["https://*.pylims.com",]
+CSRF_TRUSTED_ORIGINS = ["https://*.velocitylims.com",]
 
 CORS_ALLOWED_ORIGINS = [
-    "https://*.pylims.com",
+    "https://*.velocitylims.com",
 ]
 
 
@@ -164,7 +164,7 @@ STATIC_ROOT = '/var/www/html/static'
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 STATIC_URL = "static/"
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "staticroot"),)
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "static"),)
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 

@@ -8,7 +8,7 @@ import pylims
 class RecursiveDirectoryLoader(Loader):
     def __init__(self, engine):
         self.engine = engine
-        self.template_dirs='/home/dev/pylims/src/modules'
+        self.template_dirs=pylims.template_dirs
     def get_template(self, template_name, skip=None):
         """
         Call self.get_template_sources() and return a Template object for
@@ -60,7 +60,7 @@ class RecursiveDirectoryLoader(Loader):
         mods = json.loads(pylims.build_module_dict())
         # print(pylims.term(),'Project:',folderpattern,'template:',template_name)
         # print(f'current mod for {folderpattern}: {settings['setup'][folderpattern]}')
-        file_name = os.path.join('/home/dev/pylims/src/modules',folderpattern,settings['setup'][folderpattern],template_name)
+        file_name = os.path.join(pylims.template_dirs,folderpattern,settings['setup'][folderpattern],template_name)
         if os.path.exists(file_name):
             name = safe_join(file_name)
             # print('\n\nLOADING TEMPLATE',name)

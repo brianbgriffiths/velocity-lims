@@ -26,7 +26,7 @@ import pylims
 from django.views import static
 
 
-print(pylims.term(),"Starting Pylims Server")
+print(pylims.term(),"Starting Pylims Server v1.1")
 
 urlpatterns = [
     path('', views.home, name="home"),
@@ -70,14 +70,14 @@ for mod in setup['setup']:
             # print('urls',urls)
             for url in urls:
                 # print(pylims.term(),f'URL: mod_{mod}/' + str(url.pattern))
-                if 'overhauls' in pylims.active_mods:
+                if mod == 'overhauls':
                     url.pattern._route = str(url.pattern)
                 else:
                     url.pattern._route = f'mod_{mod}/' + str(url.pattern)
             # print(f'urls for {script}:',urls)
             urlpatterns=urlpatterns+urls
 
-            if 'overhauls' in pylims.active_mods:
+            if mod == 'overhauls':
                 url(fr"^(?P<path>.*)$", static.serve, {'document_root': settings.BASE_DIR / f"modules/{mod}/{setup['setup'][mod]}"})
                 continue
                 

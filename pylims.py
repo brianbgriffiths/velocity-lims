@@ -5,11 +5,13 @@ from psycopg import sql
 from psycopg.rows import dict_row 
 from psycopg.pq import Escaping
 
-dbname = 'pylims'
-dbuser = 'dbroot'
-dbpass = 'pylims2023'
-dbhost = '127.0.0.1'
-dbport = '5432'
+dbname = settings.DATABASES['default']['NAME']
+dbuser = settings.DATABASES['default']['USER']
+dbpass = settings.DATABASES['default']['PASSWORD']
+dbhost = settings.DATABASES['default']['HOST']
+dbport = settings.DATABASES['default']['PORT']
+
+template_dirs = '/home/ubuntu/velocity/pylims/modules'
 
 modules={}
 active_mods={}
@@ -39,6 +41,7 @@ class user:
         
 def build_module_dict():
     main_directory = settings.BASE_DIR / 'modules'
+    print(term(),f'Trawling {main_directory}')
     directory_dict = {}
     # print('trawling',main_directory)
     for root, dirs, files in os.walk(main_directory):
