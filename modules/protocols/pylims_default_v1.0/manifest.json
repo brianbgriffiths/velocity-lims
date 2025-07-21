@@ -1,0 +1,21 @@
+{
+	"type": "module",
+	"category": "Protocols",
+	"author": "Brian Griffiths",
+	"author_email": "tech@pylims.com",
+	"authentication": "loggedin",
+	"scripts": [
+		"protocols.py"
+	],
+	"load_script_function": [0,"load_protocols",["user"]],
+	"default_template": "protocols.html",
+	"templates": {
+		"protocols.html": {"name":"Protocols","display_link":true,"authentication":"loggedin"}
+	},
+	"title": "Pylims Default Protocols",
+	"version_major": 1,
+	"version_minor": 0,
+	"setup_options":{
+		
+	}
+}

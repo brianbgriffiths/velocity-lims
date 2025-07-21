@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>{% load static %}
+	<link rel="icon" type="image/x-icon" href="{% static 'images/curio-c-16-pink.png' %}">
+	<link rel="stylesheet" href="{% static 'css/default.css' %}">
+    <title>{% block title %}Ctools - Internal Curio Tools{% endblock %}</title>
+	<script src="https://kit.fontawesome.com/6161580af5.js" crossorigin="anonymous"></script>
+	<script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+</head>
+
+<body>
+<div id="header">
+    <img src="{% static 'images/ctools-header-pink.png' %}" style="height:30px;width:120px;vertical-align:middle;margin-right:10px;">Hi {{ user.username }}! [ <span onClick="logout();" class="fakelink"><i class="fa-solid fa-right-from-bracket"></i> logout</span> | <a href = "{% url 'home' %}">Home</a> | <a href="{%url 'screens' %}">Screens</a> | <a href = "{% url 'explorer' %}">Explorer</a> | <a href="{%url 'extensions' %}">Extensions</a> | <a href="{%url 'fun' %}">Fun</a> | <a href="{%url 'switchboard' %}">Switchboard</a>]
+	<!-- <br>BETA: <a href="{%url 'pipeline' %}">Pipeline</a> | <a href="{%url 'analysis' %}">Completed Analysis</a> -->
+	<br>EA: <a href="{%url 'pipeline_ea' %}">Pipeline</a> | <a href="{%url 'analysis_ea' %}">Completed Analysis</a>
+</div>
+	<div id="disptitle">
+        {% block disptitle %}{% endblock %}
+    </div>
+	<div id="tests">
+        {% block tests %}{% endblock %}
+    </div>
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
+	<div id="footer">
+        {% block footer %}<a href="mailto:bgriffiths@curiobioscience.com">bgriffiths@curiobioscience.com</a><br>©2021-{% now 'Y' %} Curio Bioscience, Inc. | Confidential & Proprietary<br><a href = "{% url 'changelog' %}">change log</a>{% endblock %}
+    </div>
+</body>
+{% block js %}
+{% endblock %}
+<script>
+function logout() {
+	var options={csrfmiddlewaretoken: '{{csrf_token}}' };
+	$.ajax(
+		{
+			type:"POST",
+			url: "/logout/",
+			data:options,
+			success: function( data ) 
+			{
+				data=JSON.parse(data);
+				console.log('data',data)
+				if (data.error) {
+					error(data.error);
+				} else if (data.status=='unloaded session') {
+					window.location.href='https://192.168.2.149:8000'
+				}
+			}
+		},'JSON');
+}
+</script>
+</html>

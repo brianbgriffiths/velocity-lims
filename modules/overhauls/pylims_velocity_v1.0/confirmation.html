@@ -1,0 +1,995 @@
+{% extends 'overhauls/step.html' %}
+{% load static %}
+{% block title %}Velocity LIMS - Step Details{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_common.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+<style>
+    body {
+        counter-reset: sample;
+    }
+    breadcrumbs {
+        border:solid 1px #000000;
+        padding:3px;
+        display:block;
+        margin-bottom:15px;
+    }
+	protocol {
+		background-color:var(--accent1);
+		color:white;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+	}
+	queue {
+		background-color:var(--gray-lightest);
+		color:black;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+		margin-left:30px;
+		margin-bottom:2px;
+		margin-top:2px;
+		border:solid 1px var(--gray-med);
+		clear:both;
+	}
+	queue:hover {
+		background-color:var(--accent9);
+		cursor:pointer;
+	}
+	steporder {
+		display:inline-block;
+		width:60px;
+		font-size:12px;
+		font-weight:bold;
+	}
+	steporder::before {
+		content:'Step ';
+	}
+	steporder::after {
+		content:' »';
+	}
+	stepname {
+		display:inline-block;
+	}
+	samplecount, validationcount {
+		float:right;
+		position:relative;
+		box-sizing:border-box;
+		padding:1px;
+		top:-2px;
+		height:100%;
+		margin-left:10px;
+		font-size:16px;
+		font-weight:bold;
+		width:50px;
+		text-align:right;
+	}
+	samplecount {
+		color:var(--blue-dark);
+	}
+
+	protocolsamples {
+		float:right;
+
+	}
+	.button-hover-right {
+		position:relative;
+		width:fit-content;
+		border:solid 1px var(--accent5);
+		padding:10px;
+		padding-right:30px;
+	}
+	#arrowBox {
+	    position: absolute;
+		top: 0px;
+		right: 0px;
+		padding: 0px;
+		margin: 0px;
+		font-size: 20px;
+		background-color: var(--accent3);
+		height: 100%;
+		width: 20px;
+		line-height: 20px;
+	}
+
+	#arrowBox::after {
+		content: '';
+		position:absolute;
+		text-rendering: auto;
+		-webkit-font-smoothing: antialiased;
+		font: var(--fa-font-solid);
+		content: "\f0da";
+		top: calc(50% - 10px);
+		height: 20px;
+		width: 12px;
+		left: calc(50% - 6px);
+		
+	}
+
+	
+
+	#hoverBox {
+	  display: none;
+	  position: absolute;
+	  top: 10px;
+	  right: -183px; 
+	  background-color:var(--inputhover);
+	  padding: 10px 0px;
+	  width:180px;
+	  font-size:16px;
+	  border: solid 1px var(--accent7);
+	}
+
+	#hoverBox a {
+	  display: block;
+	  margin: 5px 0;
+	  padding:0px 10px;
+	}
+	
+	#hoverBox a:hover {
+		background-color:var(--accent3);
+		color:#ffffff;
+	}
+	#arrowBox:hover #hoverBox {
+		display:block;
+	}
+	.project {
+		height: 40px;
+		border-bottom: solid 1px #cccccc;
+		line-height: 40px;
+	}
+	#new_project_button {
+		margin:20px 0px;
+	}
+    .columns {
+        display: flex;
+        gap: 20px;
+        box-sizing:border-box;
+        width:100%;
+      }
+      
+      .column-75 {
+        flex: 0 0 calc(75% - 10px);
+        
+      }
+      
+      .column-25 {
+        flex: 0 0 calc(25% - 10px);
+      }
+      #queue-info {
+        border:solid 1px #000000;
+        border-radius:3px;
+        font-size:12px;
+        font-weight:bold;
+        padding:3px;
+        margin-bottom:5px;
+      }
+      #begin-step {
+        background-color:var(--green-med);
+        border:solid 1px var(--gray-med);
+        color:white;
+        font-size:16px;
+        border-radius:3px;
+        width:100%;
+        display:block;
+        cursor:pointer;
+        box-shadow: 1px 1px 4px 0px #0000006b;
+        margin-bottom:15px;
+      }
+      #begin-step:hover {
+        background-color:var(--highlight-green-med);
+      }
+
+      reserve, release {
+        background-color:var(--blue-med);
+        border-radius:2px;
+        position: absolute;
+        right: 2px;
+        top: 2px;
+        padding:2px 5px;
+        width:70px;
+        font-size:14px;
+        text-align:center;
+        color:white;
+        cursor:pointer;
+      }
+      release {
+        background-color:var(--gray-med);
+
+      }
+      reserve:hover {
+        cursor:pointer;
+        background-color:var(--blue-dark);
+      }
+      release:hover {
+        cursor:pointer;
+        background-color:var(--gray-dark);
+      }
+      #releaseall {
+        font-size:24px;
+        position:relative;
+      }
+      vhr {
+        width:100%;
+        background-color:var(--gray-med);
+        height:1px;
+        display:block;
+        border-bottom:solid 1px black;
+        border-top:var(--gray-dark);
+        margin:10px 0px;
+      }
+      outputsample {
+        
+        width:100%;
+        display: block;
+        border: solid 1px;
+        border-radius: 3px;
+        margin: 2px 40px;
+        background-color: white;
+        position:relative;
+        margin-left:0px;
+        padding:3px 0px;
+        }
+        outputsample input, outputsample select {
+            margin:0px;
+            padding:1px 2px;
+            width:100%;
+        }
+      samplenumber {
+        width:50px;
+        box-sizing:border-box;
+        display:inline-block;
+      }
+      samplenumber::before {
+        counter-increment: sample; 
+        content: counter(sample) ". "; 
+      }
+      
+
+      sampleheader {
+        border: solid 1px #000000;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: bold;
+        padding: 0px;
+        margin-bottom: 5px;
+        background-color: var(--gray-light);
+        display: block;
+        position: relative;
+        height: 36px;
+      }
+      headercontent {
+        line-height: 13px;
+        display: inline-block;
+        padding: 5px 10px;
+        vertical-align: bottom;
+        text-align: center;
+        box-sizing: border-box;
+      }
+      headerhandle {
+        height:100%;
+        width:1px;
+        background-color:white;
+        border-left:solid 1px var(--gray-med);
+        border-right:solid 1px var(--gray-light);
+        display:inline-block;
+        vertical-align:top;
+        cursor:ew-resize;
+      }
+      tablerow {
+
+      }
+      samplename {
+        display:inline-block;
+        width:203px;
+      }
+      sampletablecolumn.well {
+        text-align:center;
+        width:50px;
+      }
+      #dragsamples {
+         font-size:28px;
+         color:white;
+      }
+
+      #containers {
+        width:100%;
+      }
+      pagelinks {
+        position:relative;
+        display:flex;
+        margin-bottom:15px;
+      }
+      pages {
+        flex-grow:0;
+      }
+      page {
+        display:inline-block;
+        background-color:var(--gray-med);
+        padding:3px 10px;
+        border:solid 1px var(--gray-dark);
+        border-left:none;
+        color:white;
+        cursor:pointer;
+      }
+      page:nth-child(1) {
+        border-left:solid 1px #000000;
+        border-top-left-radius:15px;
+        border-bottom-left-radius:15px;
+      }
+      page:last-of-type {
+        border-top-right-radius: 15px;
+        border-bottom-right-radius: 15px;
+      }
+      page:hover {
+        background-color:var(--gray-dark);
+      }
+      .page-selected {
+        background-color:var(--blue-med);
+      }
+      .page-selected:hover {
+        background-color:var(--blue-dark);
+      }
+      pagebuttons {
+        display:inline-block;
+        text-align:right;
+        flex-grow:1;
+      }
+
+      pagebutton {
+        display:inline-block;
+        background-color:var(--gray-med);
+        padding:3px 10px;
+        border:solid 1px var(--gray-dark);
+        color:white;
+        cursor:pointer;
+        margin-left:20px;
+        border-radius:15px;
+      }
+      #abort-button:hover {
+        background-color:var(--pink-med);
+      }
+      #save-button:hover {
+        background-color:var(--blue-med);
+      }
+      #next-button:hover {
+        background-color:var(--pink-med);
+        cursor:not-allowed;
+      }
+      #next-button.next-button-active {
+        background-color:var(--green-med);
+        
+      }
+      #next-button.next-button-active:hover {
+        background-color:var(--green-dark);
+        cursor:pointer;
+      }
+      containerview {
+        display:flex;
+        gap:20px;
+        position:relative;
+      }
+      inputs, outputs {
+        flex: 1;
+        
+      }
+
+      container {
+        display:inline-block;
+        width:100%;
+        max-height:calc(360px + 80px);
+        position:relative;
+        background-color:white;
+      }
+      containertitlebar {
+        display:block;
+        background-color:var(--accent1);
+        padding:5px;
+        height:30px;
+        box-sizing:border-box;
+        text-align:left;
+      }
+      containername {
+        color:white;
+        font-weight:bold;
+      }
+      .containerborder {
+        padding-left: 50px;
+        padding-top: 50px;
+        padding-right: 5px;
+        padding-bottom: 5px;
+        max-width:440px;
+        margin:auto;
+      }
+
+      .grid-container {
+        display: grid;
+        grid-template-columns: repeat(var(--n-columns), 1fr);
+        grid-template-rows: repeat(var(--n-rows), 1fr);
+        gap: 5px;
+        width:100%;
+        grid-auto-rows: 1fr;
+        grid-auto-columns: 1fr;
+        grid-auto-flow: column;
+        position:relative;
+        box-sizing: border-box;
+        
+      }
+      .grid-item {
+        aspect-ratio: 1 / 1; /* Keeps the items square */
+        background-color: #ccc;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius:100px;
+        min-width:25px;
+        background: radial-gradient(ellipse at 30% 30%, #fcf3ff 12%, #d2c4d8 57%);
+        border: solid 1px #f8f2fa;
+        z-index:1;
+        position:relative;
+      }
+      rmarker {
+        position:absolute;
+        left:-45px;
+        height:25px;
+        width:44px;
+        background-image: url('/static/themes/pylims_velocity_v1.0/rmarker.svg');
+        background-repeat:no-repeat;
+        line-height: 25px;
+        box-sizing: border-box;
+        padding-left: 14px;
+        text-align: left;
+        font-weight: bold;
+      }
+      vmarker {
+        position:absolute;
+        top:-45px;
+        height:44px;
+        width:25px;
+        background-image: url('/static/themes/pylims_velocity_v1.0/vmarker.svg');
+        background-repeat:no-repeat;
+        line-height: 44px;
+        box-sizing: border-box;
+        padding-left: 7px;
+        text-align: left;
+        font-weight: bold;
+      }
+      sectiontitle {
+        font-size:24px;
+        display:block;
+        margin-top:20px;
+        margin-bottom:5px;
+        color:var(--gray-dark);
+      }
+      inputsample.selectedsample {
+        background-color:var(--accent9);
+      }
+      inputsample.selectedsample:hover {
+        background-color:var(--purple-med-hover);
+        cursor:grab;
+      }
+      dragsamplecount {
+        display:none;
+        position:absolute;
+        background-color:var(--accent1);
+        border-radius:4px;
+        border:solid 1px black;
+        padding:5px;
+        color:white;
+        top:0px;
+        left:0px;
+        z-index:20;
+      }
+      .potential-drop-well {
+        box-shadow: inset 0px 0px 8px 4px var(--accent1);
+      }
+      .no-drop-well {
+        box-shadow: inset 0px 0px 8px 4px red;
+      }
+      .filled-well {
+        background: radial-gradient(ellipse at 30% 30%, var(--accent3) 12%, var(--accent1) 57%);
+      }
+      .filled-well:hover {
+        background: radial-gradient(ellipse at 30% 30%, var(--accent8) 12%, var(--accent1) 57%);
+      }
+      selectedsamples, placedsamples {
+         display:block;
+         position:relative;
+         background-color:var(--gray-light);
+         padding:3px 10px;
+         font-size:16px;
+         height:25px;
+         line-height:25px;
+         font-weight:bold;
+         border:solid 1px var(--gray-med);
+         border-radius:3px;
+         margin:5px 0px;
+      }
+      #footerbar {
+        height:35px;
+        text-align:center;
+      }
+      #footerbar > pagebutton {
+            margin:0px 5px;
+      }
+      stepdetails {
+        background-color:white;
+        border:solid 1px var(--gray-dark);
+        display:flex;
+        padding:20px;
+        gap:10px;
+        flex-wrap: wrap;
+      }
+      stepdata {
+        display:flex;
+        align-items: flex-end;
+        flex-wrap:wrap;
+        flex:1;
+        background-color:var(--gray-lightest);
+        border-radius:8px;
+        padding:5px;
+        min-width:200px;
+      }
+      stepdata input, stepdata select, stepdata readonly {
+        width:100%;
+      } 
+      .pagelink-locked:hover {
+         background-color:var(--pink-med);
+         cursor:not-allowed;
+      }
+      scriptdetails {
+        display:block;
+        padding:20px;
+      }
+      scriptoutput {
+        display:block;
+        min-height: 50px;
+        border-radius:8px;
+        padding:8px;
+        transition:background-color .5s;
+      }
+      .scriptoutput-inactive {
+        border:solid 1px var(--accent1);
+        background-color: var(--accent3);
+        color:var(--accent1);
+      }
+      .scriptoutput-active {
+        border:solid 1px black;
+        background-color: var(--accent1);
+        color:white;
+      }
+      .scriptoutput-successful {
+        background-color:var(--green-med);
+        color:white;
+        border:solid 1px var(--green-dark);
+      }
+      .scriptoutput-unsuccessful {
+        background-color:var(--pink-med);
+        color:white;
+        border:solid 1px var(--pink-dark);
+      }
+      readonly {
+            display:block;
+            border: solid 1px #d4d4d4;
+            box-sizing: border-box;
+            font-family: 'Chivo-ExtraLight', sans-serif;
+            padding: 5px;
+            font-size: 16px;
+            border-radius: 3px;
+            margin: 2px;
+            background-color: #e7e7e7;
+            color: #4a4a4a;
+        }
+        .verification-accepted {
+            background-color:var(--green-light);
+        }
+        .verification-accepted:hover {
+            background-color:var(--green-med);
+        }
+        .verification-error {
+            background-color:var(--pink-med);
+        }
+        .verification-error:hover {
+            background-color:var(--pink-light);
+        }
+        sampletablecolumn {
+            display:inline-block;
+            margin-left:3px;
+            padding:0px 5px;
+            box-sizing:border-box;
+            vertical-align: top;
+        }
+        scriptbuttons {
+            display:flex;
+            margin:5px;
+            gap: 20px;
+        }
+        stepscript {
+            background: linear-gradient(to bottom, var(--blue-med) 0%,var(--blue-dark) 100%);
+            border:outset 1px var(--blue-dark);
+            color:white;
+            padding:10px;
+            font-size:20px;
+            border-radius:5px;
+            cursor:pointer;
+            flex-shrink:1;
+            min-width:300px;
+            max-width:33%;
+            text-align:center;
+        }
+        stepscript:hover {
+            background: linear-gradient(to bottom, var(--blue-light) 0%,var(--blue-med) 100%);
+            border:outset 1px var(--blue-med);
+        }
+        stepscript.script-inactive {
+            background: linear-gradient(to bottom, var(--gray-med) 0%,var(--gray-dark) 100%);
+            border:outset 1px var(--gray-dark);
+            cursor:not-allowed;
+        }
+        details {
+            width:100%;
+        }
+        summary {
+            background-color:var(--gray-dark);
+            color:white;
+            font-weight:bold;
+            font-size:18px;
+            padding:5px;
+        }
+        .routing-select {
+            border-radius: 15px;
+            border: solid 1px var(--gray-med);
+            padding: 2px 10px;
+            display:block;
+            position:relative;
+            margin: 2px 0px;
+            line-height: 21px;
+        }
+        .routing-display {
+            border-radius: 15px;
+            border: solid 1px var(--gray-med);
+            padding: 2px 13px;
+            display:block;
+            position:relative;
+            background-color:var(--gray-lightest);
+            margin: 2px 0px;
+            height:21px;
+            line-height: 21px;
+        }
+        routecancel {
+            position:absolute;
+            background-color:var(--gray-light);
+            color: var(--gray-dark);
+            padding:2px;
+            font-size:12px;
+            border-radius:15px;
+            height:15px;
+            width:15px;
+            right:3px;
+            top:3px;
+            text-align:center;
+            line-height:15px;
+            cursor:pointer;
+            font-weight: bold;
+        }
+        routecancel:hover {
+            background-color:var(--pink-med);
+            color:white;
+        }
+        routecancel::after {
+            content:'x';
+        }
+        
+
+</style>
+{% endblock %}
+{% block centercontent %}
+<div style="padding:0px 50px;text-align:left;">
+    <scriptdetails><scriptoutput class="scriptoutput-inactive">No scripts run yet.</scriptoutput></scriptdetails>
+    <details><summary>Step Details</summary><stepdetails></stepdetails></details>
+    <scriptbuttons></scriptbuttons>
+    <sampledetails>
+        <sampleheader><headercontent style="width:50px;">#</headercontent><headerhandle></headerhandle></sampleheader>
+    </sampledetails>
+</div>
+
+{% endblock %}
+{% block javascript %}
+
+<script>
+
+const velocity_step_io = {{ io | safe }};
+const velocity_containers = {{ containers | safe }};
+const inputcontainers = {{ inputcontainers | safe }};
+const outputcontainers = {{ outputcontainers | safe }};
+const step_data = {{ step_data | safe }};
+const step_names = {{ step_names | safe }};
+const assay_names = {{ assay_names | safe }};
+const output_data = {{ output_data | safe }};
+const data_config = {{ data_config | safe }};
+const velocity_scripts = {{ scripts | safe }};
+const velocity_script_runs = {{ script_runs | safe }};
+
+
+{% comment %} const velocity_containers = {{ containers | safe}}; {% endcomment %}
+const main = document.getElementById('queue');
+const stepdetails = document.querySelector('stepdetails');
+const scriptdetails = document.querySelector('scriptdetails');
+const scriptoutput = document.querySelector('scriptoutput');
+const sampledetails = document.querySelector('sampledetails');
+const sampleheader = document.querySelector('sampleheader');
+const scriptbuttons = document.querySelector('scriptbuttons');
+
+
+var invalid_drop = false;
+var placed_samples = [];
+var selected_samples = [];
+
+next_button.classList.add('next-button-active');
+
+function localerror(msg) {
+	error_element = document.getElementById('pylims_request_error');
+	error_element.textContent=msg;
+	error_element.style.display='block';
+}
+const rownames=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P'];
+
+var stepdata={}
+
+class StepData {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+		this.element = document.createElement('stepdata');
+
+        this.displaytext = document.createElement('div');
+        this.displaytext.textContent = this.display_text;
+        this.element.appendChild(this.displaytext);
+
+        if (this.type=='Text' || this.type=='Verification' || this.type=="Select") {
+            this.input=document.createElement('readonly');
+            this.input.textContent = this.value || this.value_default;
+            this.input.value=this.textContent;
+            this.element.appendChild(this.input);
+        } 
+    }
+    verify_input() {
+        if (this.input.value==this.accepted_value) {
+            this.input.className="verification-accepted";
+            next_step_active[`step_${this.sdcid}`]=true;
+        } else {
+            this.input.className="verification-error";
+            next_step_active[`step_${this.sdcid}`]=false;
+        }
+        set_next_step();
+    }
+}
+
+if (step_data.length==0) {
+    stepdetails.textContent='No Step Data';
+}
+for (let data of step_data) {
+    stepdata[data.sdcid]=new StepData(data);
+    stepdetails.appendChild(stepdata[data.sdcid].element);
+}
+
+var table_headers={}
+for (let data of data_config) {
+    table_headers[data.ddcid]=data;
+}
+
+for (let column of step_config.derivative_data) {
+    let header = document.createElement('headercontent');
+    header.textContent=table_headers[column].display_text;
+    header.style.width=table_headers[column].default_width+'px';
+    sampleheader.appendChild(header);
+    let handle = document.createElement('headerhandle');
+    sampleheader.appendChild(handle);
+    //<headercontent style="width:50px;">#</headercontent><headerhandle></headerhandle>
+}
+
+const options=[{id:0, text:'Set Sample Routing'}, {id:1, text:'Next Step:'},{id:2, text:'Remove from Workflow'},{id:3, text:'Repeat this step'},{id:4, text:'Requeue to Previous Step'},{id:5, text:'Complete Protocol'},{id:6, text:'Complete Workflow'}, {id:7, text:'Queue to Workflow'}, {id:8, text:'Queue to Step'}]
+
+class Route {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+        this.element = document.createElement('route');
+        this.element.textContent = `${assay_names[this.assay]} - ${step_names[this.step]}`;
+        this.cancel = document.createElement('routecancel');
+        this.element.appendChild(this.cancel);
+    }
+}
+
+class Sample {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+		this.element = document.createElement('outputsample');
+        this.number = document.createElement('samplenumber');
+        this.element.appendChild(this.number);
+        this.did = this.output_id;
+        this.element.dataset.did=this.output_id;
+        this.routing_table = []
+
+        this.data={}
+        for (let dataid of step_config.derivative_data) {
+            this.data[dataid]={}
+            this.data[dataid].element=document.createElement('sampletablecolumn');
+            this.data[dataid].element.style.width=table_headers[dataid].default_width+'px';
+            this.data[dataid].element.style.textAlign=table_headers[dataid].alignment;
+            const existing_data = output_data[this.did][dataid] || '';
+            this.data[dataid].datatype=table_headers[dataid].value_type;
+            this.data[dataid].readonly=table_headers[dataid].read_only;
+                
+            if (table_headers[dataid].key=='routing') {
+                // get current step index
+                const current_index = this.output_steps.indexOf(step_config.step_type)
+                const next_step = step_names[this.output_steps[current_index+1]]
+                const current_routing_info = JSON.parse(existing_data)
+                console.log('CURRENT',current_routing_info[0].step,existing_data)
+                
+                
+                this.element.appendChild(this.data[dataid].element)
+                if (current_routing_info[0].step > 0) {
+                    this.data[dataid].element.textContent=step_names[current_routing_info[0].step];
+                } else {
+                    for (let option of options) {
+                        if (option.id*-1 == current_routing_info[0].step) {
+                            this.data[dataid].element.textContent=option.text;
+                        }
+                    }
+                }
+                continue
+            }
+            
+            
+            this.data[dataid].element.textContent=existing_data;
+            this.element.appendChild(this.data[dataid].element)
+        }
+
+        this.placed = false;
+        this.placed_index = null;
+        this.selected = false;
+
+        console.log('creating sample',data)
+
+        // figure out placement stuff
+        //if (this.rdid !== null) {
+        //    this.reserve.style.display = 'none';
+        //    this.release.style.display = 'block';
+        //    placed_samples.push(this.did);
+        //}
+
+
+        this.element.addEventListener('mousedown',(event)=> {
+            if (event.shiftKey) {
+                event.preventDefault();
+            }
+            document.body.style.userSelect = 'none';
+        })
+
+        this.element.addEventListener('click',(event)=> {
+            if (event.shiftKey) {
+                event.preventDefault();
+            }
+            clicksample(this,event);
+        })
+	}
+}
+
+var samples = {}
+var io_inputs = {}
+var io_outputs = {}
+
+for (let io of velocity_step_io) {
+    samples[io.output_id]=new Sample(io);
+    sampledetails.appendChild(samples[io.output_id].element)
+}
+
+class Script {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+        this.element = document.createElement('stepscript');
+        this.element.textContent = this.button_display;
+        this.active=true;
+
+        this.element.addEventListener('click',()=>{
+            saveData()
+            this.active=false;
+            this.element.classList.add('script-inactive');
+            scriptoutput.innerHTML=`<b>Running script ${this.title}.</b>`;
+            scriptoutput.classList.add('scriptoutput-active');
+            const data={"step":step_config.stepid,script:this.scid}
+            const pyoptions={data,csrf,urlprefix:'..',url:'script/run',submit_mode:'silent'}
+            pylims_post(pyoptions).then(result => {
+                scriptoutput.className = '';
+                this.element.classList.remove('script-inactive');  
+                if (result.run_status==2) {
+                    scriptoutput.className = '';
+                    scriptoutput.classList.add('scriptoutput-successful');
+                    scriptoutput.innerHTML=`<b>Finished running script ${this.title}:</b><br>${result.script_message}`;
+                } else if (result.run_status==3) {
+                    scriptoutput.className = '';
+                    scriptoutput.classList.add('scriptoutput-unsuccessful');
+                    scriptoutput.innerHTML=`<b>Failed to run script ${this.title}:</b><br>${result.script_message}`;
+                } else {
+                    scriptoutput.classList.add('scriptoutput-inactive');
+                }
+                if (result.script_updates) {
+                    console.log('do updates',result.script_updates);
+                    if (result.script_updates.outputs) {
+                        for (let update of result.script_updates.outputs) {
+                            console.log('update',update)
+                            samples[update[0]].data[update[1]].value=update[2];
+                            if (!table_headers[update[1]].read_only) {
+
+                            } else {
+                                samples[update[0]].data[update[1]].element.textContent=update[2];
+                            }
+                        }
+                    }
+                }
+            }).catch(error => {
+                console.error(error);
+            }); 
+        })
+    }
+}
+
+
+
+
+if (velocity_scripts.length==0) {
+    scriptdetails.style.display='none';
+} else {
+    var scripts = {}
+    for (let script of velocity_scripts) {
+        scripts[script.scid] = new Script(script);
+        scriptbuttons.appendChild(scripts[script.scid].element)
+    }
+    if (velocity_script_runs.length > 0) {
+        if (velocity_script_runs[0].status==2) {
+            scriptoutput.classList.add('scriptoutput-successful');
+            scriptoutput.innerHTML=`<b>Finished running script ${scripts[velocity_script_runs[0].script].title}:</b><br>${velocity_script_runs[0].message}`;
+        } else if (velocity_script_runs[0].status==3) {
+            scriptoutput.classList.add('scriptoutput-unsuccessful');
+            scriptoutput.innerHTML=`<b>Failed to run script ${scripts[velocity_script_runs[0].script].title}:</b><br>${velocity_script_runs[0].message}`;
+        }
+    }
+}
+
+
+async function nextStep() {
+    const data = { step: step_config.stepid, page:'confirmation' };
+    const pyoptions = { data, csrf, urlprefix: '..', url: 'step/nextstep', submit_mode: 'silent' };
+
+    try {
+        const result = await pylims_post(pyoptions);
+        if (result.status === 'success') {
+            window.location.href=`/step/${step_config.stepid}/complete`;
+        }
+    } catch (error) {
+        console.error(error);
+    }
+    return false;
+}
+document.getElementById('save-button').addEventListener('click',()=>{
+    saveData()
+  })
+
+document.getElementById('next-button').addEventListener('click',()=>{
+    
+    nextStep()
+  })
+</script>{% endblock %}

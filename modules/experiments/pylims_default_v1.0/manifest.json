@@ -1,0 +1,21 @@
+{
+	"type": "module",
+	"category": "Experiments",
+	"author": "Brian Griffiths",
+	"author_email": "tech@pylims.com",
+	"authentication": "loggedin",
+	"scripts": [
+		"experiments.py"
+	],
+	"load_script_function": [0,"load_experiments",["user"]],
+	"default_template": "experiments.html",
+	"templates": {
+		"experiments.html": {"name":"Experiments","display_link":true,"authentication":"loggedin"}
+	},
+	"title": "Pylims Default Experiments",
+	"version_major": 1,
+	"version_minor": 0,
+	"setup_options":{
+		
+	}
+}

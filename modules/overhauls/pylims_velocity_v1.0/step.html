@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>{% block title %}Velocity LIMS{% endblock %}</title>
+	<link rel="stylesheet" type="text/css" href="{% static 'themes/pylims_velocity_v1.0/default.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'fontawesome/css/all.min.css' %}">
+	<link rel="icon" href="{% static 'themes/pylims_velocity_v1.0/icon.svg' %}" type="image/svg+xml">
+	{% csrf_token %}
+  <style>
+    #velocity-info-header {
+      margin:10px 50px;
+    }
+  </style>
+	{% block headdata %}{% endblock %}
+</head>
+<body>
+	<div id="login-pylims-logo"><a href="{% url 'home' %}"><img  src="{% static 'themes/pylims_velocity_v1.0/logo.svg' %}" alt="pylims logo"></a></div>
+	<div id="header">{% for link in links %}
+            <span class="header_link"><a href="/modules/{{ link.0 }}/{{ link.2 }}">{{ link.1 }}</a></span>
+        {% endfor %}
+	</div>
+	
+
+<div id="velocity-info-header">
+<breadcrumbs> <span id="config-protocol-name"></span> / Step #<span id="config-order-in-protocol"></span> / <b> <span id="config-step-name"></span></b></breadcrumbs>
+ <pagelinks><pages></pages><pagebuttons></pagebuttons></pagelinks></div>
+<div id="center-content">
+  {% block centercontent %}
+{% endblock %} 
+</div>
+<div id="footer">Velocity LIMS&trade; &copy; 2023 - 2025 pylims, MIT License</div>	
+</body>
+</html>
+<script>
+  const csrf = '{{ csrf_token }}';
+  const step_config = {{ config | safe }};
+  const pages = {{ pages | safe }};
+
+  const pagelinks = document.querySelector('pagelinks');
+  const pagecontainer = document.querySelector('pages');
+  const pagebuttons = document.querySelector('pagebuttons');
+
+  const config_protocol_name = document.getElementById('config-protocol-name')
+  const config_order_in_protocol = document.getElementById('config-order-in-protocol')
+  const config_step_name = document.getElementById('config-step-name')
+
+  config_protocol_name.textContent = step_config.protocol_name;
+  config_order_in_protocol.textContent = step_config.order_in_protocol;
+  config_step_name.textContent = step_config.step_name;
+
+  
+
+var locked=false;
+
+function cap(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+for (let page of step_config.pages) {
+    const index = step_config.pages.indexOf(page)
+    const pagelink = document.createElement('page');
+    pagelink.textContent=cap(pages[page].page);
+    pagelink.id=`page_${page}`;
+    pagecontainer.appendChild(pagelink);
+    if (page==parseInt('{{ loaded_page }}')) {
+        pagelink.classList.add('page-selected');
+    }
+    if (locked) {
+        pagelink.classList.add('pagelink-locked');
+        pagelink.addEventListener('click',()=> {
+            alert(`You cannot navigate directly to ${pages[page].page} until you've finished with ${cap(pages[step_config.pages[index-1]].page)}.`)
+        })
+        continue;
+    }
+    pagelink.addEventListener('click',()=> {
+      window.location.href=`/step/${step_config.stepid}/${pages[page].page}`;
+    })
+    if (page==step_config.on_page) {
+        locked=true;
+    }
+    
+  }
+  
+const abort_button = document.createElement('pagebutton');
+abort_button.textContent = 'Abort Step';
+abort_button.id="abort-button";
+pagebuttons.appendChild(abort_button);
+
+const save_button = document.createElement('pagebutton');
+save_button.textContent = 'Save';
+save_button.id="save-button";
+pagebuttons.appendChild(save_button);
+
+const next_button = document.createElement('pagebutton');
+next_button.textContent = 'Next Step';
+next_button.id="next-button";
+pagebuttons.appendChild(next_button);
+</script>
+
+{% block javascript %}
+{% endblock %}

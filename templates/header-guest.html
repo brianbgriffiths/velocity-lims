@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>{% load static %}
+	<link rel="icon" type="image/x-icon" href="{% static 'images/curio-c-16-pink.png' %}">
+	<link rel="stylesheet" href="{% static 'css/default.css' %}">
+    <title>{% block title %}Ctools - Internal Curio Tools{% endblock %}</title>
+	<script src="https://kit.fontawesome.com/6161580af5.js" crossorigin="anonymous"></script>
+	<script src="{% static 'js/jquery-3.6.0.min.js' %}"></script>
+</head>
+
+<body>
+<div id="header">
+    <img src="{% static 'images/ctools-header-pink.png' %}" style="height:30px;width:120px;vertical-align:middle;margin-right:10px;"><a href = "{% url 'home' %}">Home</a> | Login to access other tools
+</div>
+	<div id="disptitle">
+        {% block disptitle %}{% endblock %}
+    </div>
+	<div id="tests">
+        {% block tests %}{% endblock %}
+    </div>
+    <div id="content">
+        {% block content %}{% endblock %}
+    </div>
+	<div id="footer">
+        {% block footer %}<a href="mailto:bgriffiths@curiobioscience.com">bgriffiths@curiobioscience.com</a><br>©2021-{% now 'Y' %} Curio Bioscience, Inc. | Confidential & Proprietary<br><a href = "{% url 'changelog' %}">change log</a>{% endblock %}
+    </div>
+</body>
+{% block js %}{% endblock %}
+</html>

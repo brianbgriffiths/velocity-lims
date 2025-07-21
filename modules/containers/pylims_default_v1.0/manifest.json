@@ -1,0 +1,21 @@
+{
+	"type": "module",
+	"category": "Containers",
+	"author": "Brian Griffiths",
+	"author_email": "tech@pylims.com",
+	"authentication": "loggedin",
+	"scripts": [
+		"containers.py"
+	],
+	"load_script_function": [0,"load_containers",["user"]],
+	"default_template": "containers.html",
+	"templates": {
+		"goals.html": {"name":"containers","display_link":false,"authentication":"loggedin"}
+	},
+	"title": "Pylims Default Containers",
+	"version_major": 1,
+	"version_minor": 0,
+	"setup_options":{
+		
+	}
+}

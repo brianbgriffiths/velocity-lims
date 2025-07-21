@@ -1,0 +1,339 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}pylims{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<style>
+	.listed_org {
+		height:50px;
+		margin-bottom:10px;
+	}
+	.listed_org img {
+		height:50px;
+		float:left;
+		margin-right: 10px;
+	}
+	.edit_org input, .edit_org textarea {
+		width:100%;
+		margin-bottom:10px;
+		box-sizing:border-box;
+	}
+	
+	#file-input {
+		display: none;
+	}
+	#image_upload {
+		display:flex;
+		margin-bottom:20px;
+	}
+	#image_upload img {
+		max-height:128px;
+		max-width:128px;
+	}
+	#edit_org_image {
+		
+	}
+	#drop-area {
+		border: 2px dashed #ccc;
+		border-radius: 20px;
+		line-height:128px;
+		text-align: center;
+		margin-left: 20px;
+		width: 80%;
+		cursor: pointer;
+		flex-grow:1;
+		box-sizing:border-box;
+		background-color: var(--inputbg);
+	}
+	.edit_org textarea {
+	min-height:128px;
+		box-sizing:border-box;
+	}
+	table {
+		border-collapse: collapse;
+		margin-top:20px;
+	}
+	td {
+		border-top:solid 1px #cccccc;
+	}
+	tr:hover {
+		background-color:#f7f6f6;
+	}
+	td:not(:first-child) {
+		text-align:center;
+	}
+	th:not(:first-child) {
+		padding: 2px 10px;
+	}
+</style>
+{% endblock %}
+{% block centercontent %}
+
+<div id="organizations" class="center-border">
+{{ adminlinks|safe }}
+<div class="h1" id="page_title">Admin: Edit Department</div>
+<div id="organizations_display"></div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+<script>
+const mod={{ mod|safe }};
+const urlprefix='{{url}}';
+const options={{ mod_options|safe }};
+const csrf = '{{ csrf_token }}';
+const mod_data = {{ mod_data.data|safe }};
+var org_data=null;
+var dept_data=null;
+
+console.log('mod',mod,'options',options)
+const main = document.getElementById('organizations_display');
+const page_title = document.getElementById('page_title');
+
+function admin_list_orgs() {
+	let data={}
+	const pyoptions={data,csrf,urlprefix,url:'admin_list_orgs',submit_mode:'auto'}
+	pylims_post(pyoptions).then(result => {
+		console.log('pylims.post result x',result.data);
+		org_data={};
+		main.innerHTML=null;
+		for (let org of result.data) {
+			org_data[org.oid]=org;
+			console.log('processing',org)
+			const listedOrgDiv = document.createElement('div');
+			listedOrgDiv.classList.add('listed_org');
+
+			// Create the text node for org oid
+			const orgIdTextNode = document.createTextNode(`${org.oid}. `);
+
+			// Create the img element for displaying the organization image
+			const orgImage = document.createElement('img');
+			orgImage.setAttribute('src', org.image);
+			orgImage.setAttribute('style', 'height:50px;');
+
+			// Create the anchor element for organization name
+			const orgNameAnchor = document.createElement('a');
+			orgNameAnchor.setAttribute('href', '#');
+			orgNameAnchor.setAttribute('onClick', `admin_list_depts(${org.oid});`);
+			orgNameAnchor.textContent = org.organization_name;
+
+			// Create the br element
+			const lineBreak = document.createElement('br');
+
+			// Create the text node for organization description
+			const orgDescriptionTextNode = document.createTextNode(org.description);
+
+			// Append all created elements to the listedOrgDiv
+			listedOrgDiv.appendChild(orgIdTextNode);
+			listedOrgDiv.appendChild(orgImage);
+			listedOrgDiv.appendChild(orgNameAnchor);
+			listedOrgDiv.appendChild(lineBreak);
+			listedOrgDiv.appendChild(orgDescriptionTextNode);
+			
+			main.appendChild(listedOrgDiv);
+		}
+	}).catch(error => {
+        console.error(error);
+    });
+}
+
+function admin_list_depts(id) {
+	var data={}
+	data['id']=id;
+	data['id']=id;
+	const pyoptions={data,csrf,urlprefix,url:'admin_list_depts',submit_mode:'load'}
+	pylims_post(pyoptions).then(result => {
+		console.log('pylims.post result',result);
+	    page_title.innerHTML=`Admin: Edit Department in ${org_data[id].organization_name}`;
+		dept_data={};
+		main.innerHTML=null;
+		for (let dept of result.data) {
+			dept_data[dept.deptid]=dept;
+			console.log('processing',dept)
+			const listedDeptDiv = document.createElement('div');
+			listedDeptDiv.classList.add('listed_org');
+
+			// Create the img element for displaying the department image
+			const deptImage = document.createElement('img');
+			deptImage.setAttribute('src', dept.dept_image);
+			deptImage.setAttribute('style', 'height:50px;');
+
+			// Create the anchor element for department name
+			const deptNameAnchor = document.createElement('a');
+			deptNameAnchor.setAttribute('href', '#');
+			deptNameAnchor.setAttribute('onClick', `admin_edit_dept(${dept.deptid});`);
+			deptNameAnchor.textContent = dept.dept_name;
+
+			// Create the br element
+			const lineBreak = document.createElement('br');
+
+			// Create the text node for department description
+			const deptDescriptionTextNode = document.createTextNode(dept.dept_description);
+
+			// Append all created elements to the listedDeptDiv
+			listedDeptDiv.appendChild(deptImage);
+			listedDeptDiv.appendChild(deptNameAnchor);
+			listedDeptDiv.appendChild(lineBreak);
+			listedDeptDiv.appendChild(deptDescriptionTextNode);
+			main.appendChild(listedDeptDiv);
+		}
+	}).catch(error => {
+        console.error(error);
+      });
+}
+
+function admin_edit_dept(id) {
+	console.log('load',id);
+	let data={id}
+	const pyoptions={data,csrf,urlprefix,url:'admin_edit_dept',submit_mode:'load'}
+	pylims_post(pyoptions).then(result => {
+		console.log('pylims.post result x',result.data);
+		const dept=result.data;
+		
+		// Create the main div element with class 'edit_org'
+		const editDeptDiv = document.createElement('div');
+		editDeptDiv.classList.add('edit_org');
+
+		// Create the hidden input element for dept id
+		const deptIdInput = document.createElement('input');
+		deptIdInput.setAttribute('type', 'hidden');
+		deptIdInput.setAttribute('id', 'edit_dept_id');
+		deptIdInput.setAttribute('value', dept.deptid);
+
+		// Create the div element for image upload
+		const imageUploadDiv = document.createElement('div');
+		imageUploadDiv.setAttribute('id', 'image_upload');
+
+		// Create the img element for displaying the department image
+		const deptImage = document.createElement('img');
+		deptImage.setAttribute('id', 'edit_dept_image');
+		deptImage.setAttribute('src', dept.dept_image);
+
+		// Create the div element for drop area
+		const dropAreaDiv = document.createElement('div');
+		dropAreaDiv.setAttribute('id', 'drop-area');
+		dropAreaDiv.setAttribute('ondrop', 'dropHandler(event);');
+		dropAreaDiv.setAttribute('ondragover', 'dragOverHandler(event);');
+		dropAreaDiv.textContent = 'Drag and drop files here or click to select files';
+
+		// Create the input element for file selection
+		const fileInput = document.createElement('input');
+		fileInput.setAttribute('type', 'file');
+		fileInput.setAttribute('id', 'file-input');
+		fileInput.setAttribute('multiple', false);
+		fileInput.setAttribute('onchange', 'handleFiles(this.files)');
+
+		// Append file input to drop area
+		dropAreaDiv.appendChild(fileInput);
+
+		// Append org image and drop area to image upload div
+		imageUploadDiv.appendChild(deptImage);
+		imageUploadDiv.appendChild(dropAreaDiv);
+
+		// Create the input element for organization name
+		const deptNameInput = document.createElement('input');
+		deptNameInput.id='dept_name_input'
+		deptNameInput.setAttribute('type', 'text');
+		deptNameInput.setAttribute('value', dept.dept_name);
+
+		// Create the textarea element for description
+		const descriptionTextarea = document.createElement('textarea');
+		descriptionTextarea.textContent = dept.dept_description;
+		descriptionTextarea.id='description_textarea';	
+		
+		
+		
+		// Create the div element for button container
+		const buttonContainerDiv = document.createElement('div');
+		buttonContainerDiv.classList.add('button_container');
+		
+		// Create the button element for Save
+		const saveButton = document.createElement('button');
+		saveButton.id="edit_save_button";
+		saveButton.classList.add('button_save');
+		saveButton.textContent = 'Save';
+
+		// Append save button to button container div
+		buttonContainerDiv.appendChild(saveButton);
+
+		// Append all elements to the main div
+		editDeptDiv.appendChild(deptIdInput);
+		editDeptDiv.appendChild(imageUploadDiv);
+		editDeptDiv.appendChild(deptNameInput);
+		editDeptDiv.appendChild(document.createElement('br'));
+		editDeptDiv.appendChild(descriptionTextarea);
+		gen_msg_elements(editDeptDiv)
+		editDeptDiv.appendChild(buttonContainerDiv);
+		main.innerHTML=null;
+		main.append(editDeptDiv);
+		
+		saveButton.addEventListener('click',edit_dept_save)
+		
+		document.getElementById('drop-area').addEventListener('click', function() {
+			document.getElementById('file-input').click();
+		  });
+		descriptionTextarea.addEventListener('input',clear_msg_elements);
+		deptNameInput.addEventListener('input',clear_msg_elements);
+	}).catch(error => {
+        console.error(error);
+    });  
+}
+function dragOverHandler(event) {
+	event.preventDefault();
+	event.dataTransfer.dropEffect = 'copy';
+}
+function clear_msg_elements() {
+	let success_element = document.getElementById('pylims_request_success');
+	let error_element = document.getElementById('pylims_request_error');
+	if (success_element) {
+		success_element.style.display='none';
+	}
+	if (error_element) {
+		error_element.style.display='none';
+	}
+}
+function dropHandler(event) {
+	event.preventDefault();
+	const files = event.dataTransfer.files;
+	handleFiles(files);
+}
+function handleFiles(files) {
+	var file = files[0];
+	console.log(file)
+	var reader = new FileReader();
+	var data={}
+	reader.onload = function() {
+		var base64String = reader.result;
+		console.log('Base64:', base64String);
+		data.image=base64String;
+		data.id=document.getElementById('edit_dept_id').value;
+		const pyoptions={data,csrf,urlprefix,url:'admin_upload_image',submit_mode:'upload'}
+		pylims_post(pyoptions).then(result => {
+			console.log(result)
+			const edit_dept_image=document.getElementById('edit_dept_image');
+			edit_dept_image.src=result['image'];
+		}).catch(error => {
+			console.error(error);
+		});
+	}
+	
+	reader.readAsDataURL(file);
+}
+
+function edit_dept_save() {
+	data={}
+	data['description']=document.getElementById('description_textarea').value;
+	data['name']=document.getElementById('dept_name_input').value;
+	data['id']=document.getElementById('edit_dept_id').value;
+	const pyoptions={data,csrf,urlprefix,url:'admin_edit_save',submit_mode:'save',submit_id:'edit_save_button'}
+	pylims_post(pyoptions).then(result => {
+		console.log(result)
+		
+	}).catch(error => {
+		console.error(error);
+	});
+}
+
+admin_list_orgs();
+</script>{% endblock %}

@@ -1,0 +1,66 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}pylims{% endblock %}
+{% block headdata %}
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<link rel="stylesheet" href="{% static 'css/automations_configure.css' %}">
+<script src="{% static 'js/pylims_popup.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+
+<style>
+	
+	.edit_window_maximized {
+		position: absolute;
+		height: 100%;
+		width: 100%;
+		top: 0px;
+		left: 0px;
+		box-sizing: border-box;
+		margin: 0px;
+	}
+
+	
+	
+
+</style>
+{% endblock %}
+{% block centercontent %}
+<div id="pylims_request_error"></div><div id="pylims_request_success"></div>
+<div id="edit_window" class="center-border edit_window_maximized">
+	<div id="edit_header">
+		<div id="edit_header_title">Select Step to Edit</div>
+		<div id="edit_windowed" class="fa_button" onClick="undock();"><i class="fa-light fa-rectangle-xmark"></i></div>
+	</div>
+	<div id="edit_content">
+		Select Step to Edit
+
+	</div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+const mod={{ mod|safe }};
+const user={{ user|safe }};
+const urlprefix='{{url}}';
+const options={{ mod_options | safe }};
+const csrf = '{{ csrf_token }}';
+const mod_data = {{ mod_data | safe }};
+var is_fullscreen_editor = true;
+var editing_step = null;
+var is_edit_window_minimized=false;
+
+window.onload = function() {
+    const pyoptions={data:{},csrf,urlprefix,url:'admin_list_automations',silent:true}
+	pylims_post(pyoptions).then(result => {
+		console.log('pylims post result:',result);
+		populate_step_list(result.steps);
+		populate_workflow_list(result.workflows);
+	}).catch(error => {
+		console.error(error);
+	});
+};
+</script>
+<script src="{% static 'js/automations_configure.js' %}"></script>
+{% endblock %}

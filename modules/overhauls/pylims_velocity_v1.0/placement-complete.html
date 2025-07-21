@@ -1,0 +1,990 @@
+{% extends 'overhauls/step_complete.html' %}
+{% load static %}
+{% block title %}Velocity LIMS - Queue{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_common.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<style>
+  body {
+    counter-reset: sample;
+}
+breadcrumbs {
+    border:solid 1px #000000;
+    padding:3px;
+    display:block;
+    margin-bottom:15px;
+}
+protocol {
+background-color:var(--accent1);
+color:white;
+display:block;
+position:relative;
+border-radius:3px;
+padding:3px 10px;
+}
+queue {
+background-color:var(--gray-lightest);
+color:black;
+display:block;
+position:relative;
+border-radius:3px;
+padding:3px 10px;
+margin-left:30px;
+margin-bottom:2px;
+margin-top:2px;
+border:solid 1px var(--gray-med);
+clear:both;
+}
+queue:hover {
+background-color:var(--accent9);
+cursor:pointer;
+}
+steporder {
+display:inline-block;
+width:60px;
+font-size:12px;
+font-weight:bold;
+}
+steporder::before {
+content:'Step ';
+}
+steporder::after {
+content:' »';
+}
+stepname {
+display:inline-block;
+}
+samplecount, validationcount {
+float:right;
+position:relative;
+box-sizing:border-box;
+padding:1px;
+top:-2px;
+height:100%;
+margin-left:10px;
+font-size:16px;
+font-weight:bold;
+width:50px;
+text-align:right;
+}
+samplecount {
+color:var(--blue-dark);
+}
+
+protocolsamples {
+float:right;
+
+}
+.button-hover-right {
+position:relative;
+width:fit-content;
+border:solid 1px var(--accent5);
+padding:10px;
+padding-right:30px;
+}
+#arrowBox {
+  position: absolute;
+top: 0px;
+right: 0px;
+padding: 0px;
+margin: 0px;
+font-size: 20px;
+background-color: var(--accent3);
+height: 100%;
+width: 20px;
+line-height: 20px;
+}
+
+#arrowBox::after {
+content: '';
+position:absolute;
+text-rendering: auto;
+-webkit-font-smoothing: antialiased;
+font: var(--fa-font-solid);
+content: "\f0da";
+top: calc(50% - 10px);
+height: 20px;
+width: 12px;
+left: calc(50% - 6px);
+
+}
+
+
+
+#hoverBox {
+display: none;
+position: absolute;
+top: 10px;
+right: -183px; 
+background-color:var(--inputhover);
+padding: 10px 0px;
+width:180px;
+font-size:16px;
+border: solid 1px var(--accent7);
+}
+
+#hoverBox a {
+display: block;
+margin: 5px 0;
+padding:0px 10px;
+}
+
+#hoverBox a:hover {
+background-color:var(--accent3);
+color:#ffffff;
+}
+#arrowBox:hover #hoverBox {
+display:block;
+}
+.project {
+height: 40px;
+border-bottom: solid 1px #cccccc;
+line-height: 40px;
+}
+#new_project_button {
+margin:20px 0px;
+}
+.columns {
+    display: flex;
+    gap: 20px;
+    box-sizing:border-box;
+    width:100%;
+  }
+  
+  .column-75 {
+    flex: 0 0 calc(75% - 10px);
+    
+  }
+  
+  .column-25 {
+    flex: 0 0 calc(25% - 10px);
+  }
+  #queue-info {
+    border:solid 1px #000000;
+    border-radius:3px;
+    font-size:12px;
+    font-weight:bold;
+    padding:3px;
+    margin-bottom:5px;
+  }
+  #begin-step {
+    background-color:var(--green-med);
+    border:solid 1px var(--gray-med);
+    color:white;
+    font-size:16px;
+    border-radius:3px;
+    width:100%;
+    display:block;
+    cursor:pointer;
+    box-shadow: 1px 1px 4px 0px #0000006b;
+    margin-bottom:15px;
+  }
+  #begin-step:hover {
+    background-color:var(--highlight-green-med);
+  }
+
+  reserve, release {
+    background-color:var(--blue-med);
+    border-radius:2px;
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    padding:2px 5px;
+    width:70px;
+    font-size:14px;
+    text-align:center;
+    color:white;
+    cursor:pointer;
+  }
+  release {
+    background-color:var(--gray-med);
+
+  }
+  reserve:hover {
+    cursor:pointer;
+    background-color:var(--blue-dark);
+  }
+  release:hover {
+    cursor:pointer;
+    background-color:var(--gray-dark);
+  }
+  #releaseall {
+    font-size:24px;
+    position:relative;
+  }
+  vhr {
+    width:100%;
+    background-color:var(--gray-med);
+    height:1px;
+    display:block;
+    border-bottom:solid 1px black;
+    border-top:var(--gray-dark);
+    margin:10px 0px;
+  }
+  inputsample {
+    
+    width:100%;
+    display: block;
+    border: solid 1px;
+    border-radius: 3px;
+    margin: 2px 40px;
+    background-color: var(--inputbg);
+    position:relative;
+    margin-left:0px;
+    padding:3px 0px;
+    }
+  samplenumber {
+    width:50px;
+    box-sizing:border-box;
+    display:inline-block;
+  }
+  samplenumber::before {
+    counter-increment: sample; 
+    content: counter(sample) ". "; 
+  }
+  
+
+  #tableheader {
+    border:solid 1px #000000;
+    border-radius:3px;
+    font-size:12px;
+    font-weight:bold;
+    padding:0px;
+    margin-bottom:5px;
+    background-color:var(--gray-light);
+    display:block;
+    position:relative;
+  }
+  headercontent {
+    line-height:20px;
+    display:inline-block;
+    height:20px;
+    padding:0px 10px;
+    vertical-align:top;
+    text-align:center;
+    box-sizing:border-box;
+  }
+  headerhandle {
+    height:20px;
+    width:1px;
+    background-color:white;
+    border-left:solid 1px var(--gray-med);
+    border-right:solid 1px var(--gray-light);
+    display:inline-block;
+    vertical-align:top;
+    cursor:ew-resize;
+  }
+  tablerow {
+
+  }
+  samplename {
+    display:inline-block;
+    width:203px;
+  }
+  sampletablecolumn.well {
+    text-align:center;
+    width:50px;
+  }
+  #dragsamples {
+     font-size:28px;
+     color:white;
+  }
+
+  #containers {
+    width:100%;
+  }
+  pagelinks {
+    position:relative;
+    display:flex;
+  }
+  pages {
+    flex-grow:0;
+  }
+  page {
+    display:inline-block;
+    background-color:var(--gray-med);
+    padding:3px 10px;
+    border:solid 1px var(--gray-dark);
+    border-left:none;
+    color:white;
+    cursor:pointer;
+  }
+  page:nth-child(1) {
+    border-left:solid 1px #000000;
+    border-top-left-radius:15px;
+    border-bottom-left-radius:15px;
+  }
+  page:last-of-type {
+    border-top-right-radius: 15px;
+    border-bottom-right-radius: 15px;
+  }
+  page:hover {
+    background-color:var(--gray-dark);
+  }
+  .page-selected {
+    background-color:var(--blue-med);
+  }
+  .page-selected:hover {
+    background-color:var(--blue-dark);
+  }
+  pagebuttons {
+    display:inline-block;
+    text-align:right;
+    flex-grow:1;
+  }
+
+  pagebutton {
+    display:inline-block;
+    background-color:var(--gray-med);
+    padding:3px 10px;
+    border:solid 1px var(--gray-dark);
+    color:white;
+    cursor:pointer;
+    margin-left:20px;
+    border-radius:15px;
+  }
+  #abort-button:hover {
+    background-color:var(--pink-med);
+  }
+  #save-button:hover {
+    background-color:var(--blue-med);
+  }
+  #next-button:hover {
+    background-color:var(--pink-med);
+    cursor:not-allowed;
+  }
+  #next-button.next-button-active {
+    background-color:var(--green-med);
+    
+  }
+  #next-button.next-button-active:hover {
+    background-color:var(--green-dark);
+    cursor:pointer;
+  }
+  containerview {
+    display:flex;
+    gap:20px;
+    position:relative;
+  }
+  inputs, outputs {
+    flex: 1;
+    
+  }
+
+  container {
+    display:inline-block;
+    width:100%;
+    max-height:calc(360px + 80px);
+    position:relative;
+    background-color:white;
+  }
+  containertitlebar {
+    display:block;
+    background-color:var(--accent1);
+    padding:5px;
+    height:30px;
+    box-sizing:border-box;
+    text-align:left;
+  }
+  containername {
+    color:white;
+    font-weight:bold;
+  }
+  .containerborder {
+    padding-left: 50px;
+    padding-top: 50px;
+    padding-right: 5px;
+    padding-bottom: 5px;
+    max-width:440px;
+    margin:auto;
+  }
+
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(var(--n-columns), 1fr);
+    grid-template-rows: repeat(var(--n-rows), 1fr);
+    /* gap: 5px; */
+    width:100%;
+    grid-auto-rows: 1fr;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    position:relative;
+    box-sizing: border-box;
+    
+  }
+  .grid-item {
+    aspect-ratio: 1 / 1; /* Keeps the items square */
+    background-color: #ccc;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius:100px;
+    min-width:15px;
+    background: radial-gradient(ellipse at 30% 30%, #fcf3ff 12%, #d2c4d8 57%);
+    border: solid 1px #f8f2fa;
+    z-index:1;
+    position:relative;
+    container-type: size;
+  }
+  rmarker {
+    position:absolute;
+    left:-33px;
+    height:100%;
+    max-height: 25px;
+    width:27px;
+    background-image: url('/static/themes/pylims_velocity_v1.0/rmarker-small.svg');
+    background-repeat:no-repeat;
+    line-height: 25px;
+    box-sizing: border-box;
+    padding-right: 5px;
+    text-align: center;
+    font-weight: bold;
+    color:var(--gray-dark);
+    text-shadow: 1px 1px 4px white;
+    font-size:100%;
+  }
+  vmarker {
+    position:absolute;
+    top:-33px;
+    height:27px;
+    width:100%;
+    max-width: 25px;
+    background-image: url('/static/themes/pylims_velocity_v1.0/vmarker-small.svg');
+    background-repeat:no-repeat;
+    line-height: 22px;
+    box-sizing: border-box;
+    text-align: center;
+    font-weight: bold;
+    color: var(--gray-dark);
+    text-shadow: 1px 1px 4px white;
+    container-type: inline-size;
+  }
+  
+  @container (max-width: 20px) {
+    vmarker {
+          font-size: 10px;
+          line-height: 16px;
+      }
+      rmarker {
+        height:100%;
+        font-size:10px;
+        line-height: 19px;
+        padding-right: 13px;
+      }
+  }
+  
+  @container (min-width: 20px) and (max-width: 25px) {
+    vmarker {
+          font-size: 14px;
+      }
+  }
+  
+  @container (min-width: 25px) {
+    vmarker {
+          font-size: 16px;
+      }
+  }
+  sectiontitle {
+    font-size:24px;
+    display:block;
+    margin-top:20px;
+    margin-bottom:5px;
+    color:var(--gray-dark);
+  }
+  inputsample.selectedsample {
+    background-color:var(--accent9);
+  }
+  inputsample.selectedsample:hover {
+    background-color:var(--purple-med-hover);
+    cursor:grab;
+  }
+  dragsamplecount {
+    display:none;
+    position:absolute;
+    background-color:var(--accent1);
+    border-radius:4px;
+    border:solid 1px black;
+    padding:5px;
+    color:white;
+    top:0px;
+    left:0px;
+    z-index:20;
+  }
+  .potential-drop-well {
+    box-shadow: inset 0px 0px 8px 4px var(--accent1);
+  }
+  .no-drop-well {
+    box-shadow: inset 0px 0px 8px 4px red;
+  }
+  .filled-well {
+    background: radial-gradient(ellipse at 30% 30%, var(--accent3) 12%, var(--accent1) 57%);
+  }
+  .filled-well:hover {
+    background: radial-gradient(ellipse at 30% 30%, var(--accent8) 12%, var(--accent1) 57%);
+  }
+  selectedsamples, placedsamples {
+     display:block;
+     position:relative;
+     background-color:var(--gray-light);
+     padding:3px 10px;
+     font-size:16px;
+     height:25px;
+     line-height:25px;
+     font-weight:bold;
+     border:solid 1px var(--gray-med);
+     border-radius:3px;
+     margin:5px 0px;
+  }
+      #footerbar {
+        height:35px;
+        text-align:center;
+      }
+      #footerbar > pagebutton {
+            margin:0px 5px;
+      }
+      .pagelink-locked:hover {
+        background-color:var(--pink-med);
+        cursor:not-allowed;
+     }
+
+
+
+
+</style>
+{% endblock %}
+{% block centercontent %}
+<div style="padding:0px 50px;text-align:left;">
+    <breadcrumbs> {{ config.protocol_name }} / Step # {{config.order_in_protocol}} / <b>{{ config.step_name }}</b></breadcrumbs>
+    <pagelinks><pages></pages><pagebuttons></pagebuttons></pagelinks>
+    <containerview>
+        <inputs>
+            <sectiontitle>Input Samples</sectiontitle>
+            <inputcontainer></inputcontainer>
+            <inputsampleinfo><selectedsamples>0 Selected</selectedsamples></inputsampleinfo>
+            <inputsamples></inputsamples>
+        </inputs>
+        <outputs>
+            <sectiontitle>Output Samples</sectiontitle>
+            <outputcontainer></outputcontainer>
+            <outputsampleinfo><placedsamples>0 Placed</placedsamples></outputsampleinfo>
+            <div id="tableheader" style="">
+                <headercontent style="width:50px;">#</headercontent><headerhandle></headerhandle>
+                <headercontent style="width:200px;">Sample</headercontent><headerhandle></headerhandle>
+                <headercontent>Well</headercontent><headerhandle></headerhandle>
+            </div>
+            <outputsamples></outputsamples>
+        </outputs>
+    </containerview>
+    <sampleview></sampleview>
+    <dragsamplecount><dragsamplecount>
+</div>
+
+{% endblock %}
+{% block javascript %}
+
+<script>
+const velocity_step_io = {{ io | safe }};
+const velocity_containers = {{ containers | safe }};
+const inputcontainers = {{ inputcontainers | safe }};
+const outputcontainers = {{ outputcontainers | safe }};
+
+{% comment %} const velocity_containers = {{ containers | safe}}; {% endcomment %}
+const main = document.getElementById('queue');
+const outputcontainer = document.querySelector('outputcontainer');
+const inputcontainer = document.querySelector('inputcontainer');
+const inputsamples = document.querySelector('inputsamples');
+const outputsamples = document.querySelector('outputsamples');
+const selectedsamples = document.querySelector('selectedsamples');
+const placedsamples = document.querySelector('placedsamples');
+const dragsamplecount = document.querySelector('dragsamplecount');
+
+var invalid_drop = false;
+var placed_samples = [];
+var selected_samples = [];
+
+function localerror(msg) {
+	error_element = document.getElementById('pylims_request_error');
+	error_element.textContent=msg;
+	error_element.style.display='block';
+}
+const rownames=['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P'];
+
+
+
+class Container {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+		this.element = document.createElement('container');
+
+        this.titlebar = document.createElement('containertitlebar');
+        this.element.appendChild(this.titlebar);
+
+        this.containername = document.createElement('containername');
+        this.containername.textContent=this.type_name;
+        this.titlebar.appendChild(this.containername);
+
+        this.columnlabels = document.createElement('columnlabels');
+        this.rowlabels = document.createElement('rowlabels');
+        
+        this.containerborder = document.createElement('div');
+        this.containerborder.className='containerborder';
+        this.element.appendChild(this.containerborder);    
+
+        this.gridcontainer = document.createElement('div');
+        this.gridcontainer.className = 'grid-container';
+        this.gridcontainer.style.setProperty('--n-rows', this.rows);
+        this.gridcontainer.style.setProperty('--n-columns', this.columns);
+        this.containerborder.appendChild(this.gridcontainer);
+
+        this.wells = []
+        placedsamples.innerHTML = `${this.placements.length} Placed`;
+
+        for (let i = 0; i < this.rows; i++) {
+            const rmarker = document.createElement('rmarker');
+            rmarker.textContent=i;
+            rmarker.style.top=`${(i/this.rows)*100}%`;
+            //this.gridcontainer.appendChild(rmarker);
+        }
+        for (let i = 0; i < this.rows * this.columns; i++) {
+            this.wells.push(document.createElement('div'));
+            this.wells[i].className = 'grid-item';
+            this.wells[i].container=this;
+            //item.textContent = `${i + 1}`;
+            this.gridcontainer.appendChild(this.wells[i]);
+            if (i<this.rows) {
+                const rmarker = document.createElement('rmarker');
+                rmarker.textContent=rownames[i];
+                this.wells[i].appendChild(rmarker);
+            }
+            if (i%this.rows==0) {
+                const vmarker = document.createElement('vmarker');
+                vmarker.textContent=i/this.rows+1;
+                this.wells[i].appendChild(vmarker);
+            }
+
+            if (this.placements[i]) {
+              this.wells[i].classList.add('filled-well');
+              this.wells[i].dataset.sample=this.placements[i];
+            }
+            this.wells[i].addEventListener('mouseenter', function() {
+                if (dragging===2) {
+                    reset_potential_drops();
+                    console.log('mouseover')
+                    const siblings = Array.from(this.parentNode.children).filter(sibling =>
+                        sibling.classList.contains('grid-item')
+                    );
+                    const index = siblings.indexOf(this);
+                    invalid_drop=false;
+                    if (index + selected_samples.length > this.container.rows*this.container.columns) {
+                        invalid_drop=true;
+                    }
+                    if (index !== -1) {
+                        for (let i = index; i < index + selected_samples.length && i < siblings.length; i++) {
+                            if (siblings[i].classList.contains('filled-well') || invalid_drop===true) {
+                                siblings[i].classList.add('no-drop-well');
+                                dragsamplecount.style.backgroundColor='red';
+                                invalid_drop=true;
+                                continue;
+                            }
+                            
+                            siblings[i].classList.add('potential-drop-well');
+                        }
+                    }
+                    
+                }
+            })
+            this.wells[i].addEventListener('mouseup',function() {
+                if (dragging===2) {
+                    if (invalid_drop) {
+                        reset_potential_drops();
+                        return false;
+                    }
+                    console.log('drop samples here');
+                    const siblings = Array.from(this.parentNode.children).filter(sibling =>
+                        sibling.classList.contains('grid-item')
+                    );
+                    const index = siblings.indexOf(this);
+
+                    var drop_index = []
+                    if (index !== -1) {
+                        for (let i = index; i < index + selected_samples.length && i < siblings.length; i++) {
+                            siblings[i].classList.add('filled-well');
+                            drop_index.push(i);
+                        }
+                    }
+                    for (let i=0; i<selected_samples.length;i++) {
+                        let sample = selected_samples[i]
+                        outputsamples.appendChild(samples[sample].element);
+                        samples[sample].element.classList.remove('selectedsample')
+                        samples[sample].selected=false;
+                        samples[sample].placed=true;
+                        samples[sample].placed_index = drop_index[i];
+                        samples[sample].well.textContent = this.container.index_to_grid(drop_index[i]);
+                        siblings[drop_index[i]].dataset.sample=selected_samples[i];
+                        samples[sample].well.style.display='inline-block';
+                        update_placed_sample('add',sample);
+                    }
+                    selected_samples=[];
+                    selectedsamples.textContent = `${selected_samples.length} Selected`;
+                    placedsamples.textContent = `${placed_samples.length} Placed`;
+                    if (placed_samples.length==velocity_step_io.length) {
+                        console.log('all placed');
+                        next_button.classList.add('next-button-active');
+                    }
+                }
+            })
+        }
+        this.footerbar = document.createElement('containertitlebar');
+        this.footerbar.id="footerbar";
+
+        
+        
+        this.element.appendChild(this.footerbar);
+        
+        
+
+    }
+    index_to_grid(index) {
+        const row_index = index % this.rows;
+        const col_index = Math.floor(index / this.rows);
+        return `${rownames[row_index]}:${col_index+1}`;
+    }
+
+}
+
+function empty_placed_samples() {
+
+}
+
+document.addEventListener('mouseup', (event) => {
+    console.log('stop drag');
+    dragging = null;
+    document.body.style.userSelect = '';
+    dragsamplecount.style.display='none';
+    reset_potential_drops();
+});
+
+function reset_potential_drops() {
+    const wells = document.querySelectorAll('.grid-item');
+    for (let well of wells) {
+        well.classList.remove('potential-drop-well','no-drop-well');
+    }
+    dragsamplecount.style.backgroundColor='var(--accent1)';
+}
+
+var containers = {}
+for (let container of velocity_containers) {
+    containers[container.conid]=new Container(container);
+}
+
+for (let container of outputcontainers) {
+    outputcontainer.appendChild(containers[container].element);
+}
+
+
+
+function clicksample(sample,event) {
+    const siblings = document.querySelectorAll('inputsample');
+    const index = Array.from(siblings).indexOf(sample.element);
+    console.log(index,'was clicked, with',event.shiftKey,event.ctrlKey)
+    if (event.shiftKey) {
+        event.preventDefault();
+        console.log('Shift key was held down!');
+        if (last_selected < index) {
+            for (let i=last_selected; i<=index; i++) {
+                samples[siblings[i].dataset.did].selected=true;
+                samples[siblings[i].dataset.did].element.classList.add('selectedsample');
+                update_selected_samples('add',siblings[i].dataset.did);
+            }
+        } else {
+            for (let i=last_selected; i>=index; i--) {
+                samples[siblings[i].dataset.did].selected=true;
+                samples[siblings[i].dataset.did].element.classList.add('selectedsample');
+                update_selected_samples('add',siblings[i].dataset.did);
+            }
+        }
+    } else if (event.ctrlKey) {
+        if (sample.selected) {
+            sample.selected=false;
+            sample.element.classList.remove('selectedsample');
+            update_selected_samples('remove',sample.did);
+        } else {
+            sample.selected=true;
+            sample.element.classList.add('selectedsample');
+            last_selected = index;
+            update_selected_samples('add',sample.did);
+        }
+    } else {
+        console.log('single click',sample);
+        const clicked_sample_state = sample.selected;
+        for (let sample in samples) {
+            if (samples[sample].selected) {
+                console.log('clear selection',samples[sample].sample_name);
+                samples[sample].selected=false;
+                samples[sample].element.classList.remove('selectedsample');  
+                update_selected_samples('remove',sample);
+            }
+        }
+        if (clicked_sample_state) {
+            sample.selected=false;
+            sample.element.classList.remove('selectedsample');
+            update_selected_samples('remove',sample.did);
+        } else {
+            sample.selected=true;
+            sample.element.classList.add('selectedsample');
+            last_selected = index;
+            update_selected_samples('add',sample.did);
+        }
+        last_selected = index;
+    }
+}
+
+var last_selected=0;
+
+function update_selected_samples(action,sampleid) {
+    console.log(action,sampleid)
+    sampleid = parseInt(sampleid);
+    if (action=='add') {
+        const index = selected_samples.indexOf(sampleid);
+        if (index == -1) {
+            selected_samples.push(sampleid);
+        }
+    } else {
+        const index = selected_samples.indexOf(sampleid);
+        console.log(index)
+        if (index > -1) {
+            console.log('splicing')
+            selected_samples.splice(index, 1);
+        }
+    }
+    selectedsamples.textContent = `${selected_samples.length} Selected`;
+}
+function update_placed_sample(action,sampleid) {
+    console.log(action,sampleid)
+    sampleid = parseInt(sampleid);
+    if (action=='add') {
+        const index = placed_samples.indexOf(sampleid);
+        if (index == -1) {
+            placed_samples.push(sampleid);
+        }
+    } else {
+        const index = placed_samples.indexOf(sampleid);
+        console.log(index)
+        if (index > -1) {
+            console.log('splicing')
+            placed_samples.splice(index, 1);
+        }
+    }
+    
+}
+
+var dragging=null;
+
+class Sample {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+		this.element = document.createElement('inputsample');
+        this.number = document.createElement('samplenumber');
+        this.element.appendChild(this.number);
+        this.did = this.output_id;
+        this.element.dataset.did=this.output_id;
+
+        this.samplename = document.createElement('samplename');
+        this.samplename.textContent = this.sample_name;
+        this.element.appendChild(this.samplename);
+
+        this.well = document.createElement('sampletablecolumn');
+        this.well.className='well';
+        this.well.style.display='none';
+        this.element.appendChild(this.well);
+
+
+        this.placed = Boolean(this.output_well);
+        this.placed_index = this.output_placement_index;
+        this.selected = false;
+
+        console.log('creating sample',data)
+
+        // figure out placement stuff
+        //if (this.rdid !== null) {
+        //    this.reserve.style.display = 'none';
+        //    this.release.style.display = 'block';
+        //    placed_samples.push(this.did);
+        //}
+        if (this.placed) {
+            this.well.style.display='inline-block'
+            this.well.textContent = this.output_well
+        }
+
+
+        this.element.addEventListener('mousedown',(event)=> {
+            if (event.shiftKey) {
+                event.preventDefault();
+            }
+            console.log('startdrag');
+            document.body.style.userSelect = 'none';
+            dragging=1;   
+        })
+
+        this.element.addEventListener('click',(event)=> {
+            if (event.shiftKey) {
+                event.preventDefault();
+            }
+            clicksample(this,event);
+        })
+
+        this.element.addEventListener('mousemove',(event)=> {
+            if (dragging===1) {
+                console.log('dragging');
+                dragging=2;
+                if (!this.selected && selected_samples.length==0) {
+                    this.selected=true;
+                    update_selected_samples('add',this.did);
+                }
+                dragsamplecount.textContent=selected_samples.length;
+                dragsamplecount.style.left = event.pageX;
+                dragsamplecount.style.top = event.pageY;
+                dragsamplecount.style.display='block';
+                
+            } 
+        })
+
+	}
+    
+}
+
+
+
+var samples = {}
+var io_inputs = {}
+var io_outputs = {}
+
+velocity_step_io.sort((a, b) => a.output_placement_index - b.output_placement_index);
+
+for (let io of velocity_step_io) {
+    samples[io.output_id]=new Sample(io);
+    if (!samples[io.output_id].placed) {
+      inputsamples.appendChild(samples[io.output_id].element)
+    } else {
+      outputsamples.appendChild(samples[io.output_id].element)
+    }
+}
+
+
+document.addEventListener('mousemove',(event)=> {
+    if (dragging===2) {
+        event.preventDefault();
+        dragsamplecount.style.left = event.pageX+20+'px';
+        dragsamplecount.style.top = event.pageY+20+'px';
+        
+    }
+})
+
+</script>{% endblock %}

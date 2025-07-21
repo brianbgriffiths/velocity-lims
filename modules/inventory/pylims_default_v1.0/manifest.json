@@ -1,0 +1,21 @@
+{
+	"type": "module",
+	"category": "inventory",
+	"author": "Brian Griffiths",
+	"author_email": "tech@pylims.com",
+	"authentication": "loggedin",
+	"scripts": [
+		"inventory.py"
+	],
+	"load_script_function": [0,"get_inventory",["user"]],
+	"templates": {
+		"inventory.html": {"name":"Inventory","display_link":true,"authentication":"loggedin"}
+		
+	},
+	"default_template": "inventory.html",
+	"title": "Pylims Default Inventory",
+	"version_major": 1,
+	"version_minor": 0,
+	"setup_options":{
+	}
+}

@@ -1,0 +1,480 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}Velocity LIMS - Queue{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_common.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<style>
+    body {
+        counter-reset: sample;
+    }
+    breadcrumbs {
+        border:solid 1px #000000;
+        padding:3px;
+        display:block;
+        margin-bottom:15px;
+    }
+	protocol {
+		background-color:var(--accent1);
+		color:white;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+	}
+	queue {
+		background-color:var(--gray-lightest);
+		color:black;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+		margin-left:30px;
+		margin-bottom:2px;
+		margin-top:2px;
+		border:solid 1px var(--gray-med);
+		clear:both;
+	}
+	queue:hover {
+		background-color:var(--accent9);
+		cursor:pointer;
+	}
+	steporder {
+		display:inline-block;
+		width:60px;
+		font-size:12px;
+		font-weight:bold;
+	}
+	steporder::before {
+		content:'Step ';
+	}
+	steporder::after {
+		content:' »';
+	}
+	stepname {
+		display:inline-block;
+	}
+	samplecount, validationcount {
+		float:right;
+		position:relative;
+		box-sizing:border-box;
+		padding:1px;
+		top:-2px;
+		height:100%;
+		margin-left:10px;
+		font-size:16px;
+		font-weight:bold;
+		width:50px;
+		text-align:right;
+	}
+	samplecount {
+		color:var(--blue-dark);
+	}
+
+	protocolsamples {
+		float:right;
+
+	}
+	.button-hover-right {
+		position:relative;
+		width:fit-content;
+		border:solid 1px var(--accent5);
+		padding:10px;
+		padding-right:30px;
+	}
+	#arrowBox {
+	    position: absolute;
+		top: 0px;
+		right: 0px;
+		padding: 0px;
+		margin: 0px;
+		font-size: 20px;
+		background-color: var(--accent3);
+		height: 100%;
+		width: 20px;
+		line-height: 20px;
+	}
+
+	#arrowBox::after {
+		content: '';
+		position:absolute;
+		text-rendering: auto;
+		-webkit-font-smoothing: antialiased;
+		font: var(--fa-font-solid);
+		content: "\f0da";
+		top: calc(50% - 10px);
+		height: 20px;
+		width: 12px;
+		left: calc(50% - 6px);
+		
+	}
+
+	
+
+	#hoverBox {
+	  display: none;
+	  position: absolute;
+	  top: 10px;
+	  right: -183px; 
+	  background-color:var(--inputhover);
+	  padding: 10px 0px;
+	  width:180px;
+	  font-size:16px;
+	  border: solid 1px var(--accent7);
+	}
+
+	#hoverBox a {
+	  display: block;
+	  margin: 5px 0;
+	  padding:0px 10px;
+	}
+	
+	#hoverBox a:hover {
+		background-color:var(--accent3);
+		color:#ffffff;
+	}
+	#arrowBox:hover #hoverBox {
+		display:block;
+	}
+	.project {
+		height: 40px;
+		border-bottom: solid 1px #cccccc;
+		line-height: 40px;
+	}
+	#new_project_button {
+		margin:20px 0px;
+	}
+    .columns {
+        display: flex;
+        gap: 20px;
+        box-sizing:border-box;
+        width:100%;
+      }
+      
+      .column-75 {
+        flex: 0 0 calc(75% - 10px);
+        
+      }
+      
+      .column-25 {
+        flex: 0 0 calc(25% - 10px);
+      }
+      #queue-info {
+        border:solid 1px #000000;
+        border-radius:3px;
+        font-size:12px;
+        font-weight:bold;
+        padding:3px;
+        margin-bottom:5px;
+      }
+      #begin-step {
+        background-color:var(--green-med);
+        border:solid 1px var(--gray-med);
+        color:white;
+        font-size:16px;
+        border-radius:3px;
+        width:100%;
+        display:block;
+        cursor:pointer;
+        box-shadow: 1px 1px 4px 0px #0000006b;
+        margin-bottom:15px;
+      }
+      #begin-step:hover {
+        background-color:var(--highlight-green-med);
+      }
+      .reserved-box {
+        background-color:var(--gray-dark);
+        border-radius:3px;
+        padding:10px 5px;
+        border:solid 1px #2a2a2a;
+        margin:2px 0px;
+        text-align:center;
+      }
+      reserve, release {
+        background-color:var(--blue-med);
+        border-radius:2px;
+        position: absolute;
+        right: 2px;
+        top: 2px;
+        padding:2px 5px;
+        width:70px;
+        font-size:14px;
+        text-align:center;
+        color:white;
+        cursor:pointer;
+      }
+      release {
+        background-color:var(--gray-med);
+
+      }
+      reserve:hover {
+        cursor:pointer;
+        background-color:var(--blue-dark);
+      }
+      release:hover {
+        cursor:pointer;
+        background-color:var(--gray-dark);
+      }
+      #releaseall {
+        font-size:24px;
+        position:relative;
+      }
+      vhr {
+        width:100%;
+        background-color:var(--gray-med);
+        height:1px;
+        display:block;
+        border-bottom:solid 1px black;
+        border-top:var(--gray-dark);
+        margin:10px 0px;
+      }
+      queuedsample {
+        margin-left:0px;
+        padding:3px 0px;
+        width:100%;
+      }
+      samplenumber {
+        width:50px;
+        box-sizing:border-box;
+        display:inline-block;
+      }
+      samplenumber::before {
+        counter-increment: sample; 
+        content: counter(sample) ". "; 
+      }
+      
+
+      #tableheader {
+        border:solid 1px #000000;
+        border-radius:3px;
+        font-size:12px;
+        font-weight:bold;
+        padding:0px;
+        margin-bottom:5px;
+        background-color:var(--gray-light);
+        display:block;
+        position:relative;
+      }
+      headercontent {
+        line-height:20px;
+        display:inline-block;
+        height:20px;
+        padding:0px 10px;
+        vertical-align:top;
+        text-align:center;
+        box-sizing:border-box;
+      }
+      headerhandle {
+        height:20px;
+        width:1px;
+        background-color:white;
+        border-left:solid 1px var(--gray-med);
+        border-right:solid 1px var(--gray-light);
+        display:inline-block;
+        vertical-align:top;
+        cursor:ew-resize;
+      }
+      tablerow {
+
+      }
+      samplename {
+        width:150px;
+      }
+      #dragsamples {
+         font-size:28px;
+         color:white;
+      }
+
+      #containers {
+        width:100%;
+      }
+
+
+
+
+</style>
+{% endblock %}
+{% block centercontent %}
+<div id="queue" class="center-border">
+    <breadcrumbs><a href="{% url 'display_queues' %}">Queues</a> / {{ queue.protocol_name }} / <a href="/queue/{{queue.qid}}">{{ queue.step_name }} Queue</a> / <b>Reserved Samples</b></breadcrumbs>
+    <div class="columns">
+        <div class="column-75">
+            <div id="queue-info">Reserved ({{ reserved }} samples)</div>
+            <div id="tableheader" style="">
+                <headercontent style="width:50px;">#</headercontent><headerhandle></headerhandle>
+                <headercontent style="width:150px;">Sample</headercontent><headerhandle></headerhandle>
+                <headercontent>Plasma Matrix ID</headercontent><headerhandle></headerhandle>
+                <headercontent>Scan Order</headercontent><headerhandle></headerhandle>
+                <headercontent>Initial Workflow</headercontent><headerhandle></headerhandle>
+                <headercontent>Waiting</headercontent><headerhandle></headerhandle>
+                <headercontent>Location</headercontent><headerhandle></headerhandle>
+
+            </div>
+            <div id="queuedsamples"></div>
+        </div>
+        <div class="column-25">
+            <button id="begin-step">Begin Step »</button>
+            <div class="reserved-box" id="dragbox"><div style="text-align:left;color:white;">Container:</div><div id="containers"></div><vhr></vhr><div id="dragsamples"><div id="draghereempty">Drag Samples Here</div></div><vhr></vhr><reserve id="releaseall">Release All</reserve></div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+{% block javascript %}
+
+<script>
+const csrf = '{{ csrf_token }}';
+const queue= {{queue | safe}}
+const velocity_samples = {{ samples | safe}};
+const velocity_containers = {{ containers | safe}};
+const main = document.getElementById('queue');
+const queuedsamples = document.getElementById('queuedsamples');
+const dragsamples = document.getElementById('dragsamples');
+const containerselect = document.getElementById('containers');
+var reserved_samples = []
+
+function localerror(msg) {
+	error_element = document.getElementById('pylims_request_error');
+	error_element.textContent=msg;
+	error_element.style.display='block';
+}
+
+class QueuedSample {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+		this.element = document.createElement('queuedsample');
+
+        this.number = document.createElement('samplenumber');
+        this.element.appendChild(this.number);
+
+        this.samplename = document.createElement('samplename');
+        this.samplename.textContent = this.sample_name;
+        this.element.appendChild(this.samplename);
+
+        this.reserve = document.createElement('reserve');
+        this.reserve.textContent = 'Reserve';
+        this.element.appendChild(this.reserve);
+
+        this.release = document.createElement('release');
+        this.release.textContent = 'Release';
+        this.release.style.display = 'none';
+        this.element.appendChild(this.release);
+
+        this.reserved_status = false;
+
+        console.log('creating sample',data)
+
+        if (this.rdid !== null) {
+            this.reserve.style.display = 'none';
+            this.release.style.display = 'block';
+            reserved_samples.push(this.did);
+            dragsamples.textContent = reserved_samples.length;
+        }
+
+        this.reserve.addEventListener('click',()=> {
+            this.reserveSample(this.did);
+        })
+
+        this.release.addEventListener('click',()=> {
+            this.releaseSample(this.did);
+        })
+
+	}
+    reserveSample(displayOnly=false) {
+        console.log('reserve',this.did)
+    
+        const index = reserved_samples.indexOf(this.did);
+        console.log(index)
+        if (reserved_samples.indexOf(this.did) == -1) {
+            reserved_samples.push(this.did);
+            this.reserve.style.display='none';
+            this.release.style.display='block';
+            const data={"step":this.queue, "sample":this.did}
+            const pyoptions={data,csrf,urlprefix:'..',url:'reserve',submit_mode:'silent'}
+            pylims_post(pyoptions).then(result => {
+                console.log(result)
+            
+            }).catch(error => {
+                console.error(error);
+            });  
+        }
+        dragsamples.textContent = reserved_samples.length;
+    }
+    releaseSample(displayOnly=false) {
+        console.log('release',this.did)
+        const index = reserved_samples.indexOf(this.did);
+        if (index !== -1) {
+            this.reserve.style.display='block';
+            this.release.style.display='none';
+            reserved_samples.splice(index, 1);
+            dragsamples.textContent = reserved_samples.length;
+            if (!displayOnly) {
+                const data={"step":this.queue, "sample":this.did}
+                const pyoptions={data,csrf,urlprefix:'..',url:'release',submit_mode:'silent'}
+                pylims_post(pyoptions).then(result => {
+                    console.log(result)
+                
+                }).catch(error => {
+                    console.error(error);
+                }); 
+            }
+            return false;
+        } 
+    }
+}
+
+
+
+var samples = {}
+
+for (let sample of velocity_samples) {
+    samples[sample.did] = new QueuedSample(sample);
+    queuedsamples.appendChild(samples[sample.did].element)
+}
+
+const container_select = document.createElement('select');
+container_select.id='containers';
+for (let container of velocity_containers) {
+    const option = document.createElement('option');
+    option.value = container.cid;
+    option.textContent =container.type_name;
+    container_select.appendChild(option);
+}
+containerselect.appendChild(container_select);
+
+
+
+document.getElementById('releaseall').addEventListener('click',()=>{
+    const data={"step":queue.step}
+    const pyoptions={data,csrf,urlprefix:'..',url:'releaseall',submit_mode:'silent'}
+    pylims_post(pyoptions).then(result => {
+        console.log(result)
+        for (let i=reserved_samples.length-1;i>=0;i--) {
+            samples[reserved_samples[i]].releaseSample(true);
+        }
+    
+    }).catch(error => {
+        console.error(error);
+    }); 
+})
+
+document.getElementById('begin-step').addEventListener('click',()=>{
+  const selected_container = container_select.value;
+  const data={"step":queue.step,"container":selected_container}
+  const pyoptions={data,csrf,urlprefix:'..',url:'steps/begin',submit_mode:'silent'}
+  pylims_post(pyoptions).then(result => {
+      console.log(result)
+      window.location.href=`/step/${result.stepid}`;
+  
+  }).catch(error => {
+      console.error(error);
+  }); 
+})
+
+
+
+</script>{% endblock %}

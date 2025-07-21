@@ -1,0 +1,15 @@
+{% extends 'index.html' %}
+
+{% block title %}Login{% endblock %}
+
+{% block centercontent %}<div id="login-greeting">Python-based Laboratory Information Management System (pylims)
+			<br>free, open source, easy</div>
+		<div id="login-form"><input type="text" id="login-username" placeholder="Username">
+		<br><input type="password" id="login-password">
+		<br><button>Login</button>
+		<a href="{% url 'login_password_reset' %}">Reset Password</a>
+		</div>{% endblock %}
+
+{% block javascript %}
+
+{% endblock %}

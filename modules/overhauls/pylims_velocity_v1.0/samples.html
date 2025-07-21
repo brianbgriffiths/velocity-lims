@@ -1,0 +1,439 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}Velocity LIMS{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_common.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<style>
+	protocol {
+		background-color:var(--accent3);
+		color:white;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+	}
+	queue {
+		background-color:var(--gray-lightest);
+		color:black;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+		margin-left:30px;
+		margin-bottom:2px;
+		margin-top:2px;
+		border:solid 1px var(--gray-med);
+		clear:both;
+	}
+	queue:hover {
+		background-color:var(--accent9);
+		cursor:pointer;
+	}
+	steporder {
+		display:inline-block;
+		width:60px;
+		font-size:12px;
+		font-weight:bold;
+	}
+	steporder::before {
+		content:'Step ';
+	}
+	steporder::after {
+		content:' »';
+	}
+	stepname {
+		display:inline-block;
+	}
+	samplecount, validationcount {
+		float:right;
+		position:relative;
+		box-sizing:border-box;
+		padding:1px;
+		top:-2px;
+		height:100%;
+		margin-left:10px;
+		font-size:16px;
+		font-weight:bold;
+		width:50px;
+		text-align:right;
+	}
+	samplecount {
+		color:var(--blue-dark);
+	}
+
+	protocolsamples {
+		float:right;
+
+	}
+	.button-hover-right {
+		position:relative;
+		width:fit-content;
+		border:solid 1px var(--accent5);
+		padding:10px;
+		padding-right:30px;
+	}
+	#arrowBox {
+	    position: absolute;
+		top: 0px;
+		right: 0px;
+		padding: 0px;
+		margin: 0px;
+		font-size: 20px;
+		background-color: var(--accent3);
+		height: 100%;
+		width: 20px;
+		line-height: 20px;
+	}
+
+	#arrowBox::after {
+		content: '';
+		position:absolute;
+		text-rendering: auto;
+		-webkit-font-smoothing: antialiased;
+		font: var(--fa-font-solid);
+		content: "\f0da";
+		top: calc(50% - 10px);
+		height: 20px;
+		width: 12px;
+		left: calc(50% - 6px);
+		
+	}
+	
+
+	#hoverBox {
+	  display: none;
+	  position: absolute;
+	  top: 10px;
+	  right: -183px; 
+	  background-color:var(--inputhover);
+	  padding: 10px 0px;
+	  width:180px;
+	  font-size:16px;
+	  border: solid 1px var(--accent7);
+	}
+
+	#hoverBox a {
+	  display: block;
+	  margin: 5px 0;
+	  padding:0px 10px;
+	}
+	
+	#hoverBox a:hover {
+		background-color:var(--accent3);
+		color:#ffffff;
+	}
+	#arrowBox:hover #hoverBox {
+		display:block;
+	}
+	.project {
+		height: 40px;
+		border-bottom: solid 1px #cccccc;
+		line-height: 40px;
+	}
+	#new_project_button {
+		margin:20px 0px;
+	}
+	step {
+		background-color:var(--accent1);
+		text-align:left;
+		display:block;
+		position:relative;
+		margin:3px 50px;
+		padding:0px;
+		height:auto;
+		line-height:revert;
+		border:solid 1px var(--gray-dark);
+	}
+	step a {
+		text-decoration:none;
+		border-left:solid 1px var(--accent3);
+		display:inline-block;
+		padding:4px;
+		color:var(--purple-light);
+		font-size:14px;
+		padding-left:15px;
+	}
+	workflowname {
+		padding:4px;
+		display:inline-block;
+		width:100px;
+		border-right:solid 1px var(--gray-dark);
+		color:white;
+		font-size:14px;
+	}
+    .searchtype {
+        flex:1;
+    }
+    details {
+        display: block;
+        background-color: var(--accent8);
+        width: 200px;
+        margin: 5px;
+        
+        border: solid 1px var(--accent7);
+        border-radius: 3px;
+        
+    }
+    summary {
+        padding: 5px;
+    }
+    summary:hover {
+        
+        cursor: pointer;
+        background-color:var(--accent9);
+    }
+    reqsample {
+        width: 100%;
+        display: block;
+        margin-left: 30px;
+    }
+    assay {
+        display: block;
+        border: solid 2px var(--green-med);
+        margin: 10px 0px;
+        padding: 20px;
+        background-color: var(--green-light);
+    }
+    reqsample {
+        border:solid 1px var(--gray-dark);
+        padding:3px;
+        border-radius:3px;
+        margin:2px;
+        display:block;
+        box-sizing:border-box;
+        width:calc(100% - 30px);
+        margin-left:30px;
+    }
+    .selected-sample {
+        background-color:var(--accent3);
+    }
+    dragsamplecount {
+        display:none;
+        position:absolute;
+        background-color:var(--accent1);
+        border-radius:4px;
+        border:solid 1px black;
+        padding:5px;
+        color:white;
+        top:0px;
+        left:0px;
+        z-index:20;
+      }
+      .assay-drop {
+        box-shadow: inset 0px 0px 6px 2px var(--accent1);
+        border-color:var(--accent1);
+    }
+    version {
+        display:block;
+        font-size:12px;
+        border:solid 1px var(--green-dark);
+        background-color:var(--green-med);
+        color:white;
+        padding:2px;
+        border-radius:10px;
+        margin:auto;
+        width:30px;
+        text-align:center;
+    }
+    version::before {
+        content:'v';
+    }
+</style>
+{% endblock %}
+{% block centercontent %}
+<div class="center-border" style="display:flex;">
+	<div class="searchtype"> Find a Requisition:
+        <br><input type="text"></div>
+    <div class="searchtype"> Find a Sample:
+        <br><input type="text"></div>
+    <div class="searchtype"> Find a Container:
+        <br><input type="text"></div>
+    <div class="searchtype"> Find a Batch:
+        <br><input type="text"></div>
+</div>
+<div style="display:flex">
+    <div class="center-border">
+        <div>Latest Requisitions: <selectedsamples>0 Selected</selectedsamples></div>
+        <div id="requisitions"></div>
+    </div>
+    <div class="center-border">
+        <div>Active Assays:</div>
+        <div id="active_assays"></div>
+    </div>
+</div>
+<dragsamplecount><dragsamplecount>
+
+{% endblock %}
+
+{% block javascript %}
+
+<script>
+const csrf = '{{ csrf_token }}';
+const default_reqs = {{ last_20 | safe }};
+const default_samples = {{ samples | safe }};
+const main = document.getElementById('queues');
+const requisitions = document.getElementById('requisitions');
+const velocity_assays = {{ assays | safe }};
+const active_assays = document.getElementById('active_assays');
+const dragsamplecount = document.querySelector('dragsamplecount');
+const selectedsamples = document.querySelector('selectedsamples');
+
+var selected_samples = []
+var dragging=0;
+
+for (let req of default_reqs) {
+    let req_details = document.createElement('details');
+    req_details.id='req_'+req.reqid;
+    let req_summary = document.createElement('summary');
+    req_details.appendChild(req_summary);
+    req_summary.innerHTML+=req.req_name;
+    requisitions.appendChild(req_details)
+}
+document.addEventListener('mouseup', (event) => {
+    console.log('stop drag');
+    dragging = null;
+    document.body.style.userSelect = '';
+    dragsamplecount.style.display='none';
+    reset_potential_drops();
+});
+
+function update_selected_samples(action,sampleid) {
+    console.log(action,sampleid)
+    sampleid = parseInt(sampleid);
+    if (action=='add') {
+        const index = selected_samples.indexOf(sampleid);
+        if (index == -1) {
+            selected_samples.push(sampleid);
+        }
+    } else {
+        const index = selected_samples.indexOf(sampleid);
+        console.log(index)
+        if (index > -1) {
+            console.log('splicing')
+            selected_samples.splice(index, 1);
+        }
+    }
+    selectedsamples.textContent = `${selected_samples.length} Selected`;
+}
+
+function reset_potential_drops() {
+   
+    dragsamplecount.style.backgroundColor='var(--accent1)';
+}
+class Sample {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum];
+		}
+        this.selected=false;
+		this.element = document.createElement('reqsample');
+        this.element.textContent=data.sample_name;
+        this.element.addEventListener('mouseup',()=> {
+            if (dragging!=2) {
+                this.selected=!this.selected;
+                const sample_index = selected_samples.indexOf(this.smid)
+                if (this.selected) {
+                    if (sample_index==-1) {
+                        selected_samples.push(this.smid)
+                    }
+                    this.element.classList.add('selected-sample');
+                } else {
+                    
+                    if (sample_index>-1) {
+                        selected_samples.splice(sample_index,1);
+                    }
+                    this.element.classList.remove('selected-sample');
+                }
+            }
+        })
+        this.element.addEventListener('mousedown',(event)=> {
+            if (event.shiftKey) {
+                event.preventDefault();
+            }
+            console.log('startdrag');
+            document.body.style.userSelect = 'none';
+            dragging=1;   
+        })
+        this.element.addEventListener('mousemove',(event)=> {
+            if (dragging===1) {
+                console.log('dragging');
+                dragging=2;
+                if (!this.selected && selected_samples.length==0) {
+                    this.selected=true;
+                    update_selected_samples('add',this.smid);
+                    this.element.classList.add('selected-sample');
+                }
+                dragsamplecount.textContent=selected_samples.length;
+                dragsamplecount.style.left = event.pageX;
+                dragsamplecount.style.top = event.pageY;
+                dragsamplecount.style.display='block';
+                
+            } 
+        })
+        
+    }
+    
+}
+var samples = {}
+for (let sample of default_samples) {
+    samples[sample.smid] = new Sample(sample)
+    const sample_req = document.getElementById('req_'+sample.req)
+    sample_req.appendChild(samples[sample.smid].element)
+}
+
+class Assay {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+		this.element = document.createElement('assay');
+        this.element.innerHTML=`${data.assay_name}<version>${data.version_major}.${data.version_minor}</version>`;
+        this.element.addEventListener('mouseenter',()=> {
+            if (dragging==2) {
+                this.element.classList.add('assay-drop');
+            }
+        })
+        this.element.addEventListener('mouseleave',()=>{
+            this.element.classList.remove('assay-drop');
+        })
+        this.element.addEventListener('mouseup',()=> {
+            if (dragging==2) {
+                const data={"assay":this.assayid, samples:selected_samples}
+                const pyoptions={data,csrf,urlprefix:'..',url:'add_to_assay',submit_mode:'silent'}
+                pylims_post(pyoptions).then(result => {
+                    
+                    
+                }).catch(error => {
+                    console.error(error);
+                }); 
+                return false;
+            }
+        })
+    }
+}
+document.addEventListener('mousemove',(event)=> {
+    if (dragging===2) {
+        event.preventDefault();
+        dragsamplecount.style.left = event.pageX+20+'px';
+        dragsamplecount.style.top = event.pageY+20+'px';
+        
+    }
+})
+
+var assays = {}
+for (const assay of velocity_assays) {
+    assays[assay.assayid] = new Assay(assay)
+    active_assays.appendChild(assays[assay.assayid].element)
+}
+
+function localerror(msg) {
+	error_element = document.getElementById('pylims_request_error');
+	error_element.textContent=msg;
+	error_element.style.display='block';
+}
+
+
+</script>{% endblock %}

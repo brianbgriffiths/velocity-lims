@@ -1,0 +1,291 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}Velocity LIMS{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_common.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<style>
+	protocol {
+		background-color:var(--accent3);
+		color:white;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+	}
+	queue {
+		background-color:var(--gray-lightest);
+		color:black;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+		margin-left:30px;
+		margin-bottom:2px;
+		margin-top:2px;
+		border:solid 1px var(--gray-med);
+		clear:both;
+	}
+	queue:hover {
+		background-color:var(--accent9);
+		cursor:pointer;
+	}
+	steporder {
+		display:inline-block;
+		width:60px;
+		font-size:12px;
+		font-weight:bold;
+	}
+	steporder::before {
+		content:'Step ';
+	}
+	steporder::after {
+		content:' »';
+	}
+	stepname {
+		display:inline-block;
+	}
+	samplecount, validationcount {
+		float:right;
+		position:relative;
+		box-sizing:border-box;
+		padding:1px;
+		top:-2px;
+		height:100%;
+		margin-left:10px;
+		font-size:16px;
+		font-weight:bold;
+		width:50px;
+		text-align:right;
+	}
+	samplecount {
+		color:var(--blue-dark);
+	}
+
+	protocolsamples {
+		float:right;
+
+	}
+	.button-hover-right {
+		position:relative;
+		width:fit-content;
+		border:solid 1px var(--accent5);
+		padding:10px;
+		padding-right:30px;
+	}
+	#arrowBox {
+	    position: absolute;
+		top: 0px;
+		right: 0px;
+		padding: 0px;
+		margin: 0px;
+		font-size: 20px;
+		background-color: var(--accent3);
+		height: 100%;
+		width: 20px;
+		line-height: 20px;
+	}
+
+	#arrowBox::after {
+		content: '';
+		position:absolute;
+		text-rendering: auto;
+		-webkit-font-smoothing: antialiased;
+		font: var(--fa-font-solid);
+		content: "\f0da";
+		top: calc(50% - 10px);
+		height: 20px;
+		width: 12px;
+		left: calc(50% - 6px);
+		
+	}
+	
+
+	#hoverBox {
+	  display: none;
+	  position: absolute;
+	  top: 10px;
+	  right: -183px; 
+	  background-color:var(--inputhover);
+	  padding: 10px 0px;
+	  width:180px;
+	  font-size:16px;
+	  border: solid 1px var(--accent7);
+	}
+
+	#hoverBox a {
+	  display: block;
+	  margin: 5px 0;
+	  padding:0px 10px;
+	}
+	
+	#hoverBox a:hover {
+		background-color:var(--accent3);
+		color:#ffffff;
+	}
+	#arrowBox:hover #hoverBox {
+		display:block;
+	}
+	.project {
+		height: 40px;
+		border-bottom: solid 1px #cccccc;
+		line-height: 40px;
+	}
+	#new_project_button {
+		margin:20px 0px;
+	}
+	step {
+		background-color:var(--accent1);
+		text-align:left;
+		display:block;
+		position:relative;
+		margin:3px 50px;
+		padding:0px;
+		height:auto;
+		line-height:revert;
+		border:solid 1px var(--gray-dark);
+	}
+	step a {
+		text-decoration:none;
+		border-left:solid 1px var(--accent3);
+		display:inline-block;
+		padding:4px;
+		color:var(--purple-light);
+		font-size:14px;
+		padding-left:15px;
+	}
+	workflowname {
+		padding:4px;
+		display:inline-block;
+		width:100px;
+		border-right:solid 1px var(--gray-dark);
+		color:white;
+		font-size:14px;
+	}
+</style>
+{% endblock %}
+{% block centercontent %}
+<inprogresssteps></inprogresssteps>
+
+<div id="queues" class="center-border">
+	<div style="position:relative;margin-bottom:10px;height:22px;">
+		{% comment %} <validationcount style="width:auto;"># Validations</validationcount> {% endcomment %}
+		<samplecount style="width:auto;"># Samples</samplecount>
+		
+		</div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+
+<script>
+const csrf = '{{ csrf_token }}';
+const queues= {{queues | safe}}
+const main = document.getElementById('queues');
+const inprogress_steps = document.querySelector('inprogresssteps')
+const velocity_inprogress = {{ inprogress | safe }};
+
+
+class Step {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+		this.element = document.createElement('step');
+		let wfname = document.createElement('workflowname');
+		wfname.textContent = this.assay_name;
+		this.element.appendChild(wfname);
+		this.link = document.createElement('a')
+		this.link.href = `/step/${this.step}`;
+		this.link.textContent = `Step 1 » ${this.step_name}`;
+		this.element.appendChild(this.link)
+	}
+}
+
+var steps={}
+
+for (let ip of velocity_inprogress) {
+	steps[ip.step] = new Step(ip);
+	inprogress_steps.appendChild(steps[ip.step].element)
+}
+
+function localerror(msg) {
+	error_element = document.getElementById('pylims_request_error');
+	error_element.textContent=msg;
+	error_element.style.display='block';
+}
+
+class Queue {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+		this.element = document.createElement('queue');
+
+		this.step_order = document.createElement('steporder');
+		this.step_order.textContent = this.order;
+		this.element.appendChild(this.step_order);
+
+		this.protocol_step_name = document.createElement('stepname')
+		this.protocol_step_name.textContent = this.step_name;
+		this.element.appendChild(this.protocol_step_name);
+
+		{% comment %} this.validation_count = document.createElement('validationcount')
+		this.validation_count.textContent = this.validations;
+		this.element.appendChild(this.validation_count); {% endcomment %}
+
+		this.sample_count = document.createElement('samplecount')
+		this.sample_count.textContent = this.samples;
+		this.element.appendChild(this.sample_count);
+
+		
+	}
+}
+
+class Protocol {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+		this.samplecount=0;
+		this.element = document.createElement('protocol');
+		this.element.textContent = this.pid;
+
+		this.sample_count_display = document.createElement('protocolsamples');
+		this.sample_count_display.textContent = this.samplecount;
+		this.element.appendChild(this.sample_count_display);
+	}
+	add_samples(samples_to_add) {
+		this.samplecount+=parseInt(samples_to_add);
+		this.sample_count_display.textContent = this.samplecount;
+	}
+}
+  
+var last_protocol = null;
+var protocols={}
+var order = 0;
+for (let queue of queues) {
+	if (queue.protocol != last_protocol) {
+		protocols[queue.protocol] = new Protocol({pid:queue.protocol_name});
+		main.appendChild(protocols[queue.protocol].element)
+		order=0;
+	}
+	order++;
+	last_protocol = queue.protocol;
+	queue.order=order;
+	protocols[queue.protocol].add_samples(queue.samples);
+	const queue_row = new Queue(queue);
+	main.appendChild(queue_row.element);
+	queue_row.element.addEventListener('click',()=> {
+		window.location.href = `/queue/${queue.sid}`;
+
+	})
+
+}
+
+
+
+</script>{% endblock %}

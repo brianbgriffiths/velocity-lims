@@ -1,0 +1,176 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}pylims/organization{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_common.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+<script src="{% static 'js/pluralize.js' %}"></script>
+
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<style>
+	.button-hover-right {
+		position:relative;
+		width:fit-content;
+		border:solid 1px var(--accent5);
+		padding:10px;
+		padding-right:30px;
+	}
+	#arrowBox {
+	    position: absolute;
+		top: 0px;
+		right: 0px;
+		padding: 0px;
+		margin: 0px;
+		font-size: 20px;
+		background-color: var(--accent3);
+		height: 100%;
+		width: 20px;
+		line-height: 20px;
+	}
+
+	#arrowBox::after {
+		content: '';
+		position:absolute;
+		text-rendering: auto;
+		-webkit-font-smoothing: antialiased;
+		font: var(--fa-font-solid);
+		content: "\f0da";
+		top: calc(50% - 10px);
+		height: 20px;
+		width: 12px;
+		left: calc(50% - 6px);
+		
+	}
+	
+
+	#hoverBox {
+	  display: none;
+	  position: absolute;
+	  top: 10px;
+	  right: -183px; 
+	  background-color:var(--inputhover);
+	  padding: 10px 0px;
+	  width:180px;
+	  font-size:16px;
+	  border: solid 1px var(--accent7);
+	}
+
+	#hoverBox a {
+	  display: block;
+	  margin: 5px 0;
+	  padding:0px 10px;
+	}
+	
+	#hoverBox a:hover {
+		background-color:var(--accent3);
+		color:#ffffff;
+	}
+	#arrowBox:hover #hoverBox {
+		display:block;
+	}
+	.project {
+		height: 40px;
+		border-bottom: solid 1px #cccccc;
+		line-height: 40px;
+	}
+	#new_space_button {
+		margin:20px 0px;
+	}
+	.project_owner {
+		font-size: 14px;
+		border: solid 1px #306998;
+		padding: 2px 5px;
+		border-radius: 13px;
+		background-color: #f7f7f7;
+		color: #306998;
+		width: fit-content;
+	}
+	.space_level {
+		position:relative;
+		box-sizing:border-box;
+		
+	}
+	details {
+		display:inline-block;
+		vertical-align:top;
+	}
+	.add_space_button {
+		vertical-align:top;
+	}
+</style>
+{% endblock %}
+{% block centercontent %}
+
+<div id="spaces" class="center-border">
+{{ adminlinks|safe }}
+{% if mod_data.data.oid %}
+<div id="breadcrumbs"><a href="/modules/organization"><i class="fa-light fa-sitemap"></i></a> <i class="fa-solid fa-caret-right"></i> </div>
+{% endif %}
+
+<div>The physical buildings, rooms, cabinets, freezers and containers your inventory lives in.</div>
+{% if mod.only_admins_add_spaces.value == 'false' %}
+	<button id="new_space_button" class="button-hover-right" onClick="newSpace();"><div><i class="fa-regular fa-cube"></i> New Space</div>
+{% endif %}
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+<script>
+const active_mods = {{ active_mods|safe }};
+const mod={{ mod|safe }};
+const urlprefix='{{url}}';
+const options={{ mod_options|safe }};
+const csrf = '{{ csrf_token }}';
+const mod_data = {{ mod_data|safe }};
+const main = document.getElementById('spaces');
+
+const space_list = new content_container('space_list',main);
+const new_space = new content_container('new_space',main);
+levels={}
+for (let x in options) {
+	
+	let opt = x.split('_');
+	let is_level = (opt[0]=='level');
+	console.log(x,is_level,options[x])
+	if (is_level && options[x]=='true') {
+		let lev=opt[1];
+		if (!levels[lev]) { levels[lev]=[] }
+		levels[lev].push(pluralize(opt[2]))
+	}
+}
+console.log('levels',levels)
+<!-- const levels=[['Country'],['City'], ['State'],['Building'],['Room'],['Equipment','Container','Shelf','Drawer','Cabinet','Bench'],['Box','Rack','Shelf','Tray']]; -->
+
+function newSpace() {
+	var i=0;
+	for (let level in levels) {
+		i++;
+		const this_level = document.createElement('div');
+		this_level.classList.add('space_level');
+		this_level.style.paddingLeft=i*20+'px';
+		new_space.add(this_level);
+		console.log('level',level)
+		for (let space of levels[level]) {
+			const this_space = document.createElement('div');
+			const this_button = document.createElement('button');
+			this_button.innerHTML='+';
+			this_button.classList.add('add_space_button')
+			this_space.appendChild(this_button);
+			const this_details = document.createElement('details');
+			this_space.appendChild(this_details);
+			const this_summary = document.createElement('summary');
+			this_summary.textContent = space;
+			const no_items = document.createElement('div');
+			no_items.textContent = 'No items yet';
+			
+			this_details.appendChild(this_summary);
+			this_details.appendChild(no_items);
+			this_level.appendChild(this_space);
+		}
+	}
+}
+
+</script>
+{% endblock %}

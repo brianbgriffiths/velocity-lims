@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>{% block title %}Velocity LIMS{% endblock %}</title>
+	<link rel="stylesheet" type="text/css" href="{% static 'themes/pylims_velocity_v1.0/default.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'fontawesome/css/all.min.css' %}">
+	<link rel="icon" href="{% static 'themes/pylims_velocity_v1.0/icon.svg' %}" type="image/svg+xml">
+	{% csrf_token %}
+	{% block headdata %}{% endblock %}
+</head>
+<body>
+	<div id="login-pylims-logo"><a href="{% url 'home' %}"><img  src="{% static 'themes/pylims_velocity_v1.0/logo.svg' %}" alt="pylims logo"></a></div>
+	<div id="header"><a href="/queues">Lab Queues</a> | <a href="/samples">Samples</a>{% for link in links %}
+            <span class="header_link"><a href="/modules/{{ link.0 }}/{{ link.2 }}">{{ link.1 }}</a></span>
+        {% endfor %}
+	</div>
+	<div id="center-content">
+	{% block stepbreadcrumbs %}{% endblock %}
+	{% block centercontent %}
+	
+	{{ adminlinks|safe }}
+	<div class="center-border">
+	<p>Welcome to your locally installed pylims server. Login as the default account to begin setup.</p><table>
+		{% for stat in info %}
+			<tr><td>{{stat.0}}</td><td>{{stat.1}}</td></tr>
+		{% endfor %}
+	</table>
+	</div>
+	{% endblock %}
+	{% if template %}
+    {% include template %}
+{% endif %}
+		
+	</div>
+<div id="footer">Velocity LIMS&trade; &copy; 2023 - 2025 pylims, MIT License</div>	
+</body>
+{% block javascriptcommon %}{% endblock %}
+{% block javascript %}{% endblock %}
+
+</html>

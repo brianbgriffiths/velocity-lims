@@ -1,0 +1,21 @@
+{
+	"type": "module",
+	"category": "Projects",
+	"author": "Brian Griffiths",
+	"author_email": "tech@pylims.com",
+	"authentication": "loggedin",
+	"scripts": [
+		"projects.py"
+	],
+	"load_script_function": [0,"load_projects",["user"]],
+	"default_template": "projects.html",
+	"templates": {
+		"projects.html": {"name":"Projects","display_link":true,"authentication":"loggedin"}
+	},
+	"title": "Pylims Default Projects",
+	"version_major": 1,
+	"version_minor": 0,
+	"setup_options":{
+		
+	}
+}

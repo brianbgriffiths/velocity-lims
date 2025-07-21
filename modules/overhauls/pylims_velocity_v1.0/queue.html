@@ -1,0 +1,861 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}Velocity LIMS - Queue{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_common.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<style>
+    body {
+        counter-reset: sample control;
+    }
+    breadcrumbs {
+        border:solid 1px #000000;
+        padding:3px;
+        display:block;
+        margin-bottom:15px;
+    }
+	protocol {
+		background-color:var(--accent1);
+		color:white;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+	}
+	queue {
+		background-color:var(--gray-lightest);
+		color:black;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+		margin-left:30px;
+		margin-bottom:2px;
+		margin-top:2px;
+		border:solid 1px var(--gray-med);
+		clear:both;
+	}
+	queue:hover {
+		background-color:var(--accent9);
+		cursor:pointer;
+	}
+	steporder {
+		display:inline-block;
+		width:60px;
+		font-size:12px;
+		font-weight:bold;
+	}
+	steporder::before {
+		content:'Step ';
+	}
+	steporder::after {
+		content:' »';
+	}
+	stepname {
+		display:inline-block;
+	}
+	samplecount, validationcount {
+		float:right;
+		position:relative;
+		box-sizing:border-box;
+		padding:1px;
+		top:-2px;
+		height:100%;
+		margin-left:10px;
+		font-size:16px;
+		font-weight:bold;
+		width:50px;
+		text-align:right;
+	}
+	samplecount {
+		color:var(--blue-dark);
+	}
+
+	protocolsamples {
+		float:right;
+
+	}
+	.button-hover-right {
+		position:relative;
+		width:fit-content;
+		border:solid 1px var(--accent5);
+		padding:10px;
+		padding-right:30px;
+	}
+	#arrowBox {
+	    position: absolute;
+		top: 0px;
+		right: 0px;
+		padding: 0px;
+		margin: 0px;
+		font-size: 20px;
+		background-color: var(--accent3);
+		height: 100%;
+		width: 20px;
+		line-height: 20px;
+	}
+
+	#arrowBox::after {
+		content: '';
+		position:absolute;
+		text-rendering: auto;
+		-webkit-font-smoothing: antialiased;
+		font: var(--fa-font-solid);
+		content: "\f0da";
+		top: calc(50% - 10px);
+		height: 20px;
+		width: 12px;
+		left: calc(50% - 6px);	
+	}
+
+	#hoverBox {
+	  display: none;
+	  position: absolute;
+	  top: 10px;
+	  right: -183px; 
+	  background-color:var(--inputhover);
+	  padding: 10px 0px;
+	  width:180px;
+	  font-size:16px;
+	  border: solid 1px var(--accent7);
+	}
+
+	#hoverBox a {
+	  display: block;
+	  margin: 5px 0;
+	  padding:0px 10px;
+	}
+	
+	#hoverBox a:hover {
+		background-color:var(--accent3);
+		color:#ffffff;
+	}
+	#arrowBox:hover #hoverBox {
+		display:block;
+	}
+	.project {
+		height: 40px;
+		border-bottom: solid 1px #cccccc;
+		line-height: 40px;
+	}
+	#new_project_button {
+		margin:20px 0px;
+	}
+    .columns {
+        display: flex;
+        gap: 20px;
+        box-sizing:border-box;
+        width:100%;
+      }
+      
+      .column-75 {
+        flex: 0 0 calc(75% - 10px);
+        
+      }
+      
+      .column-25 {
+        flex: 0 0 calc(25% - 10px);
+      }
+      #queue-info {
+        border:solid 1px #000000;
+        border-radius:3px;
+        font-size:12px;
+        font-weight:bold;
+        padding:3px;
+        margin-bottom:5px;
+        position:relative;
+        height:22px;
+      }
+      #view-reserved {
+        background-color:var(--green-med);
+        border:solid 1px var(--gray-med);
+        color:white;
+        font-size:16px;
+        border-radius:3px;
+        width:100%;
+        display:block;
+        cursor:pointer;
+        box-shadow: 1px 1px 4px 0px #0000006b;
+        margin-bottom:15px;
+      }
+      #view-reserved:hover {
+        background-color:var(--highlight-green-med);
+      }
+      .reserved-box {
+        background-color:var(--gray-dark);
+        border-radius:3px;
+        padding:10px 5px;
+        border:solid 1px #2a2a2a;
+        margin:2px 0px;
+        text-align:center;
+        position:relative;
+      }
+      reserve, release, add {
+        background-color:var(--blue-med);
+        border-radius:2px;
+        position: absolute;
+        right: 2px;
+        top: 2px;
+        padding:2px 5px;
+        width:70px;
+        font-size:14px;
+        text-align:center;
+        color:white;
+        cursor:pointer;
+        user-select:none;
+      }
+      release {
+        background-color:var(--gray-med);
+
+      }
+      reserve:hover, add:hover {
+        cursor:pointer;
+        background-color:var(--blue-dark);
+      }
+      release:hover {
+        cursor:pointer;
+        background-color:var(--gray-dark);
+      }
+      add {
+        position:relative;
+        display:inline-block;
+        margin:5px 10px;
+      }
+      #releaseall {
+        font-size:24px;
+        position:relative;
+      }
+      vhr {
+        width:100%;
+        background-color:var(--gray-med);
+        height:1px;
+        display:block;
+        border-bottom:solid 1px black;
+        border-top:var(--gray-dark);
+        margin:10px 0px;
+      }
+      queuedsample {
+        margin-left:0px;
+        padding:3px 0px;
+        width:100%;
+      }
+      samplenumber, controlnumber {
+        width:50px;
+        box-sizing:border-box;
+        display:inline-block;
+      }
+      samplenumber::before {
+        counter-increment: sample; 
+        content: counter(sample) ". "; 
+      }
+      controlnumber::before {
+        counter-increment: control; 
+        content: counter(control) ". "; 
+      }
+      
+
+      #tableheader {
+        border:solid 1px #000000;
+        border-radius:3px;
+        font-size:12px;
+        font-weight:bold;
+        padding:0px;
+        margin-bottom:5px;
+        background-color:var(--gray-light);
+        display:block;
+        position:relative;
+      }
+      headercontent {
+        line-height:20px;
+        display:inline-block;
+        height:20px;
+        padding:0px 10px;
+        vertical-align:top;
+        text-align:center;
+        box-sizing:border-box;
+      }
+      headerhandle {
+        height:20px;
+        width:1px;
+        background-color:white;
+        border-left:solid 1px var(--gray-med);
+        border-right:solid 1px var(--gray-light);
+        display:inline-block;
+        vertical-align:top;
+        cursor:ew-resize;
+      }
+      tablerow {
+
+      }
+      samplename {
+        width:150px;
+      }
+      #dragsamples {
+         font-size:28px;
+         color:white;
+      }
+      .groupbar {
+        background-color: var(--gray-med);
+        padding:2px;
+        font-weight:bold;
+      }
+
+      queuedsample.selectedsample {
+        background-color:var(--accent9);
+      }
+      queuedsample.selectedsample:hover {
+        background-color:var(--purple-med-hover);
+      }
+
+      sampleoptions {
+        position: absolute;
+        right: 3px;
+        top: 3px;
+        background-color: white;
+        height: 22px;
+        text-align:right;
+        line-height: 22px;
+        font-size: 14px;
+        overflow:hidden;
+      }
+      sampleoptions:hover {
+        overflow:visible;
+        z-index:10;
+        height:auto;
+        box-shadow: 0px 5px 5px 0px #0000004d;
+        border-bottom:solid 1px #000000;
+      }
+      sampleoptions span {
+        height: 22px;
+        border-radius: 2px;
+        line-height: 22px;
+        padding: 0px 5px;
+        font-size: 14px;
+        display:block;
+        background-color: var(--gray-light);
+        padding: 0px 5px;
+        border-radius: 2px;
+      }
+      sampleoptions div {
+        background-color:var(--gray-light);
+        margin:3px;
+        padding: 0px 5px;
+        font-size:12px;
+        border-radius: 2px;
+      }
+      sampleoptions div:hover {
+        background-color:var(--accent8);
+        cursor:pointer;
+      }
+
+
+
+</style>
+{% endblock %}
+{% block centercontent %}
+<div id="queue" class="center-border">
+    <breadcrumbs><a href="{% url 'display_queues' %}">Queues</a> / {{ queue.protocol_name }} / <b>{{ queue.step_name }} Queue</b></breadcrumbs>
+    <div class="columns">
+        <div class="column-75">
+            <div id="queue-info">Queue ({{queue.samples}} samples)<sampleoptions><span id="selectedsamples">0 Selected</span><div onClick="reserveSelected();">Reserve</div><div>Release</div><div onClick="removeFromQueue();">Remove from Queue</div><div>Move to Next Step</div></sampleoptions></div>
+            <div id="tableheader" style="">
+                <headercontent style="width:50px;">#</headercontent><headerhandle></headerhandle>
+                <headercontent style="width:150px;">Sample</headercontent><headerhandle></headerhandle>
+                <headercontent>Plasma Matrix ID</headercontent><headerhandle></headerhandle>
+                <headercontent>Scan Order</headercontent><headerhandle></headerhandle>
+                <headercontent>Initial Workflow</headercontent><headerhandle></headerhandle>
+                <headercontent>Waiting</headercontent><headerhandle></headerhandle>
+                <headercontent>Location</headercontent><headerhandle></headerhandle>
+
+            </div>
+            <div class="groupbar">Controls</div>
+            <div id="queuedcontrols"></div>
+            <div class="groupbar">Samples</div>
+            <div id="queuedsamples"></div>
+        </div>
+        <div class="column-25">
+            <button id="view-reserved">Use Reserved »</button>
+            <div class="reserved-box"><input type="text" id="scaninput" placeholder="Scan Tube"></div>
+            <div class="reserved-box" id="dragbox"><div id="dragsamples"><div id="draghereempty">Drag Samples Here</div></div><vhr></vhr><reserve id="releaseall">Release All</reserve></div>
+            <div class="reserved-box" id="controlbox"><span style="color:white">Add Controls</span><div id="controls"></div><add id="addall">Add All</add><add id="add">Add</add></div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+
+<script>
+const csrf = '{{ csrf_token }}';
+const queue= {{queue | safe}}
+const velocity_samples = {{samples | safe}};
+const controls = {{controls|safe}}
+const main = document.getElementById('queue');
+const queuedcontrols = document.getElementById('queuedcontrols');
+const queuedsamples = document.getElementById('queuedsamples');
+const dragsamples = document.getElementById('dragsamples');
+const selectedsamples = document.getElementById('selectedsamples');
+var reserved_samples=[];
+var selected_samples=[];
+var last_selected = 0;
+
+function localerror(msg) {
+	error_element = document.getElementById('pylims_request_error');
+	error_element.textContent=msg;
+	error_element.style.display='block';
+}
+
+document.getElementById('scaninput').focus()
+
+function clicksample(sample,event) {
+    const siblings = document.querySelectorAll('queuedsample');
+    const index = Array.from(siblings).indexOf(sample.element);
+    console.log(index,'was clicked, with',event.shiftKey,event.ctrlKey)
+    if (event.shiftKey) {
+        event.preventDefault();
+        console.log('Shift key was held down!');
+        if (last_selected < index) {
+            for (let i=last_selected; i<=index; i++) {
+                samples[siblings[i].dataset.did].selected=true;
+                samples[siblings[i].dataset.did].element.classList.add('selectedsample');
+                update_selected_samples('add',siblings[i].dataset.did);
+            }
+        } else {
+            for (let i=last_selected; i>=index; i--) {
+                samples[siblings[i].dataset.did].selected=true;
+                samples[siblings[i].dataset.did].element.classList.add('selectedsample');
+                update_selected_samples('add',siblings[i].dataset.did);
+            }
+        }
+    } else if (event.ctrlKey) {
+        if (sample.selected) {
+            sample.selected=false;
+            sample.element.classList.remove('selectedsample');
+            update_selected_samples('remove',sample.did);
+        } else {
+            sample.selected=true;
+            sample.element.classList.add('selectedsample');
+            last_selected = index;
+            update_selected_samples('add',sample.did);
+        }
+    } else {
+        console.log('single click',sample);
+        const clicked_sample_state = sample.selected;
+        for (let sample in samples) {
+            if (samples[sample].selected) {
+                console.log('clear selection',samples[sample].sample_name);
+                samples[sample].selected=false;
+                samples[sample].element.classList.remove('selectedsample');  
+                update_selected_samples('remove',sample);
+            }
+        }
+        if (clicked_sample_state) {
+            sample.selected=false;
+            sample.element.classList.remove('selectedsample');
+            update_selected_samples('remove',sample.did);
+        } else {
+            sample.selected=true;
+            sample.element.classList.add('selectedsample');
+            last_selected = index;
+            update_selected_samples('add',sample.did);
+        }
+        last_selected = index;
+    }
+}
+
+function update_selected_samples(action,sampleid) {
+    console.log(action,sampleid)
+    sampleid = parseInt(sampleid);
+    if (action=='add') {
+        const index = selected_samples.indexOf(sampleid);
+        if (index == -1) {
+            selected_samples.push(sampleid);
+        }
+    } else {
+        const index = selected_samples.indexOf(sampleid);
+        console.log(index)
+        if (index > -1) {
+            console.log('splicing')
+            selected_samples.splice(index, 1);
+        }
+    }
+    selectedsamples.textContent = `${selected_samples.length} Selected`;
+}
+
+function reserveSample(sample, displayOnly=false) {
+    console.log('reserve',sample.did)
+
+    const index = reserved_samples.indexOf(sample.did);
+    console.log(index)
+    if (reserved_samples.indexOf(sample.did) == -1) {
+        reserved_samples.push(sample.did);
+        sample.reserve.style.display='none';
+        sample.release.style.display='block';
+        const data={"step":sample.queue, "sample":sample.did}
+        const pyoptions={data,csrf,urlprefix:'..',url:'reserve',submit_mode:'silent'}
+        pylims_post(pyoptions).then(result => {
+            console.log(result)
+        
+        }).catch(error => {
+            console.error(error);
+        });  
+    }
+    dragsamples.textContent = reserved_samples.length;
+}
+function releaseSample(sample, displayOnly=false) {
+    console.log('release',sample.did)
+    const index = reserved_samples.indexOf(sample.did);
+    if (index !== -1) {
+        sample.reserve.style.display='block';
+        sample.release.style.display='none';
+        reserved_samples.splice(index, 1);
+        dragsamples.textContent = reserved_samples.length;
+        if (!displayOnly) {
+            console.log('commit')
+            const data={"step":sample.queue, "sample":sample.did}
+            const pyoptions={data,csrf,urlprefix:'..',url:'release',submit_mode:'silent'}
+            pylims_post(pyoptions).then(result => {
+                console.log(result)
+            
+            }).catch(error => {
+                console.error(error);
+            }); 
+        }
+        return false;
+    } 
+}
+
+function removeFromQueue() {
+    const data={"step":queue.sid, "samples":selected_samples}
+    const pyoptions={data,csrf,urlprefix:'..',url:'remove_samples',submit_mode:'silent'}
+    pylims_post(pyoptions).then(result => {
+        for (let i = selected_samples.length - 1; i >= 0; i--) {
+            let sample_id = selected_samples[i];
+            update_selected_samples('remove',sample_id)
+            let sample = samples[sample_id];
+            sample.element.parentNode.removeChild(sample.element);
+            delete samples[sample_id];
+
+            
+        }
+    }).catch(error => {
+        console.error(error);
+    }); 
+}
+
+function reserveSelected(displayOnly=false) {
+    for (let sample_id of selected_samples) {
+        let sample = samples[sample_id];
+
+        let index = reserved_samples.indexOf(sample.did);
+        if (reserved_samples.indexOf(sample.did) == -1) {
+            reserved_samples.push(sample.did);
+            sample.reserve.style.display='none';
+            sample.release.style.display='block';
+            
+        }
+        sample.selected=false;
+        sample.element.classList.remove('selectedsample');
+    }
+    dragsamples.textContent = reserved_samples.length;
+    if (!displayOnly) {
+        console.log('commit')
+        const data={"step":queue.sid, "samples":selected_samples}
+        const pyoptions={data,csrf,urlprefix:'..',url:'reserve_samples',submit_mode:'silent'}
+        pylims_post(pyoptions).then(result => {
+            for (let i = selected_samples.length - 1; i >= 0; i--) {
+                let sample_id = selected_samples[i];
+                let sample = samples[sample_id];
+
+                update_selected_samples('remove',sample_id)
+            }
+        }).catch(error => {
+            console.error(error);
+        }); 
+    }
+    return false;   
+}
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'a' && event.ctrlKey) {
+      event.preventDefault(); // Prevent the default "select all" behavior
+      console.log('Ctrl+A was pressed');
+      const siblings = document.querySelectorAll('queuedsample');
+      for (let sample of siblings) {
+            samples[sample.dataset.did].selected=true;
+            samples[sample.dataset.did].element.classList.add('selectedsample');
+            update_selected_samples('add',sample.dataset.did)
+      }
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      console.log('Esc was pressed');
+      const siblings = document.querySelectorAll('queuedsample');
+      for (let sample of siblings) {
+            samples[sample.dataset.did].selected=false;
+            samples[sample.dataset.did].element.classList.remove('selectedsample');
+      }
+    }
+  });
+
+class QueuedSample {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+		this.element = document.createElement('queuedsample');
+
+        this.number = document.createElement('samplenumber');
+        this.element.appendChild(this.number);
+        this.element.dataset.did=this.did;
+
+        this.samplename = document.createElement('samplename');
+        this.samplename.textContent = this.sample_name;
+        this.element.appendChild(this.samplename);
+
+        this.reserve = document.createElement('reserve');
+        this.reserve.textContent = 'Reserve';
+        this.element.appendChild(this.reserve);
+
+        this.release = document.createElement('release');
+        this.release.textContent = 'Release';
+        this.release.style.display = 'none';
+        this.element.appendChild(this.release);
+
+        this.reserved_status = false;
+        this.selected = false;
+
+        console.log('creating sample',data)
+
+        if (this.rdid !== null) {
+            this.reserve.style.display = 'none';
+            this.release.style.display = 'block';
+            reserved_samples.push(this.did);
+            dragsamples.textContent = reserved_samples.length;
+        }
+
+        this.reserve.addEventListener('click',(event)=> {
+            event.stopPropagation()
+            reserveSample(this);
+        })
+
+        this.release.addEventListener('click',(event)=> {
+            event.stopPropagation()
+            releaseSample(this);
+        })
+
+        this.element.addEventListener('mousedown',(event)=> {
+            if (event.shiftKey) {
+                event.preventDefault();
+            }
+        })
+
+        this.element.addEventListener('click',(event)=> {
+            if (event.shiftKey) {
+                event.preventDefault();
+            }
+            clicksample(this,event);
+        })
+
+	}
+    
+}
+
+class QueuedControl {
+	constructor(data) {
+		for (let datum in data) {
+			this[datum] = data[datum]
+		}
+		this.element = document.createElement('queuedsample');
+
+        this.number = document.createElement('controlnumber');
+        this.element.appendChild(this.number);
+        this.element.dataset.did=this.did;
+
+        this.samplename = document.createElement('samplename');
+        this.samplename.textContent = this.sample_name;
+        this.element.appendChild(this.samplename);
+
+        this.reserve = document.createElement('reserve');
+        this.reserve.textContent = 'Reserve';
+        this.element.appendChild(this.reserve);
+
+        this.release = document.createElement('release');
+        this.release.textContent = 'Remove';
+        this.release.style.display = 'none';
+        this.element.appendChild(this.release);
+
+        this.reserved_status = false;
+        this.selected = false;
+
+        console.log('creating sample',data)
+
+        if (this.rdid !== null) {
+            this.reserve.style.display = 'none';
+            this.release.style.display = 'block';
+            reserved_samples.push(this.did);
+            dragsamples.textContent = reserved_samples.length;
+        }
+
+        this.reserve.addEventListener('click',(event)=> {
+            event.stopPropagation()
+            reserveSample(this);
+        })
+
+        this.release.addEventListener('click',(event)=> {
+            event.stopPropagation()
+            this.removeControl();
+        })
+
+        this.element.addEventListener('mousedown',(event)=> {
+            if (event.shiftKey) {
+                event.preventDefault();
+            }
+        })
+
+        this.element.addEventListener('click',(event)=> {
+            if (event.shiftKey) {
+                event.preventDefault();
+            }
+            clicksample(this,event);
+        })
+
+	}
+
+    removeControl(displayOnly=false) {
+        console.log('release',this.did)
+        const index = reserved_samples.indexOf(this.did);
+        if (index !== -1) {
+            this.element.style.display='none';
+            reserved_samples.splice(index, 1);
+            dragsamples.textContent = reserved_samples.length;
+            if (!displayOnly) {
+                console.log('commit')
+                const data={"step":this.queue, "queue_id":this.qdid}
+                const pyoptions={data,csrf,urlprefix:'..',url:'controls/remove',submit_mode:'silent'}
+                pylims_post(pyoptions).then(result => {
+                    console.log(result)
+                    samples[result['qdid']].element.remove();
+                    delete samples[result['qdid']];
+                    // add back to control Options
+                    const does_control_exist = Array.from(control_select.options).find(option => option.text === this.sample_name);
+                    if (!does_control_exist) {
+                        const option = document.createElement('option');
+                        option.value=this.control;
+                        option.textContent=this.sample_name;
+                        control_select.appendChild(option);
+                    }
+                    control_select.disabled=false;
+                    const no_controls = document.getElementById('no_controls');
+                    if (no_controls) { no_controls.remove(); }
+                    document.getElementById('add').style.display='inline-block';
+                    document.getElementById('addall').style.display='inline-block';
+                }).catch(error => {
+                    console.error(error);
+                }); 
+            }
+            return false;
+        } 
+    }
+    selectSample() {
+        console.log('selected',this.samplename)
+    }
+}
+
+const controlbox = document.getElementById('controlbox');
+const control_container = document.getElementById('controls');
+const control_select = document.createElement('select');
+control_select.style.userSelect='none';
+
+control_container.appendChild(control_select);
+if (controls.length==0) {
+  controlbox.style.display='none';
+} else {
+  for (let control of controls) {
+      const option = document.createElement('option');
+      option.value=control.ctrlid;
+      option.textContent=control.control_type;
+      control_select.appendChild(option);
+  }
+}
+
+
+var samples = {}
+
+function remove_control_option(id) {
+    const optionToDisable = control_select.querySelector(`option[value="${id}"]`);
+    if (optionToDisable) {
+        optionToDisable.remove();
+    }
+    const option_count = control_select.querySelectorAll('option').length;
+    console.log(option_count,'controls remaining');
+    if (option_count == 0) {
+        const no_controls = document.createElement('option');
+        no_controls.id="no_controls";
+        no_controls.textContent="All Controls Addded";
+        control_select.appendChild(no_controls);
+        control_select.disabled=true;
+        document.getElementById('add').style.display='none';
+        document.getElementById('addall').style.display='none';
+    } else {
+        control_select.disabled=false;
+    }
+}
+
+for (let sample of velocity_samples) {
+    console.log(sample.control)
+    if (sample.control) {
+        samples[sample.did] = new QueuedControl(sample);
+        queuedcontrols.appendChild(samples[sample.did].element);
+        remove_control_option(sample.control);
+
+    } else {
+        samples[sample.did] = new QueuedSample(sample);
+        queuedsamples.appendChild(samples[sample.did].element);
+    }    
+}
+
+
+
+document.getElementById('releaseall').addEventListener('click',()=>{
+    const data={"step":queue.sid}
+    const pyoptions={data,csrf,urlprefix:'..',url:'releaseall',submit_mode:'silent'}
+    pylims_post(pyoptions).then(result => {
+        console.log(result)
+        for (let i=reserved_samples.length-1;i>=0;i--) {
+            samples[reserved_samples[i]].releaseSample(true);
+        }
+    }).catch(error => {
+        console.error(error);
+    }); 
+    return false;
+})
+
+document.getElementById('view-reserved').addEventListener('click',()=>{
+    window.location.href='/reserved/'+queue.sid;
+})
+
+document.getElementById('add').addEventListener('click',()=>{
+  const selected_control = control_select.options[control_select.selectedIndex].value;
+  const data={"step":queue.sid,"control":selected_control}
+  const pyoptions={data,csrf,urlprefix:'..',url:'addcontrol',submit_mode:'silent'}
+  pylims_post(pyoptions).then(result => {
+        const sample = JSON.parse(result.samples)[0]
+      samples[sample.did] = new QueuedControl(sample);
+      queuedcontrols.appendChild(samples[sample.did].element)
+      remove_control_option(sample.control)
+      
+  }).catch(error => {
+      console.error(error);
+  }); 
+  return false;
+})
+
+
+
+</script>{% endblock %}

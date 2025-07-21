@@ -1,0 +1,40 @@
+{
+	"type": "module",
+	"category": "spaces",
+	"author": "Brian Griffiths",
+	"author_email": "tech@pylims.com",
+	"authentication": "loggedin",
+	"scripts": [
+		"spaces.py"
+	],
+	"load_script_function": [0,"load_spaces",["user"]],
+	"templates": {
+		"spaces.html": {"name":"Spaces","display_link":true,"authentication":"loggedin"}
+		
+	},
+	"default_template": "spaces.html",
+	"title": "Pylims Default Spaces",
+	"version_major": 1,
+	"version_minor": 0,
+	"setup_options":{
+		"only_admins_add_spaces":{"type":"tf","value":"false"},
+		"level_1_country":{"type":"tf","value":"false"},
+		"level_2_state":{"type":"tf","value":"false"},
+		"level_3_city":{"type":"tf","value":"false"},
+		"level_4_campus":{"type":"tf","value":"false"},
+		"level_5_building":{"type":"tf","value":"false"},
+		"level_6_room":{"type":"tf","value":"false"},
+		"level_6_lab":{"type":"tf","value":"true"},
+		"level_7_equipment":{"type":"tf","value":"true"},
+		"level_7_container":{"type":"tf","value":"true"},
+		"level_7_shelf":{"type":"tf","value":"false"},
+		"level_7_drawer":{"type":"tf","value":"false"},
+		"level_7_bench":{"type":"tf","value":"false"},
+		"level_8_box":{"type":"tf","value":"true"},
+		"level_8_rack":{"type":"tf","value":"true"},
+		"level_8_shelf":{"type":"tf","value":"false"},
+		"level_8_tray":{"type":"tf","value":"false"},
+		"level_8_kit":{"type":"tf","value":"false"},
+		"level_9_subdivision":{"type":"tf","value":"false"}
+	}
+}
