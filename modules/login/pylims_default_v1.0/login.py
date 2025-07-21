@@ -15,7 +15,7 @@ self = os.path.basename(current_directory)
 class EmailModel(BaseModel):
     email: EmailStr
 
-def submit(request):
+def login_submit(request):
     data = json.loads(request.body)
     print(data)
     
@@ -83,5 +83,5 @@ def submit(request):
     return JsonResponse(response)
 
 urlpatterns=[
-    path('submit/', submit, name="submit"),
+    path('submit/', login_submit, name="login_submit"),
     ]
