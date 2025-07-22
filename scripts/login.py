@@ -33,7 +33,7 @@ def login_submit(request):
     
     print('logging in with type',data['logintype'])
     
-    if data['logintype']=='Email' and not data['login']=='root':  
+    if data['logintype']=='email' and not data['login']=='root':  
         try:
             print('posted email:',data['login'])
             validated_email = EmailModel(email=data['login'])
@@ -43,7 +43,7 @@ def login_submit(request):
         except:
             response['error']='Email not valid'
             return JsonResponse(response)
-    elif data['logintype']=='Email' and data['login']=='root':
+    elif data['logintype']=='email' and data['login']=='root':
         print('login is root')
         selectdata['email']=data['login']
         selectdata['type']='email'
