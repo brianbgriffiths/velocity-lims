@@ -24,7 +24,7 @@ from colorama import Fore, Back, Style, just_fix_windows_console
 just_fix_windows_console()
 import pylims
 from django.views import static
-from scripts import login, queues, steps
+from scripts import login, queues, steps, samples, user_scripts
 
 
 print(pylims.term(),"Starting Pylims Server v1.1")
@@ -56,4 +56,11 @@ urlpatterns = [
     path('step/nextstep/', steps.next_step, name='next_step'),
     path('step/save/', steps.save_step, name='save_step'),
     path('step/saveplacements/', steps.save_placements, name='save_placements'),
+
+    #samples
+    path("samples/", samples.display_samples, name="display_samples"),
+    path("add_to_assay/", samples.add_to_assay, name="add_to_assay"),
+
+    #scripts
+    path("script/run/", user_scripts.run_script, name="run_script"),
 ]

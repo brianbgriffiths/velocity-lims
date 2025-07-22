@@ -82,7 +82,3 @@ def run_script(request):
     conn.close()
     response['status']='success'
     return JsonResponse(response)
-
-urlpatterns=[
-   path("script/run/", run_script, name="run_script"),
-    ]

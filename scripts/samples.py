@@ -72,7 +72,7 @@ def display_samples(request):
     response['assays'] = parse_json_list(temp_assays)
     
     conn.close()
-    return render(request, 'overhauls/samples.html', response)
+    return render(request, 'samples.html', response)
 
 def add_to_assay(request):
     response_code = handlePost(request)
@@ -133,8 +133,3 @@ def add_to_assay(request):
     conn.close()
     return JsonResponse(response)
     
-
-urlpatterns=[
-   path("samples/", display_samples, name="display_samples"),
-   path("add_to_assay/", add_to_assay, name="add_to_assay"),
-    ]
