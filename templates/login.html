@@ -34,21 +34,17 @@
 
 {% block javascript %}
 <script>
-const mod={{ mod|safe }};
-const urlprefix='{{url}}';
-const options={{ mod_options|safe }};
 const csrf = '{{ csrf_token }}';
 
-console.log('mod',mod,'options',options)
 const main = document.getElementById('account_login');
 
 var container = document.createElement("div");
 var textbox = document.createElement("input");
 container.appendChild(textbox)
 textbox.type="text";
-textbox.placeholder=mod.login.value[options.login];
+textbox.placeholder='Email';
 textbox.id='login-account'
-textbox.dataset.type=mod.login.value[options.login];
+textbox.dataset.type='email'
 main.appendChild(container);
 
 var pcontainer = document.createElement("div");
@@ -79,7 +75,7 @@ function login() {
 	data['login']=document.getElementById('login-account').value;
 	data['logintype']=document.getElementById('login-account').dataset.type;
 	data['password']=document.getElementById('login-password').value;
-	const pyoptions={data,csrf,urlprefix,url:'submit',submit_id:'login-button',submit_mode:'success'}
+	const pyoptions={data,csrf,urlprefix,url:'login_submit',submit_id:'login-button',submit_mode:'success'}
 	pylims_post(pyoptions).then(result => {
 	  console.log('pylims.post result',result);
 	  setTimeout(function() { window.location.href=`https://${window.location.hostname}`; }, 1000);  
