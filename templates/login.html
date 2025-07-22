@@ -1,15 +1,91 @@
 {% extends 'index.html' %}
+{% load static %}
+{% block title %}pylims{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<style>
+	#pylims_request_error {
+		border:solid 1px #ff0000;
+		color:#ff0000;
+		background:#660000;
+		padding:10px;
+		display:none;
+		margin:10px 0px;
+	}
+	#pylims_request_success {
+		border:solid 1px #00ff00;
+		color:#00ff00;
+		background:#006600;
+		padding:10px;
+		display:none;
+		margin:10px 0px;
+	}
+</style>
+{% endblock %}
+{% block centercontent %}
 
-{% block title %}Login{% endblock %}
+<div id="account_login" class="center-border">
 
-{% block centercontent %}<div id="login-greeting">Python-based Laboratory Information Management System (pylims)
-			<br>free, open source, easy</div>
-		<div id="login-form"><input type="text" id="login-username" placeholder="Username">
-		<br><input type="password" id="login-password">
-		<br><button>Login</button>
-		<a href="{% url 'login_password_reset' %}">Reset Password</a>
-		</div>{% endblock %}
-
-{% block javascript %}
+	
+	
+</div>
 
 {% endblock %}
+
+{% block javascript %}
+<script>
+const mod={{ mod|safe }};
+const urlprefix='{{url}}';
+const options={{ mod_options|safe }};
+const csrf = '{{ csrf_token }}';
+
+console.log('mod',mod,'options',options)
+const main = document.getElementById('account_login');
+
+var container = document.createElement("div");
+var textbox = document.createElement("input");
+container.appendChild(textbox)
+textbox.type="text";
+textbox.placeholder=mod.login.value[options.login];
+textbox.id='login-account'
+textbox.dataset.type=mod.login.value[options.login];
+main.appendChild(container);
+
+var pcontainer = document.createElement("div");
+var password = document.createElement("input");
+pcontainer.appendChild(password)
+password.type="password";
+password.placeholder='password';
+password.id='login-password'
+main.appendChild(pcontainer);
+
+var error = document.createElement("div");
+error.id='pylims_request_error';
+main.appendChild(error);
+
+var success = document.createElement("div");
+success.id='pylims_request_success';
+main.appendChild(success);
+
+var button = document.createElement("button");
+button.innerText='Login';
+button.id='login-button';
+main.appendChild(button)
+button.addEventListener('click', login);
+
+
+function login() {
+	let data={}
+	data['login']=document.getElementById('login-account').value;
+	data['logintype']=document.getElementById('login-account').dataset.type;
+	data['password']=document.getElementById('login-password').value;
+	const pyoptions={data,csrf,urlprefix,url:'submit',submit_id:'login-button',submit_mode:'success'}
+	pylims_post(pyoptions).then(result => {
+	  console.log('pylims.post result',result);
+	  setTimeout(function() { window.location.href=`https://${window.location.hostname}`; }, 1000);  
+	}).catch(error => {
+        console.error(error);
+      });
+	
+}
+</script>{% endblock %}

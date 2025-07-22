@@ -159,7 +159,7 @@ def mod_resolver(request, mod, page=False, query=False):
             print(pylims.term(),page,pylims.error('Authentication not granted.'))
             conn.close()
             return redirect('home')
-    elif f'{page}.html' in mods[mod][settings['setup'][mod]]['admin_templates']:
+    elif 'admin_templates' in mods[mod][settings['setup'][mod]] and f'{page}.html' in mods[mod][settings['setup'][mod]]['admin_templates']:
         if 'admin' in context and len(context['admin']) == 0:
             print(pylims.term(),page,pylims.error('User is not an admin.'))
             conn.close()
@@ -202,7 +202,8 @@ def mod_resolver(request, mod, page=False, query=False):
             
     context['mod_options']=json.dumps(settings['options'][mod][settings['setup'][mod]])
     
-    context['url']=f'mod_{mod}';
+    # context['url']=f'mod_{mod}'
+    context['url']=f'modules/{mod}'
     if 'setup_options' in mods[mod][settings['setup'][mod]]:
         context["mod"]=mods[mod][settings['setup'][mod]]['setup_options']
     else:

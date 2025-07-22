@@ -58,12 +58,12 @@ class RecursiveDirectoryLoader(Loader):
         template_name=splitname[1]
         settings=json.loads(pylims.get_setup_options())
         mods = json.loads(pylims.build_module_dict())
-        # print(pylims.term(),'Project:',folderpattern,'template:',template_name)
-        # print(f'current mod for {folderpattern}: {settings['setup'][folderpattern]}')
+        print(pylims.term(),'Project:',folderpattern,'template:',template_name)
+        print(f'current mod for {folderpattern}: {settings['setup'][folderpattern]}')
         file_name = os.path.join(pylims.template_dirs,folderpattern,settings['setup'][folderpattern],template_name)
         if os.path.exists(file_name):
             name = safe_join(file_name)
-            # print('\n\nLOADING TEMPLATE',name)
+            print('\n\nLOADING TEMPLATE',name)
             yield Origin(
                     name=name,
                     template_name=template_name,

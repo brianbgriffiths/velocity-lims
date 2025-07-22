@@ -81,7 +81,3 @@ def login_submit(request):
         response['status']='success'
         response['msg_success']='Login successful'
     return JsonResponse(response)
-
-urlpatterns=[
-    path('submit/', login_submit, name="login_submit"),
-    ]
