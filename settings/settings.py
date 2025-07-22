@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-s_3=93^z#n(&*!q7l@mzllmr1d=#u%)2n1iyj4$vv*8%m1w9(5
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [".pylims.com","127.0.0.1", "*.velocitylims.com","demo.velocitylims.com","54.177.169.3"]
+ALLOWED_HOSTS = [".pylims.com","127.0.0.1", "velocitylims.com", "*.velocitylims.com","demo.velocitylims.com","54.177.169.3"]
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
