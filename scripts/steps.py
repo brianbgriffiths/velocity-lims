@@ -276,9 +276,9 @@ def load_step(request, step, page=None):
     if page:
         response['loaded_page']=page_index[page]
         if step_config['status']==2:
-            return render(request, f'overhauls/{page}-complete.html', response)
-        return render(request, f'overhauls/{page}.html', response)
-    return render(request, f'overhauls/{step_config['page']}.html', response)
+            return render(request, f'{page}-complete.html', response)
+        return render(request, f'{page}.html', response)
+    return render(request, f'{step_config['page']}.html', response)
 
 def save_step(request):
     response_code = handlePost(request)
@@ -552,13 +552,3 @@ def save_placements(request):
     conn.close()
     response['status']='success'
     return JsonResponse(response)
-
-
-urlpatterns=[
-   path("steps/begin/", begin_step, name="begin_step"),
-   path('step/<str:step>', load_step, name='load_step'),
-   path('step/<str:step>/<str:page>', load_step, name='load_step'),
-   path('step/nextstep/', next_step, name='next_step'),
-   path('step/save/', save_step, name='save_step'),
-   path('step/saveplacements/', save_placements, name='save_placements'),
-    ]

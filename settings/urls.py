@@ -24,7 +24,7 @@ from colorama import Fore, Back, Style, just_fix_windows_console
 just_fix_windows_console()
 import pylims
 from django.views import static
-from scripts import login, queues
+from scripts import login, queues, steps
 
 
 print(pylims.term(),"Starting Pylims Server v1.1")
@@ -35,6 +35,8 @@ urlpatterns = [
     path('setup/', views.setup, name="setup"),
     path('setup_save/', views.setup_save, name="setup_save"),
     path('login_submit/', login.login_submit, name="login_submit"),
+    
+    #queues
     path("queues/", queues.display_queues, name="display_queues"),
     path('queue/<str:queue>', queues.display_queue, name='display_queue'),
     path('reserved/<str:reserved>', queues.display_reserved, name='display_reserved'),
@@ -47,4 +49,11 @@ urlpatterns = [
     path('addallcontrols/',queues.add_all_controls, name='add_all_controls'),
     path('controls/remove/',queues.remove_controls, name='remove_controls'),
 
+    #steps
+    path("steps/begin/", steps.begin_step, name="begin_step"),
+    path('step/<str:step>', steps.load_step, name='load_step'),
+    path('step/<str:step>/<str:page>', steps.load_step, name='load_step'),
+    path('step/nextstep/', steps.next_step, name='next_step'),
+    path('step/save/', steps.save_step, name='save_step'),
+    path('step/saveplacements/', steps.save_placements, name='save_placements'),
 ]
