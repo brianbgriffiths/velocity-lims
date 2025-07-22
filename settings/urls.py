@@ -32,6 +32,7 @@ print(pylims.term(),"Starting Pylims Server v1.1")
 urlpatterns = [
     path('', views.home, name="home"),
     path('login/',views.show_login, name='show_login'),
+    path('logout/', views.show_logout, name='show_logout'),
     path('setup/', views.setup, name="setup"),
     path('setup_save/', views.setup_save, name="setup_save"),
     path('login_submit/', login.login_submit, name="login_submit"),

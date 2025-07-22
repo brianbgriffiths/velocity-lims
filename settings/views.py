@@ -38,6 +38,9 @@ def home(request):
 def show_login(request):
     context = {}
     return render(request, 'login.html', context)
+def show_logout(request):
+    context = {}
+    return render(request, 'logout.html', context)
 
 def setup(request):
     print(pylims.term(),pylims.info('building module list'))
