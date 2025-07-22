@@ -372,16 +372,3 @@ def remove_controls(request):
     return JsonResponse(response)
 
 
-urlpatterns=[
-   path("queues/", display_queues, name="display_queues"),
-   path('queue/<str:queue>', display_queue, name='display_queue'),
-   path('reserved/<str:reserved>', display_reserved, name='display_reserved'),
-   path('reserve/',reserve_sample, name='reserve_sample'),
-   path('reserve_samples/',reserve_samples, name='reserve_samples'),
-   path('remove_samples/',remove_samples, name='remove_samples'),
-   path('release/',release_sample, name='release_sample'),
-   path('releaseall/',release_all_samples, name='release_all_samples'),
-   path('addcontrol/',add_control, name='add_control'),
-   path('addallcontrols/',add_all_controls, name='add_all_controls'),
-   path('controls/remove/',remove_controls, name='remove_controls'),
-    ]
