@@ -135,21 +135,21 @@ def display_queues(request):
         context['inprogress'] = parse_json_list(context['inprogress'])
 
     print('inprogress',context['inprogress'])
-    return render(request, 'overhauls/queues.html', context)
+    return render(request, 'queues.html', context)
 
 def display_queue(request,queue):
     options_to_send={}
     options_to_send['userid']=request.session['userid']
     options_to_send['queue']=queue
     context=load_queue(options_to_send)
-    return render(request, 'overhauls/queue.html', context)
+    return render(request, 'queue.html', context)
 
 def display_reserved(request,reserved):
     options_to_send={}
     options_to_send['userid']=request.session['userid']
     options_to_send['reserved']=reserved
     context=load_reserved(options_to_send)
-    return render(request, 'overhauls/reserved.html', context)
+    return render(request, 'reserved.html', context)
 
 def reserve_sample(request):
     response_code = handlePost(request)
