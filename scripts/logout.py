@@ -12,7 +12,7 @@ import bcrypt
 current_directory = os.path.dirname(os.path.abspath(__file__))
 self = os.path.basename(current_directory)
 
-def submit(request):
+def logout_submit(request):
     data = json.loads(request.body)
     print(data)
     
@@ -25,6 +25,3 @@ def submit(request):
         response['status']='success'
         response['msg_success']='Logout successful'
     return JsonResponse(response)
-urlpatterns=[
-    path('submit/', submit, name="submit"),
-    ]

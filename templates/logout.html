@@ -32,9 +32,6 @@
 
 {% block javascript %}
 <script>
-const mod={{ mod|safe }};
-const urlprefix='{{url}}';
-const options={{ mod_options|safe }};
 const csrf = '{{ csrf_token }}';
 
 console.log('mod',mod,'options',options)
@@ -76,7 +73,7 @@ function nevermind() {
 
 function logout() {
 	let data={}
-	const pyoptions={data,csrf,urlprefix,url:'submit',submit_id:'logout-yes',submit_mode:'success'}
+	const pyoptions={data,csrf,url:'logout_submit',submit_id:'logout-yes',submit_mode:'success'}
 	const result = pylims_post(pyoptions).then(result => {
 	  console.log('pylims.post result',result);
 	  setTimeout(function() { window.location.href=`https://${window.location.hostname}`; }, 1000);  
