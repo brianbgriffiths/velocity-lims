@@ -129,7 +129,7 @@ def load_reserved(params):
 def display_queues(request):
     context=load_queues(request)
     if context==False:
-        return redirect('/modules/login')
+        return redirect('login')
     context['inprogess']=load_in_progress(request)
     if len(context['inprogress'])>0:
         context['inprogress'] = parse_json_list(context['inprogress'])
