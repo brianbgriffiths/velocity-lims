@@ -75,7 +75,7 @@ function login() {
 	data['login']=document.getElementById('login-account').value;
 	data['logintype']=document.getElementById('login-account').dataset.type;
 	data['password']=document.getElementById('login-password').value;
-	const pyoptions={data,csrf,urlprefix,url:'login_submit',submit_id:'login-button',submit_mode:'success'}
+	const pyoptions={data,csrf,url:'login_submit',submit_id:'login-button',submit_mode:'success'}
 	pylims_post(pyoptions).then(result => {
 	  console.log('pylims.post result',result);
 	  setTimeout(function() { window.location.href=`https://${window.location.hostname}`; }, 1000);  

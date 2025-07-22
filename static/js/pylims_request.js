@@ -19,7 +19,7 @@ function pylims_post(options) {
 		if (options.submit_id && options.submit_mode && (options.submit_mode=='success' || options.submit_mode=='save')) {
 			submitbutton.disabled = true;
 		}
-		fetch(`/${options.urlprefix}/${options.url}/`, {
+		fetch(`/${options.url}/`, {
 		  method: "POST",
 		  headers: {
 			"Content-Type": "application/json",
@@ -31,7 +31,7 @@ function pylims_post(options) {
 			// Check if the request was successful (status code 2xx)
 			if (!response.ok) {
 				const statusCode = response.status;
-				throw new Error(`Pylims error: ${statusCode} /${options.urlprefix}/${options.url}/`);
+				throw new Error(`Pylims error: ${statusCode} /${options.url}/`);
 			}	
 			return response.json();
 		  })
