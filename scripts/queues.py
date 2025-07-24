@@ -131,6 +131,7 @@ def load_reserved(params):
 def display_queues(request):
     context=load_queues(request)
     context['inprogess']=load_in_progress(request)
+    context['userid'] = request.session.get('userid', None)
     if len(context['inprogress'])>0:
         context['inprogress'] = parse_json_list(context['inprogress'])
 
