@@ -10,6 +10,7 @@ from datetime import datetime
 from django.urls import reverse
 
 import bcrypt
+from settings.views import login_required
 
 def handlePost(request):
     if request.method == 'POST':
@@ -126,10 +127,9 @@ def load_reserved(params):
     conn.close()
     return response
 
+@login_required
 def display_queues(request):
     context=load_queues(request)
-    if context==False:
-        return redirect('show_login')
     context['inprogess']=load_in_progress(request)
     if len(context['inprogress'])>0:
         context['inprogress'] = parse_json_list(context['inprogress'])
