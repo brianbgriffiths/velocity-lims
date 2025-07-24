@@ -154,6 +154,7 @@ def show_login(request):
 @login_required
 def show_logout(request):
     context = {}
+    context['userid'] = request.session.get('userid', None)
     return render(request, 'logout.html', context)
 
 def setup(request):
