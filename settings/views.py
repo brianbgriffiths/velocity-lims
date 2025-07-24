@@ -9,11 +9,93 @@ import json, os, sys, subprocess, datetime
 from pathlib import Path
 from settings import settings
 from django.template.loader import get_template
+from functools import wraps
 import pylims
 import psycopg
 from psycopg import sql
 from psycopg.rows import dict_row 
 from psycopg.pq import Escaping
+
+def is_user_logged_in(request):
+    """
+    Check if the user is logged in by verifying if userid is set in the session.
+    
+    Args:
+        request: Django HttpRequest object
+        
+    Returns:
+        bool: True if user is logged in (userid exists in session), False otherwise
+    """
+    return 'userid' in request.session and request.session['userid'] is not None
+
+def login_required(view_func):
+    """
+    Decorator that requires a user to be logged in to access a view.
+    
+    If the user is not logged in, they will be redirected to the login page.
+    
+    Usage:
+        @login_required
+        def my_view(request):
+            # This view is only accessible to logged-in users
+            pass
+    """
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not is_user_logged_in(request):
+            return redirect('show_login')  # Redirect to login page
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+def get_sample_count(request):
+    """
+    Query to get the total count of samples in the database.
+    
+    Args:
+        request: Django HttpRequest object
+        
+    Returns:
+        JsonResponse: JSON response containing the sample count
+    """
+    try:
+        conn = psycopg.connect(
+            dbname=pylims.dbname, 
+            user=pylims.dbuser, 
+            password=pylims.dbpass, 
+            host=pylims.dbhost, 
+            port=pylims.dbport, 
+            row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Query to count total samples
+        cursor.execute("SELECT COUNT(*) as total_samples FROM samples;")
+        result = cursor.fetchone()
+        
+        # Also get count from velocity.samples if it exists
+        try:
+            cursor.execute("SELECT COUNT(*) as velocity_samples FROM velocity.samples;")
+            velocity_result = cursor.fetchone()
+        except:
+            velocity_result = {'velocity_samples': 0}
+        
+        cursor.close()
+        conn.close()
+        
+        response = {
+            'status': 'success',
+            'total_samples': result['total_samples'],
+            'velocity_samples': velocity_result['velocity_samples']
+        }
+        
+        return JsonResponse(response)
+        
+    except Exception as e:
+        response = {
+            'status': 'error',
+            'error': f'Database error: {str(e)}'
+        }
+        return JsonResponse(response, status=500)
 
 def handlePost(request):
     if request.method == 'POST':
@@ -32,12 +114,44 @@ def home(request):
     with open("VERSION", 'r') as file:
         context['info'].append(['Pylims Version',file.read()])
     context['info'].append(['Python Version',".".join(sys.version.split()[0].split('.')[:2])])
-    return redirect('display_queues')
+    
+    # Add sample count to info
+    try:
+        conn = psycopg.connect(
+            dbname=pylims.dbname, 
+            user=pylims.dbuser, 
+            password=pylims.dbpass, 
+            host=pylims.dbhost, 
+            port=pylims.dbport, 
+            row_factory=dict_row
+        )
+        cursor = conn.cursor
+        
+        # Also get count from velocity.samples if it exists
+        try:
+            cursor.execute("SELECT COUNT(*) as velocity_samples FROM velocity.samples;")
+            velocity_result = cursor.fetchone()
+            context['info'].append(['Total Samples', velocity_result['velocity_samples']])
+        except:
+            pass  # velocity.samples table might not exist
+        
+        cursor.close()
+        conn.close()
+        
+    except Exception as e:
+        context['info'].append(['Sample Count', f'Error: {str(e)}'])
+
+    if not is_user_logged_in(request):
+        context['userid'] = None
+    else:
+        context['userid'] = request.session.get('userid', None)
     return render(request, 'index.html', context)
 
 def show_login(request):
     context = {}
     return render(request, 'login.html', context)
+
+@login_required
 def show_logout(request):
     context = {}
     return render(request, 'logout.html', context)

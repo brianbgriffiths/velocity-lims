@@ -13,9 +13,13 @@
 </head>
 <body>
 	<div id="login-pylims-logo"><a href="{% url 'home' %}"><img  src="{% static 'themes/pylims_velocity_v1.0/logo.svg' %}" alt="pylims logo"></a></div>
-	<div id="header"><a href="/queues">Lab Queues</a> | <a href="/samples">Samples</a>{% for link in links %}
-            <span class="header_link"><a href="/modules/{{ link.0 }}/{{ link.2 }}">{{ link.1 }}</a></span>
-        {% endfor %}
+	<div id="header">
+		{% if userid %}
+		<a href="{% url 'show_logout' %}">Logout</a> | <a href="{% url 'display_queues' %}">Lab Queues</a> | <a href="{% url 'display_samples' %}">Samples</a> 
+		{% endif %}
+		{% if not userid %}
+			<a href="{% url 'show_login' %}">Login</a>
+		{% endif %}
 	</div>
 	<div id="center-content">
 	{% block stepbreadcrumbs %}{% endblock %}
