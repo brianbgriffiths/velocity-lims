@@ -107,7 +107,6 @@ def handlePost(request):
     return 405
     
 
-
 def home(request):
     context={}
     context['info']=[]
@@ -156,6 +155,19 @@ def show_logout(request):
     context = {}
     context['userid'] = request.session.get('userid', None)
     return render(request, 'logout.html', context)
+
+@login_required
+def view_settings(request):
+    context = {}
+    context['userid'] = request.session.get('userid', None)
+
+    return render(request, 'settings.html', context)
+
+@login_required
+def settings_operators(request):
+    context = {}
+    context['userid'] = request.session.get('userid', None)
+    return render(request, 'settings_operators.html', context)
 
 def setup(request):
     print(pylims.term(),pylims.info('building module list'))

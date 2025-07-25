@@ -1,0 +1,395 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}Velocity LIMS - Settings{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_common.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<style>
+    body {
+        counter-reset: sample control;
+    }
+    breadcrumbs {
+        border:solid 1px #000000;
+        padding:3px;
+        display:block;
+        margin-bottom:15px;
+    }
+	protocol {
+		background-color:var(--accent1);
+		color:white;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+	}
+	queue {
+		background-color:var(--gray-lightest);
+		color:black;
+		display:block;
+		position:relative;
+		border-radius:3px;
+		padding:3px 10px;
+		margin-left:30px;
+		margin-bottom:2px;
+		margin-top:2px;
+		border:solid 1px var(--gray-med);
+		clear:both;
+	}
+	queue:hover {
+		background-color:var(--accent9);
+		cursor:pointer;
+	}
+	steporder {
+		display:inline-block;
+		width:60px;
+		font-size:12px;
+		font-weight:bold;
+	}
+	steporder::before {
+		content:'Step ';
+	}
+	steporder::after {
+		content:' »';
+	}
+	stepname {
+		display:inline-block;
+	}
+	samplecount, validationcount {
+		float:right;
+		position:relative;
+		box-sizing:border-box;
+		padding:1px;
+		top:-2px;
+		height:100%;
+		margin-left:10px;
+		font-size:16px;
+		font-weight:bold;
+		width:50px;
+		text-align:right;
+	}
+	samplecount {
+		color:var(--blue-dark);
+	}
+
+	protocolsamples {
+		float:right;
+
+	}
+	.button-hover-right {
+		position:relative;
+		width:fit-content;
+		border:solid 1px var(--accent5);
+		padding:10px;
+		padding-right:30px;
+	}
+	#arrowBox {
+	    position: absolute;
+		top: 0px;
+		right: 0px;
+		padding: 0px;
+		margin: 0px;
+		font-size: 20px;
+		background-color: var(--accent3);
+		height: 100%;
+		width: 20px;
+		line-height: 20px;
+	}
+
+	#arrowBox::after {
+		content: '';
+		position:absolute;
+		text-rendering: auto;
+		-webkit-font-smoothing: antialiased;
+		font: var(--fa-font-solid);
+		content: "\f0da";
+		top: calc(50% - 10px);
+		height: 20px;
+		width: 12px;
+		left: calc(50% - 6px);	
+	}
+
+	#hoverBox {
+	  display: none;
+	  position: absolute;
+	  top: 10px;
+	  right: -183px; 
+	  background-color:var(--inputhover);
+	  padding: 10px 0px;
+	  width:180px;
+	  font-size:16px;
+	  border: solid 1px var(--accent7);
+	}
+
+	#hoverBox a {
+	  display: block;
+	  margin: 5px 0;
+	  padding:0px 10px;
+	}
+	
+	#hoverBox a:hover {
+		background-color:var(--accent3);
+		color:#ffffff;
+	}
+	#arrowBox:hover #hoverBox {
+		display:block;
+	}
+	.project {
+		height: 40px;
+		border-bottom: solid 1px #cccccc;
+		line-height: 40px;
+	}
+	#new_project_button {
+		margin:20px 0px;
+	}
+    .columns {
+        display: flex;
+        gap: 20px;
+        box-sizing:border-box;
+        width:100%;
+      }
+      
+      .column-75 {
+        flex: 0 0 calc(75% - 10px);
+        
+      }
+      
+      .column-25 {
+        flex: 0 0 calc(25% - 10px);
+      }
+      #queue-info {
+        border:solid 1px #000000;
+        border-radius:3px;
+        font-size:12px;
+        font-weight:bold;
+        padding:3px;
+        margin-bottom:5px;
+        position:relative;
+        height:22px;
+      }
+      #view-reserved {
+        background-color:var(--green-med);
+        border:solid 1px var(--gray-med);
+        color:white;
+        font-size:16px;
+        border-radius:3px;
+        width:100%;
+        display:block;
+        cursor:pointer;
+        box-shadow: 1px 1px 4px 0px #0000006b;
+        margin-bottom:15px;
+      }
+      #view-reserved:hover {
+        background-color:var(--highlight-green-med);
+      }
+      .reserved-box {
+        background-color:var(--gray-dark);
+        border-radius:3px;
+        padding:10px 5px;
+        border:solid 1px #2a2a2a;
+        margin:2px 0px;
+        text-align:center;
+        position:relative;
+      }
+      reserve, release, add {
+        background-color:var(--blue-med);
+        border-radius:2px;
+        position: absolute;
+        right: 2px;
+        top: 2px;
+        padding:2px 5px;
+        width:70px;
+        font-size:14px;
+        text-align:center;
+        color:white;
+        cursor:pointer;
+        user-select:none;
+      }
+      release {
+        background-color:var(--gray-med);
+
+      }
+      reserve:hover, add:hover {
+        cursor:pointer;
+        background-color:var(--blue-dark);
+      }
+      release:hover {
+        cursor:pointer;
+        background-color:var(--gray-dark);
+      }
+      add {
+        position:relative;
+        display:inline-block;
+        margin:5px 10px;
+      }
+      #releaseall {
+        font-size:24px;
+        position:relative;
+      }
+      vhr {
+        width:100%;
+        background-color:var(--gray-med);
+        height:1px;
+        display:block;
+        border-bottom:solid 1px black;
+        border-top:var(--gray-dark);
+        margin:10px 0px;
+      }
+      queuedsample {
+        margin-left:0px;
+        padding:3px 0px;
+        width:100%;
+      }
+      samplenumber, controlnumber {
+        width:50px;
+        box-sizing:border-box;
+        display:inline-block;
+      }
+      samplenumber::before {
+        counter-increment: sample; 
+        content: counter(sample) ". "; 
+      }
+      controlnumber::before {
+        counter-increment: control; 
+        content: counter(control) ". "; 
+      }
+      
+
+      #tableheader {
+        border:solid 1px #000000;
+        border-radius:3px;
+        font-size:12px;
+        font-weight:bold;
+        padding:0px;
+        margin-bottom:5px;
+        background-color:var(--gray-light);
+        display:block;
+        position:relative;
+      }
+      headercontent {
+        line-height:20px;
+        display:inline-block;
+        height:20px;
+        padding:0px 10px;
+        vertical-align:top;
+        text-align:center;
+        box-sizing:border-box;
+      }
+      headerhandle {
+        height:20px;
+        width:1px;
+        background-color:white;
+        border-left:solid 1px var(--gray-med);
+        border-right:solid 1px var(--gray-light);
+        display:inline-block;
+        vertical-align:top;
+        cursor:ew-resize;
+      }
+      tablerow {
+
+      }
+      samplename {
+        width:150px;
+      }
+      #dragsamples {
+         font-size:28px;
+         color:white;
+      }
+      .groupbar {
+        background-color: var(--gray-med);
+        padding:2px;
+        font-weight:bold;
+      }
+
+      queuedsample.selectedsample {
+        background-color:var(--accent9);
+      }
+      queuedsample.selectedsample:hover {
+        background-color:var(--purple-med-hover);
+      }
+
+      sampleoptions {
+        position: absolute;
+        right: 3px;
+        top: 3px;
+        background-color: white;
+        height: 22px;
+        text-align:right;
+        line-height: 22px;
+        font-size: 14px;
+        overflow:hidden;
+      }
+      sampleoptions:hover {
+        overflow:visible;
+        z-index:10;
+        height:auto;
+        box-shadow: 0px 5px 5px 0px #0000004d;
+        border-bottom:solid 1px #000000;
+      }
+      sampleoptions span {
+        height: 22px;
+        border-radius: 2px;
+        line-height: 22px;
+        padding: 0px 5px;
+        font-size: 14px;
+        display:block;
+        background-color: var(--gray-light);
+        padding: 0px 5px;
+        border-radius: 2px;
+      }
+      sampleoptions div {
+        background-color:var(--gray-light);
+        margin:3px;
+        padding: 0px 5px;
+        font-size:12px;
+        border-radius: 2px;
+      }
+      sampleoptions div:hover {
+        background-color:var(--accent8);
+        cursor:pointer;
+      }
+
+
+
+</style>
+{% endblock %}
+{% block centercontent %}
+<div id="main" class="center-border">
+    <breadcrumbs><a href="{% url 'view_settings' %}">Settings</a> / <b><a href="{% settings_operators %}">Operators</a></b></breadcrumbs>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+
+<script>
+const csrf = '{{ csrf_token }}';
+const main = document.getElementById('main');
+
+function localerror(msg) {
+	error_element = document.getElementById('pylims_request_error');
+	error_element.textContent=msg;
+	error_element.style.display='block';
+}
+
+
+document.getElementById('add').addEventListener('click',()=>{
+  const selected_control = control_select.options[control_select.selectedIndex].value;
+  const data={"step":queue.sid,"control":selected_control}
+  const pyoptions={data,csrf,urlprefix:'..',url:'addcontrol',submit_mode:'silent'}
+  pylims_post(pyoptions).then(result => {
+        const sample = JSON.parse(result.samples)[0]
+      samples[sample.did] = new QueuedControl(sample);
+      queuedcontrols.appendChild(samples[sample.did].element)
+      remove_control_option(sample.control)
+      
+  }).catch(error => {
+      console.error(error);
+  }); 
+  return false;
+})
+
+
+
+</script>{% endblock %}
