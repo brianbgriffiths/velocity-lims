@@ -15,7 +15,7 @@
 	<div id="login-pylims-logo"><a href="{% url 'home' %}"><img  src="{% static 'themes/pylims_velocity_v1.0/logo.svg' %}" alt="pylims logo"></a></div>
 	<div id="header">
 		{% if userid %}
-		<a href="{% url 'show_logout' %}">Logout</a> | <a href="{% url 'display_queues' %}">Lab Queues</a> | <a href="{% url 'display_samples' %}">Samples</a> 
+		<a href="{% url 'show_logout' %}">Logout</a> | <a href="{% url 'display_queues' %}">Lab Queues</a> | <a href="{% url 'display_samples' %}">Samples</a> | <a href="{% url 'settings' %}">Settings</a>  
 		{% endif %}
 		{% if not userid %}
 			<a href="{% url 'show_login' %}">Login</a>
@@ -39,7 +39,7 @@
 {% endif %}
 		
 	</div>
-<div id="footer">Velocity LIMS&trade; &copy; 2023 - 2025 pylims, MIT License</div>	
+<div id="footer"><a href="https://velocitylims.com">Velocity LIMS&trade;</a> by Pylims LLC &copy; 2023 - 2025 | <a href="https://github.com/brianbgriffiths/velocity-lims">Open Source on Github</a></div>
 </body>
 {% block javascriptcommon %}{% endblock %}
 {% block javascript %}{% endblock %}
