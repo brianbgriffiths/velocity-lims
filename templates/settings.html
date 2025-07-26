@@ -357,7 +357,8 @@
 {% block centercontent %}
 <div id="main" class="center-border">
     <breadcrumbs><a href="{% url 'view_settings' %}">Settings</a> </breadcrumbs>
-    <a href="{% url 'settings_operators' %}">Operators</a>
+    <div class="role"><a href="{% url 'settings_roles' %}">Roles</a></div>
+    <div class="role"><a href="{% url 'settings_operators' %}">Operators</a></div>
 </div>
 
 {% endblock %}

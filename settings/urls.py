@@ -39,6 +39,7 @@ urlpatterns = [
     path('logout_submit/', logout.logout_submit, name="submit"),
     path('view_settings/', views.view_settings, name="view_settings"),
     path('settings_operators/', views.settings_operators, name="settings_operators"),
+    path('settings_roles/', views.settings_roles, name="settings_roles"),
 
     #queues
     path("queues/", queues.display_queues, name="display_queues"),

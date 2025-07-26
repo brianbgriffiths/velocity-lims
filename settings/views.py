@@ -167,7 +167,37 @@ def view_settings(request):
 def settings_operators(request):
     context = {}
     context['userid'] = request.session.get('userid', None)
+
     return render(request, 'settings_operators.html', context)
+
+@login_required
+def settings_roles(request):
+    context = {}
+    context['userid'] = request.session.get('userid', None)
+
+    # Fetch roles from the database
+    try:
+        conn = psycopg.connect(
+            dbname=pylims.dbname, 
+            user=pylims.dbuser, 
+            password=pylims.dbpass, 
+            host=pylims.dbhost, 
+            port=pylims.dbport, 
+            row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT * FROM velocity.roles;")
+        roles = cursor.fetchall()
+        
+        cursor.close()
+        conn.close()
+        
+        context['roles'] = roles
+    except Exception as e:
+        context['error'] = f"Error fetching roles: {str(e)}"
+
+    return render(request, 'settings_roles.html', context)
 
 def setup(request):
     print(pylims.term(),pylims.info('building module list'))
