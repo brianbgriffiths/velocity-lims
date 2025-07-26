@@ -45,6 +45,8 @@ urlpatterns = [
     path('delete_role/', views.delete_role, name="delete_role"),
     path('assign_user_roles/', views.assign_user_roles, name="assign_user_roles"),
     path('get_user_roles/', views.get_user_roles, name="get_user_roles"),
+    path('get_all_users/', views.get_all_users, name="get_all_users"),
+    path('get_all_roles/', views.get_all_roles, name="get_all_roles"),
 
     #queues
     path("queues/", queues.display_queues, name="display_queues"),

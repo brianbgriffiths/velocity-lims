@@ -565,3 +565,65 @@ def login_password_reset(request):
 
 def test(test):
     return test
+
+@login_required
+def get_all_users(request):
+    """
+    Get all users for the user role assignment interface.
+    """
+    if request.method == 'POST':
+        try:
+            conn = psycopg.connect(
+                dbname=pylims.dbname,
+                user=pylims.dbuser,
+                password=pylims.dbpass,
+                host=pylims.dbhost,
+                port=pylims.dbport,
+                row_factory=dict_row
+            )
+            cursor = conn.cursor()
+
+            # Get all users from accounts table
+            cursor.execute("SELECT userid, username, email FROM velocity.accounts ORDER BY email")
+            users = cursor.fetchall()
+
+            cursor.close()
+            conn.close()
+
+            return JsonResponse({'status': 'success', 'users': users}, status=200)
+            
+        except Exception as e:
+            return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@login_required
+def get_all_roles(request):
+    """
+    Get all roles for the user role assignment interface.
+    """
+    if request.method == 'POST':
+        try:
+            conn = psycopg.connect(
+                dbname=pylims.dbname,
+                user=pylims.dbuser,
+                password=pylims.dbpass,
+                host=pylims.dbhost,
+                port=pylims.dbport,
+                row_factory=dict_row
+            )
+            cursor = conn.cursor()
+
+            # Get all roles
+            cursor.execute("SELECT * FROM velocity.roles ORDER BY role_name")
+            roles = cursor.fetchall()
+
+            cursor.close()
+            conn.close()
+
+            return JsonResponse({'status': 'success', 'roles': roles}, status=200)
+            
+        except Exception as e:
+            return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
