@@ -26,7 +26,42 @@ def is_user_logged_in(request):
     Returns:
         bool: True if user is logged in (userid exists in session), False otherwise
     """
-    return 'userid' in request.session and request.session['userid'] is not None
+    userid = request.session.get('userid', None)
+    if userid is None:
+        return False
+    return True
+
+def has_permission(request, permission_name):
+    """
+    Check if the current user has a specific permission.
+    
+    Args:
+        request: Django HttpRequest object
+        permission_name: String name of the permission to check
+        
+    Returns:
+        bool: True if user has the permission, False otherwise
+    """
+    if not is_user_logged_in(request):
+        return False
+    
+    permissions = request.session.get('permissions', {})
+    return permissions.get(permission_name, False)
+
+def get_user_permissions(request):
+    """
+    Get all permissions for the current user.
+    
+    Args:
+        request: Django HttpRequest object
+        
+    Returns:
+        dict: Dictionary of permissions where keys are permission names and values are True
+    """
+    if not is_user_logged_in(request):
+        return {}
+    
+    return request.session.get('permissions', {})
 
 def login_required(view_func):
     """
@@ -342,6 +377,146 @@ def delete_role(request):
                 conn.close()
 
                 return JsonResponse({'status': 'success'}, status=200)
+            except Exception as e:
+                return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@login_required
+def assign_user_roles(request):
+    """
+    Assign roles to a user. This will create the user-role relationship.
+    
+    Expected data:
+    {
+        "user_id": 123,
+        "role_ids": [1, 2, 3]
+    }
+    """
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            user_id = data.get('user_id')
+            role_ids = data.get('role_ids', [])
+
+            if not user_id:
+                return JsonResponse({'error': 'User ID is required'}, status=400)
+
+            try:
+                conn = psycopg.connect(
+                    dbname=pylims.dbname,
+                    user=pylims.dbuser,
+                    password=pylims.dbpass,
+                    host=pylims.dbhost,
+                    port=pylims.dbport,
+                    row_factory=dict_row
+                )
+                cursor = conn.cursor()
+
+                # Try to update roles column in accounts table first
+                try:
+                    roles_json = json.dumps(role_ids)
+                    cursor.execute("UPDATE velocity.accounts SET roles = %s WHERE userid = %s", (roles_json, user_id))
+                    
+                    if cursor.rowcount == 0:
+                        return JsonResponse({'error': 'User not found'}, status=404)
+                    
+                    print(f"Updated roles in accounts table for user {user_id}: {role_ids}")
+                    
+                except Exception as accounts_error:
+                    print(f"Accounts table doesn't have roles column: {accounts_error}")
+                    
+                    # Try user_roles junction table instead
+                    try:
+                        # First, delete existing role assignments
+                        cursor.execute("DELETE FROM velocity.user_roles WHERE user_id = %s", (user_id,))
+                        
+                        # Insert new role assignments
+                        for role_id in role_ids:
+                            cursor.execute("INSERT INTO velocity.user_roles (user_id, role_id) VALUES (%s, %s)", (user_id, role_id))
+                        
+                        print(f"Updated roles in user_roles table for user {user_id}: {role_ids}")
+                        
+                    except Exception as junction_error:
+                        return JsonResponse({'error': f'No user-role relationship table found. Please create either a "roles" column in velocity.accounts or a velocity.user_roles table. Error: {str(junction_error)}'}, status=500)
+
+                conn.commit()
+                cursor.close()
+                conn.close()
+
+                return JsonResponse({'status': 'success', 'message': f'Assigned {len(role_ids)} roles to user {user_id}'}, status=200)
+                
+            except Exception as e:
+                return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@login_required
+def get_user_roles(request):
+    """
+    Get roles assigned to a user.
+    
+    Expected data:
+    {
+        "user_id": 123
+    }
+    """
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            user_id = data.get('user_id')
+
+            if not user_id:
+                return JsonResponse({'error': 'User ID is required'}, status=400)
+
+            try:
+                conn = psycopg.connect(
+                    dbname=pylims.dbname,
+                    user=pylims.dbuser,
+                    password=pylims.dbpass,
+                    host=pylims.dbhost,
+                    port=pylims.dbport,
+                    row_factory=dict_row
+                )
+                cursor = conn.cursor()
+
+                user_role_ids = []
+                
+                # Try to get roles from accounts table first
+                try:
+                    cursor.execute("SELECT roles FROM velocity.accounts WHERE userid = %s", (user_id,))
+                    result = cursor.fetchone()
+                    if result and result.get('roles'):
+                        if isinstance(result['roles'], str):
+                            user_role_ids = json.loads(result['roles'])
+                        elif isinstance(result['roles'], list):
+                            user_role_ids = result['roles']
+                        
+                except Exception:
+                    # Try user_roles junction table
+                    try:
+                        cursor.execute("SELECT role_id FROM velocity.user_roles WHERE user_id = %s", (user_id,))
+                        results = cursor.fetchall()
+                        user_role_ids = [row['role_id'] for row in results]
+                    except Exception:
+                        user_role_ids = []
+
+                # Get role details
+                roles = []
+                if user_role_ids:
+                    placeholders = ','.join(['%s'] * len(user_role_ids))
+                    cursor.execute(f"SELECT * FROM velocity.roles WHERE rid IN ({placeholders})", user_role_ids)
+                    roles = cursor.fetchall()
+
+                cursor.close()
+                conn.close()
+
+                return JsonResponse({'status': 'success', 'role_ids': user_role_ids, 'roles': roles}, status=200)
+                
             except Exception as e:
                 return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
         except json.JSONDecodeError:
