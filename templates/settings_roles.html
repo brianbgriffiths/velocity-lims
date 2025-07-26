@@ -590,8 +590,11 @@ function setupEventListeners() {
     // Permissions modal buttons
     document.getElementById('permissions-save').addEventListener('click', saveRole);
     document.getElementById('permissions-cancel').addEventListener('click', function() {
+        console.log('Permissions cancel clicked');
         hidePermissionsModal();
-        currentRoleName = ''; // Reset on cancel
+        // Reset editing state completely when user cancels
+        currentRoleName = '';
+        currentEditingRoleId = null;
     });
     
     // Close modals when clicking outside
@@ -723,6 +726,7 @@ function showPermissionsModal() {
     let existingPermissions = [];
     if (currentEditingRoleId) {
         const role = roles.find(r => r.rid === currentEditingRoleId);
+        console.log('Found role for editing:', role);
         if (role) {
             if (typeof role.permission_set === 'string') {
                 try {
@@ -735,6 +739,7 @@ function showPermissionsModal() {
                 existingPermissions = role.permission_set;
             }
         }
+        console.log('Existing permissions for editing:', existingPermissions);
     }
     
     if (!permissions || permissions.length === 0) {
@@ -745,7 +750,9 @@ function showPermissionsModal() {
             permissionDiv.className = 'permission-item';
             
             // Check if this permission should be pre-selected
-            const isSelected = existingPermissions.includes(permission.pid);
+            // Convert both to numbers for comparison since they might be different types
+            const isSelected = existingPermissions.some(existingPid => parseInt(existingPid) === parseInt(permission.pid));
+            console.log(`Permission ${permission.pid} (${permission.permission}): isSelected = ${isSelected}, existingPermissions contains:`, existingPermissions);
             
             permissionDiv.innerHTML = `
                 <input type="checkbox" id="perm-${permission.pid}" value="${permission.pid}" ${isSelected ? 'checked' : ''}>
@@ -777,8 +784,8 @@ function showPermissionsModal() {
 function hidePermissionsModal() {
     document.getElementById('permissions-modal').style.display = 'none';
     selectedPermissions = [];
-    currentEditingRoleId = null;
-    // Don't reset currentRoleName here - keep it until save is complete
+    // Don't reset currentEditingRoleId here - it should only be reset after successful save
+    // currentEditingRoleId = null;
 }
 
 function saveRole() {
@@ -808,6 +815,10 @@ function saveRole() {
     
     // Determine if we're editing or creating
     const isEditing = currentEditingRoleId !== null;
+    console.log('Is editing mode:', isEditing);
+    console.log('currentEditingRoleId value:', currentEditingRoleId);
+    console.log('currentEditingRoleId type:', typeof currentEditingRoleId);
+    
     const url = isEditing ? 'edit_role' : 'save_role';
     
     const data = {
