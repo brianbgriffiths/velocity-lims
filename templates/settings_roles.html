@@ -617,16 +617,36 @@ function displayRoles() {
 function createRoleElement(role) {
     const roleDiv = document.createElement('div');
     roleDiv.className = 'role-item';
+    
+    // Handle permission_set - it might be a JSON string or already parsed
+    let permissionsList = [];
+    if (typeof role.permission_set === 'string') {
+        try {
+            permissionsList = JSON.parse(role.permission_set);
+        } catch (e) {
+            console.error('Error parsing permission_set:', e);
+            permissionsList = [];
+        }
+    } else if (Array.isArray(role.permission_set)) {
+        permissionsList = role.permission_set;
+    }
+    
+    // Convert permission IDs to permission names for display
+    const permissionNames = permissionsList.map(pid => {
+        const perm = permissions.find(p => p.pid === pid);
+        return perm ? perm.permission : `Unknown (${pid})`;
+    });
+    
     roleDiv.innerHTML = `
         <div class="role-header">
-            <div class="role-name">${role.name}</div>
+            <div class="role-name">${role.role_name}</div>
             <div class="role-actions">
-                <button class="btn-secondary" onclick="editRole('${role.id}')">Edit</button>
-                <button class="btn-secondary" onclick="deleteRole('${role.id}')">Delete</button>
+                <button class="btn-secondary" onclick="editRole('${role.rid}')">Edit</button>
+                <button class="btn-secondary" onclick="deleteRole('${role.rid}')">Delete</button>
             </div>
         </div>
         <div class="role-permissions">
-            ${role.permissions.map(perm => `<span class="permission-tag">${perm}</span>`).join('')}
+            ${permissionNames.map(perm => `<span class="permission-tag">${perm}</span>`).join('')}
         </div>
     `;
     return roleDiv;
@@ -652,7 +672,7 @@ function confirmRoleName() {
     }
     
     // Check if role name already exists
-    if (roles.some(role => role.name.toLowerCase() === roleName.toLowerCase())) {
+    if (roles.some(role => role.role_name.toLowerCase() === roleName.toLowerCase())) {
         localerror('A role with this name already exists');
         return;
     }
@@ -676,17 +696,16 @@ function showPermissionsModal() {
             const permissionDiv = document.createElement('div');
             permissionDiv.className = 'permission-item';
             permissionDiv.innerHTML = `
-                <input type="checkbox" id="perm-${permission.id}" value="${permission.id}">
-                <label for="perm-${permission.id}">${permission.name}</label>
-                ${permission.description ? `<div class="permission-description">${permission.description}</div>` : ''}
+                <input type="checkbox" id="perm-${permission.pid}" value="${permission.pid}">
+                <label for="perm-${permission.pid}">${permission.permission}</label>
             `;
             
             const checkbox = permissionDiv.querySelector('input[type="checkbox"]');
             checkbox.addEventListener('change', function() {
                 if (this.checked) {
-                    selectedPermissions.push(permission.id);
+                    selectedPermissions.push(permission.pid);
                 } else {
-                    selectedPermissions = selectedPermissions.filter(id => id !== permission.id);
+                    selectedPermissions = selectedPermissions.filter(id => id !== permission.pid);
                 }
             });
             
@@ -715,8 +734,8 @@ function saveRole() {
     }
     
     const data = {
-        name: currentRoleName,
-        permissions: selectedPermissions
+        role_name: currentRoleName,
+        permission_set: selectedPermissions // Send as array, backend will JSON encode
     };
     
     const pyoptions = {
@@ -730,12 +749,9 @@ function saveRole() {
         if (result.status === 'success') {
             // Add the new role to the roles array
             roles.push({
-                id: result.role_id,
-                name: currentRoleName,
-                permissions: selectedPermissions.map(id => {
-                    const perm = permissions.find(p => p.id === id);
-                    return perm ? perm.name : id;
-                })
+                rid: result.role_id,
+                role_name: currentRoleName,
+                permission_set: selectedPermissions // Keep as array for local display
             });
             
             displayRoles();
@@ -771,7 +787,7 @@ function deleteRole(roleId) {
     pylims_post(pyoptions).then(result => {
         if (result.status === 'success') {
             // Remove the role from the roles array
-            const index = roles.findIndex(role => role.id === roleId);
+            const index = roles.findIndex(role => role.rid === roleId);
             if (index > -1) {
                 roles.splice(index, 1);
             }
