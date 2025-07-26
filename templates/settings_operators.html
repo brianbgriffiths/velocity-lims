@@ -511,6 +511,20 @@
       .btn-secondary:hover {
         background-color: var(--gray-dark);
       }
+
+      .btn-tertiary {
+        background-color: var(--pink-med);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      
+      .btn-tertiary:hover {
+        background-color: var(--pink-dark);
+      }
       
       .loading-message {
         text-align: center;
@@ -980,7 +994,7 @@ function showPermissions(roleId, roleName, isCurrentlyAssigned) {
             <div class="permission-popup-actions">
                 ${!isCurrentlyAssigned ? 
                     `<button class="btn-primary" onclick="assignRoleFromPopup(${roleId})">Assign Role</button>` :
-                    `<button class="btn-secondary" onclick="unassignRoleFromPopup(${roleId})">Remove Role</button>`
+                    `<button class="btn-tertiary" onclick="unassignRoleFromPopup(${roleId})">Remove Role</button>`
                 }
                 <button class="btn-secondary" onclick="closePermissionsPopup()">Cancel</button>
             </div>
