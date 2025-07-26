@@ -116,12 +116,12 @@ def home(request):
         try:
             cursor.execute("SELECT reltuples::BIGINT AS total_specimens FROM pg_class WHERE oid = 'velocity.specimens'::regclass;")
             velocity_result = cursor.fetchone()
-            context['info'].append(['Sample Count', velocity_result['total_specimens']])
+            context['info'].append(['Specimen Count', f"{velocity_result['total_specimens']:,}"])
         except:
-            context['info'].append(['Sample Count', 0])
+            context['info'].append(['Specimen Count', 0])
 
     except Exception as e:
-        context['info'].append(['Sample Count', f'Error: {str(e)}'])
+        context['info'].append(['Specimen Count', f'Error: {str(e)}'])
 
     if not is_user_logged_in(request):
         context['userid'] = None
