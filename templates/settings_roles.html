@@ -564,8 +564,8 @@ const roles = {{ roles|safe }};
 const permissions = {{ permissions|safe }};
 
 // State variables
-let currentRoleName = '';
-let selectedPermissions = [];
+var currentRoleName = '';
+var selectedPermissions = [];
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
@@ -686,7 +686,15 @@ function confirmRoleName() {
 }
 
 function showPermissionsModal() {
-    document.getElementById('role-name-display').textContent = currentRoleName;
+    // Use currentRoleName if set, otherwise try input field as fallback
+    const roleNameFromInput = document.getElementById('role-name-input').value.trim();
+    const displayRoleName = currentRoleName || roleNameFromInput;
+    
+    console.log('showPermissionsModal - currentRoleName:', currentRoleName);
+    console.log('showPermissionsModal - roleNameFromInput:', roleNameFromInput);
+    console.log('showPermissionsModal - displayRoleName:', displayRoleName);
+    
+    document.getElementById('role-name-display').textContent = displayRoleName;
     
     const permissionsList = document.getElementById('permissions-list');
     permissionsList.innerHTML = '';
@@ -729,8 +737,16 @@ function saveRole() {
     console.log('saveRole called, currentRoleName:', currentRoleName); // Debug log
     console.log('selectedPermissions:', selectedPermissions); // Debug log
     
-    if (!currentRoleName) {
-        console.log('Error: currentRoleName is empty'); // Debug log
+    // Try to get role name from input field as fallback
+    const roleNameFromInput = document.getElementById('role-name-input').value.trim();
+    console.log('Role name from input field:', roleNameFromInput); // Debug log
+    
+    // Use currentRoleName if set, otherwise try input field
+    const finalRoleName = currentRoleName || roleNameFromInput;
+    console.log('Final role name to use:', finalRoleName); // Debug log
+    
+    if (!finalRoleName) {
+        console.log('Error: no role name available'); // Debug log
         localerror('Role name is required');
         return;
     }
@@ -742,7 +758,7 @@ function saveRole() {
     }
     
     const data = {
-        role_name: currentRoleName,
+        role_name: finalRoleName,
         permission_set: selectedPermissions // Send as array, backend will JSON encode
     };
     
@@ -763,7 +779,7 @@ function saveRole() {
             // Add the new role to the roles array
             roles.push({
                 rid: result.role_id,
-                role_name: currentRoleName,
+                role_name: finalRoleName,
                 permission_set: selectedPermissions // Keep as array for local display
             });
             
