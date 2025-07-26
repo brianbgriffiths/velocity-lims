@@ -506,6 +506,89 @@
         font-style: italic;
         padding: 20px;
       }
+      
+      .permissions-link {
+        color: var(--blue-med);
+        cursor: pointer;
+        text-decoration: underline;
+      }
+      
+      .permissions-link:hover {
+        color: var(--blue-dark);
+      }
+      
+      .permissions-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        border: 2px solid var(--gray-med);
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        z-index: 1000;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      
+      .permissions-popup-header {
+        background-color: var(--accent3);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 6px 6px 0 0;
+        font-weight: bold;
+        font-size: 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .permissions-popup-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 0;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      
+      .permissions-popup-close:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+      }
+      
+      .permissions-popup-body {
+        padding: 20px;
+      }
+      
+      .permission-item {
+        padding: 8px 12px;
+        margin-bottom: 6px;
+        background-color: var(--gray-lightest);
+        border: 1px solid var(--gray-med);
+        border-radius: 4px;
+        font-size: 14px;
+      }
+      
+      .permission-item:nth-child(odd) {
+        background-color: white;
+      }
+      
+      .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+      }
 
 
 
@@ -700,7 +783,7 @@ function displayRoles() {
             <input type="checkbox" id="role-${role.rid}" value="${role.rid}" ${isChecked ? 'checked' : ''}>
             <label for="role-${role.rid}">
                 <div class="role-name">${role.role_name}</div>
-                <div class="role-description">${getPermissionCount(role.permission_set)} permissions</div>
+                <div class="role-description"><span class="permissions-link" onclick="showPermissions(${role.rid}, '${role.role_name.replace(/'/g, "\\'")}', '${JSON.stringify(role.permission_set).replace(/'/g, "\\'")}')"> ${getPermissionCount(role.permission_set)} permissions</span></div>
             </label>
         `;
         
@@ -805,5 +888,72 @@ function localerror(msg) {
         alert(msg); // Fallback if error element doesn't exist
     }
 }
+
+function showPermissions(roleId, roleName, permissionSetJson) {
+    // Parse the permission set
+    let permissions = [];
+    try {
+        if (typeof permissionSetJson === 'string') {
+            permissions = JSON.parse(permissionSetJson);
+        } else if (Array.isArray(permissionSetJson)) {
+            permissions = permissionSetJson;
+        }
+    } catch (e) {
+        console.error('Error parsing permissions:', e);
+        permissions = [];
+    }
+    
+    // Create popup overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'popup-overlay';
+    overlay.onclick = closePermissionsPopup;
+    
+    // Create popup container
+    const popup = document.createElement('div');
+    popup.className = 'permissions-popup';
+    popup.id = 'permissions-popup';
+    
+    // Create popup content
+    popup.innerHTML = `
+        <div class="permissions-popup-header">
+            <span>Permissions for "${roleName}"</span>
+            <button class="permissions-popup-close" onclick="closePermissionsPopup()">×</button>
+        </div>
+        <div class="permissions-popup-body">
+            ${permissions.length > 0 ? 
+                permissions.map(permission => `<div class="permission-item">${permission}</div>`).join('') :
+                '<div class="permission-item">No permissions assigned</div>'
+            }
+        </div>
+    `;
+    
+    // Add to page
+    document.body.appendChild(overlay);
+    document.body.appendChild(popup);
+    
+    // Prevent event bubbling
+    popup.onclick = function(e) {
+        e.stopPropagation();
+    };
+}
+
+function closePermissionsPopup() {
+    const overlay = document.querySelector('.popup-overlay');
+    const popup = document.getElementById('permissions-popup');
+    
+    if (overlay) {
+        document.body.removeChild(overlay);
+    }
+    if (popup) {
+        document.body.removeChild(popup);
+    }
+}
+
+// Close popup on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closePermissionsPopup();
+    }
+});
 
 </script>{% endblock %}
