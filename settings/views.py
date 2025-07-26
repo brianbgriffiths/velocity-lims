@@ -111,13 +111,8 @@ def home(request):
             port=pylims.dbport, 
             row_factory=dict_row
         )
-        cursor = conn.cursor
+        cursor = conn.cursor()
         
-        # Query to count total samples
-        cursor.execute("SELECT COUNT(*) as total_samples FROM samples;")
-        result = cursor.fetchone()
-        
-        # Also get count from velocity.specimens if it exists
         try:
             cursor.execute("SELECT COUNT(*) as total_specimens FROM velocity.specimens;")
             velocity_result = cursor.fetchone()
