@@ -366,6 +366,7 @@
 <script>
 const csrf = '{{ csrf_token }}';
 const main = document.getElementById('main');
+const roles = {{ roles|safe }};
 
 function localerror(msg) {
 	error_element = document.getElementById('pylims_request_error');
