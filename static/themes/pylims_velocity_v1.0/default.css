@@ -189,15 +189,17 @@ a:hover {
 }
 
 #footer {
-	background-color: var(--accent1);
-	color: #fff;
-	text-align: center;
-	padding: 10px;
-	width:50%;
-	max-width:1000px;
-	border-top-right-radius:10px;
-	border-top-left-radius:10px;
-	margin:auto;
+	background-color: white;
+    color: #000000;
+    text-align: center;
+    padding: 10px;
+    width: 50%;
+    max-width: 1000px;
+    border-top-right-radius: 10px;
+    border-top-left-radius: 10px;
+    margin: auto;
+    border: solid 1px var(--accent1);
+    border-bottom: none;
 }
 #pylims_request_error, .localerror {
 	border:solid 1px #ff0000;
