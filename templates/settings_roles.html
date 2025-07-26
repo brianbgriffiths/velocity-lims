@@ -588,7 +588,10 @@ function setupEventListeners() {
     
     // Permissions modal buttons
     document.getElementById('permissions-save').addEventListener('click', saveRole);
-    document.getElementById('permissions-cancel').addEventListener('click', hidePermissionsModal);
+    document.getElementById('permissions-cancel').addEventListener('click', function() {
+        hidePermissionsModal();
+        currentRoleName = ''; // Reset on cancel
+    });
     
     // Close modals when clicking outside
     document.getElementById('role-name-modal').addEventListener('click', function(e) {
@@ -719,10 +722,12 @@ function showPermissionsModal() {
 function hidePermissionsModal() {
     document.getElementById('permissions-modal').style.display = 'none';
     selectedPermissions = [];
-    currentRoleName = '';
+    // Don't reset currentRoleName here - keep it until save is complete
 }
 
 function saveRole() {
+    console.log('saveRole called, currentRoleName:', currentRoleName); // Debug log
+    
     if (!currentRoleName) {
         localerror('Role name is required');
         return;
@@ -737,6 +742,8 @@ function saveRole() {
         role_name: currentRoleName,
         permission_set: selectedPermissions // Send as array, backend will JSON encode
     };
+    
+    console.log('Sending data:', data); // Debug log
     
     const pyoptions = {
         data,
@@ -756,6 +763,8 @@ function saveRole() {
             
             displayRoles();
             hidePermissionsModal();
+            // Reset currentRoleName only after successful save
+            currentRoleName = '';
         } else {
             localerror(result.error || 'Failed to save role');
         }
