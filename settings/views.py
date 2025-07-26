@@ -189,11 +189,15 @@ def settings_roles(request):
         
         cursor.execute("SELECT * FROM velocity.roles;")
         roles = cursor.fetchall()
+
+        cursor.execute("SELECT * FROM velocity.permissions;")
+        permissions = cursor.fetchall()
         
         cursor.close()
         conn.close()
         
         context['roles'] = roles
+        context['permissions'] = permissions
     except Exception as e:
         context['error'] = f"Error fetching roles: {str(e)}"
 
