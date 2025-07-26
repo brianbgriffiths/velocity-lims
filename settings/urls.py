@@ -42,6 +42,7 @@ urlpatterns = [
     path('settings_roles/', views.settings_roles, name="settings_roles"),
     path('save_role/', views.save_role, name="save_role"),
     path('edit_role/', views.edit_role, name="edit_role"),
+    path('delete_role/', views.delete_role, name="delete_role"),
 
     #queues
     path("queues/", queues.display_queues, name="display_queues"),

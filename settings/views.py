@@ -307,6 +307,48 @@ def edit_role(request):
     else:
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
+@login_required
+def delete_role(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            role_id = data.get('role_id')
+
+            if not role_id:
+                return JsonResponse({'error': 'Role ID is required'}, status=400)
+
+            try:
+                conn = psycopg.connect(
+                    dbname=pylims.dbname,
+                    user=pylims.dbuser,
+                    password=pylims.dbpass,
+                    host=pylims.dbhost,
+                    port=pylims.dbport,
+                    row_factory=dict_row
+                )
+                cursor = conn.cursor()
+
+                # Delete role from the database
+                cursor.execute("""
+                    DELETE FROM velocity.roles 
+                    WHERE rid = %s
+                """, (role_id,))
+
+                if cursor.rowcount == 0:
+                    return JsonResponse({'error': 'Role not found'}, status=404)
+
+                conn.commit()
+                cursor.close()
+                conn.close()
+
+                return JsonResponse({'status': 'success'}, status=200)
+            except Exception as e:
+                return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
 def setup(request):
     print(pylims.term(),pylims.info('building module list'))
     context={}

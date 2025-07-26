@@ -870,9 +870,17 @@ function saveRole() {
 
 function editRole(roleId) {
     console.log('Edit role:', roleId);
+    console.log('Type of roleId:', typeof roleId);
+    console.log('Available roles:', roles);
+    
+    // Convert roleId to number for comparison
+    const numericRoleId = parseInt(roleId);
+    console.log('Numeric roleId:', numericRoleId);
     
     // Find the role to edit
-    const role = roles.find(r => r.rid === roleId);
+    const role = roles.find(r => r.rid === numericRoleId);
+    console.log('Found role:', role);
+    
     if (!role) {
         localerror('Role not found');
         return;
@@ -880,7 +888,7 @@ function editRole(roleId) {
     
     // Set current role for editing
     currentRoleName = role.role_name;
-    currentEditingRoleId = roleId;
+    currentEditingRoleId = numericRoleId;
     
     // Show role name modal with existing name
     document.getElementById('role-name-input').value = role.role_name;
@@ -897,7 +905,10 @@ function deleteRole(roleId) {
         return;
     }
     
-    const data = { role_id: roleId };
+    // Convert roleId to number for consistency
+    const numericRoleId = parseInt(roleId);
+    
+    const data = { role_id: numericRoleId };
     const pyoptions = {
         data,
         csrf,
@@ -908,7 +919,7 @@ function deleteRole(roleId) {
     pylims_post(pyoptions).then(result => {
         if (result.status === 'success') {
             // Remove the role from the roles array
-            const index = roles.findIndex(role => role.rid === roleId);
+            const index = roles.findIndex(role => role.rid === numericRoleId);
             if (index > -1) {
                 roles.splice(index, 1);
             }
