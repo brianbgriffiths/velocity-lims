@@ -114,7 +114,7 @@ def home(request):
         cursor = conn.cursor()
         
         try:
-            cursor.execute("SELECT COUNT(*) as total_specimens FROM velocity.specimens;")
+            cursor.execute("SELECT reltuples::BIGINT AS total_specimens FROM pg_class WHERE oid = 'velocity.specimens'::regclass;")
             velocity_result = cursor.fetchone()
             context['info'].append(['Sample Count', velocity_result['total_specimens']])
         except:
