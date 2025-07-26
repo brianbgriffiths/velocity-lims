@@ -566,6 +566,7 @@ const permissions = {{ permissions|safe }};
 // State variables
 var currentRoleName = '';
 var selectedPermissions = [];
+var currentEditingRoleId = null;
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
@@ -656,14 +657,23 @@ function createRoleElement(role) {
 }
 
 function showRoleNameModal() {
+    // Reset editing state for new role creation
+    currentEditingRoleId = null;
+    currentRoleName = '';
+    
     document.getElementById('role-name-input').value = '';
     document.getElementById('role-name-modal').style.display = 'flex';
     document.getElementById('role-name-input').focus();
+    
+    // Reset modal title and button text for new role
+    document.querySelector('#role-name-modal h3').textContent = 'Create New Role';
+    document.getElementById('role-name-confirm').textContent = 'Continue';
 }
 
 function hideRoleNameModal() {
     document.getElementById('role-name-modal').style.display = 'none';
     currentRoleName = '';
+    currentEditingRoleId = null;
 }
 
 function confirmRoleName() {
@@ -674,8 +684,9 @@ function confirmRoleName() {
         return;
     }
     
-    // Check if role name already exists
-    if (roles.some(role => role.role_name.toLowerCase() === roleName.toLowerCase())) {
+    // Check if role name already exists (but allow same name if editing the same role)
+    const existingRole = roles.find(role => role.role_name.toLowerCase() === roleName.toLowerCase());
+    if (existingRole && existingRole.rid !== currentEditingRoleId) {
         localerror('A role with this name already exists');
         return;
     }
@@ -693,12 +704,38 @@ function showPermissionsModal() {
     console.log('showPermissionsModal - currentRoleName:', currentRoleName);
     console.log('showPermissionsModal - roleNameFromInput:', roleNameFromInput);
     console.log('showPermissionsModal - displayRoleName:', displayRoleName);
+    console.log('showPermissionsModal - currentEditingRoleId:', currentEditingRoleId);
     
     document.getElementById('role-name-display').textContent = displayRoleName;
+    
+    // Update modal title based on whether we're editing or creating
+    const modalTitle = currentEditingRoleId ? 'Edit Permissions for Role:' : 'Select Permissions for Role:';
+    document.querySelector('#permissions-modal h3').innerHTML = `${modalTitle} <span id="role-name-display">${displayRoleName}</span>`;
+    
+    // Update save button text
+    document.getElementById('permissions-save').textContent = currentEditingRoleId ? 'Update Role' : 'Save Role';
     
     const permissionsList = document.getElementById('permissions-list');
     permissionsList.innerHTML = '';
     selectedPermissions = [];
+    
+    // If editing, get existing permissions
+    let existingPermissions = [];
+    if (currentEditingRoleId) {
+        const role = roles.find(r => r.rid === currentEditingRoleId);
+        if (role) {
+            if (typeof role.permission_set === 'string') {
+                try {
+                    existingPermissions = JSON.parse(role.permission_set);
+                } catch (e) {
+                    console.error('Error parsing existing permission_set:', e);
+                    existingPermissions = [];
+                }
+            } else if (Array.isArray(role.permission_set)) {
+                existingPermissions = role.permission_set;
+            }
+        }
+    }
     
     if (!permissions || permissions.length === 0) {
         permissionsList.innerHTML = '<p>No permissions available</p>';
@@ -706,12 +743,22 @@ function showPermissionsModal() {
         permissions.forEach(permission => {
             const permissionDiv = document.createElement('div');
             permissionDiv.className = 'permission-item';
+            
+            // Check if this permission should be pre-selected
+            const isSelected = existingPermissions.includes(permission.pid);
+            
             permissionDiv.innerHTML = `
-                <input type="checkbox" id="perm-${permission.pid}" value="${permission.pid}">
+                <input type="checkbox" id="perm-${permission.pid}" value="${permission.pid}" ${isSelected ? 'checked' : ''}>
                 <label for="perm-${permission.pid}">${permission.permission}</label>
             `;
             
             const checkbox = permissionDiv.querySelector('input[type="checkbox"]');
+            
+            // Initialize selectedPermissions array with existing permissions
+            if (isSelected) {
+                selectedPermissions.push(permission.pid);
+            }
+            
             checkbox.addEventListener('change', function() {
                 if (this.checked) {
                     selectedPermissions.push(permission.pid);
@@ -730,12 +777,14 @@ function showPermissionsModal() {
 function hidePermissionsModal() {
     document.getElementById('permissions-modal').style.display = 'none';
     selectedPermissions = [];
+    currentEditingRoleId = null;
     // Don't reset currentRoleName here - keep it until save is complete
 }
 
 function saveRole() {
     console.log('saveRole called, currentRoleName:', currentRoleName); // Debug log
     console.log('selectedPermissions:', selectedPermissions); // Debug log
+    console.log('currentEditingRoleId:', currentEditingRoleId); // Debug log
     
     // Try to get role name from input field as fallback
     const roleNameFromInput = document.getElementById('role-name-input').value.trim();
@@ -757,17 +806,27 @@ function saveRole() {
         return;
     }
     
+    // Determine if we're editing or creating
+    const isEditing = currentEditingRoleId !== null;
+    const url = isEditing ? 'edit_role' : 'save_role';
+    
     const data = {
         role_name: finalRoleName,
-        permission_set: selectedPermissions // Send as array, backend will JSON encode
+        permission_set: selectedPermissions
     };
     
+    // Add role_id for editing
+    if (isEditing) {
+        data.role_id = currentEditingRoleId;
+    }
+    
     console.log('Sending data:', data); // Debug log
+    console.log('Using URL:', url); // Debug log
     
     const pyoptions = {
         data,
         csrf,
-        url: 'save_role',
+        url: url,
         submit_mode: 'silent'
     };
     
@@ -776,17 +835,30 @@ function saveRole() {
     pylims_post(pyoptions).then(result => {
         console.log('pylims_post success:', result); // Debug log
         if (result.status === 'success') {
-            // Add the new role to the roles array
-            roles.push({
-                rid: result.role_id,
-                role_name: finalRoleName,
-                permission_set: selectedPermissions // Keep as array for local display
-            });
+            if (isEditing) {
+                // Update existing role in the roles array
+                const roleIndex = roles.findIndex(r => r.rid === currentEditingRoleId);
+                if (roleIndex > -1) {
+                    roles[roleIndex] = {
+                        rid: currentEditingRoleId,
+                        role_name: finalRoleName,
+                        permission_set: selectedPermissions
+                    };
+                }
+            } else {
+                // Add the new role to the roles array
+                roles.push({
+                    rid: result.role_id,
+                    role_name: finalRoleName,
+                    permission_set: selectedPermissions
+                });
+            }
             
             displayRoles();
             hidePermissionsModal();
-            // Reset currentRoleName only after successful save
+            // Reset state
             currentRoleName = '';
+            currentEditingRoleId = null;
         } else {
             localerror(result.error || 'Failed to save role');
         }
@@ -797,9 +869,27 @@ function saveRole() {
 }
 
 function editRole(roleId) {
-    // TODO: Implement edit functionality
     console.log('Edit role:', roleId);
-    localerror('Edit functionality not yet implemented');
+    
+    // Find the role to edit
+    const role = roles.find(r => r.rid === roleId);
+    if (!role) {
+        localerror('Role not found');
+        return;
+    }
+    
+    // Set current role for editing
+    currentRoleName = role.role_name;
+    currentEditingRoleId = roleId;
+    
+    // Show role name modal with existing name
+    document.getElementById('role-name-input').value = role.role_name;
+    document.getElementById('role-name-modal').style.display = 'flex';
+    document.getElementById('role-name-input').focus();
+    
+    // Update modal title to indicate editing
+    document.querySelector('#role-name-modal h3').textContent = 'Edit Role';
+    document.getElementById('role-name-confirm').textContent = 'Continue';
 }
 
 function deleteRole(roleId) {
