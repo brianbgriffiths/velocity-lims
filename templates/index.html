@@ -9,7 +9,17 @@
 	<link rel="stylesheet" type="text/css" href="{% static 'fontawesome/css/all.min.css' %}">
 	<link rel="icon" href="{% static 'themes/pylims_velocity_v1.0/icon.svg' %}" type="image/svg+xml">
 	{% csrf_token %}
-	{% block headdata %}{% endblock %}
+	{% block headdata %}<style>
+		.center-border table tr:nth-child(even) {
+			background-color: #f2f2f2;
+		}
+		.center-border table tr:nth-child(odd) {
+			background-color: white;
+		}
+		.center-border table td {
+			padding: 6px 10px;
+		}
+	</style>{% endblock %}
 </head>
 <body>
 	<div id="login-pylims-logo"><a href="{% url 'home' %}"><img  src="{% static 'themes/pylims_velocity_v1.0/logo.svg' %}" alt="pylims logo"></a></div>
@@ -29,7 +39,7 @@
 	<div class="center-border">
 	<p>Welcome to your locally installed pylims server. Login as the default account to begin setup.</p><table>
 		{% for stat in info %}
-			<tr><td>{{stat.0}}</td><td>{{stat.1}}</td></tr>
+			<tr><td>{{stat.0}}</td><td style="padding-left: 10px;">{{stat.1}}</td></tr>
 		{% endfor %}
 	</table>
 	</div>

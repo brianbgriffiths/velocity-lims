@@ -112,6 +112,13 @@ def home(request):
             row_factory=dict_row
         )
         cursor = conn.cursor()
+
+        try:
+            cursor.execute("SELECT reltuples::BIGINT AS total_requisitions FROM pg_class WHERE oid = 'velocity.requisitions'::regclass;")
+            velocity_result = cursor.fetchone()
+            context['info'].append(['Requisition Count', f"{velocity_result['total_requisitions']:,}"])
+        except:
+            context['info'].append(['Requisition Count', 0])
         
         try:
             cursor.execute("SELECT reltuples::BIGINT AS total_specimens FROM pg_class WHERE oid = 'velocity.specimens'::regclass;")
@@ -120,8 +127,10 @@ def home(request):
         except:
             context['info'].append(['Specimen Count', 0])
 
+        
+
     except Exception as e:
-        context['info'].append(['Specimen Count', f'Error: {str(e)}'])
+        context['info'].append(['Database Stats', f'Error: {str(e)}'])
 
     if not is_user_logged_in(request):
         context['userid'] = None
