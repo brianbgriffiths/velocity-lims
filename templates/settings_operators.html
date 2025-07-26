@@ -890,17 +890,24 @@ function localerror(msg) {
 }
 
 function showPermissions(roleId, roleName, permissionSetJson) {
-    // Parse the permission set
+    // Find the role object to get permission_names
+    const role = roles.find(r => r.rid === roleId);
     let permissions = [];
-    try {
-        if (typeof permissionSetJson === 'string') {
-            permissions = JSON.parse(permissionSetJson);
-        } else if (Array.isArray(permissionSetJson)) {
-            permissions = permissionSetJson;
+    
+    if (role && role.permission_names) {
+        permissions = role.permission_names;
+    } else {
+        // Fallback to parsing permission_set if permission_names not available
+        try {
+            if (typeof permissionSetJson === 'string') {
+                permissions = JSON.parse(permissionSetJson);
+            } else if (Array.isArray(permissionSetJson)) {
+                permissions = permissionSetJson;
+            }
+        } catch (e) {
+            console.error('Error parsing permissions:', e);
+            permissions = [];
         }
-    } catch (e) {
-        console.error('Error parsing permissions:', e);
-        permissions = [];
     }
     
     // Create popup overlay

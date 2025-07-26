@@ -617,6 +617,27 @@ def get_all_roles(request):
             # Get all roles
             cursor.execute("SELECT * FROM velocity.roles ORDER BY role_name")
             roles = cursor.fetchall()
+            
+            # Get all permissions to resolve IDs to names
+            cursor.execute("SELECT pid, permission FROM velocity.permissions")
+            permissions_lookup = {row['pid']: row['permission'] for row in cursor.fetchall()}
+
+            # Resolve permission IDs to names for each role
+            for role in roles:
+                if role['permission_set']:
+                    # Parse permission set (could be JSON string or already parsed)
+                    if isinstance(role['permission_set'], str):
+                        try:
+                            permission_ids = json.loads(role['permission_set'])
+                        except:
+                            permission_ids = []
+                    else:
+                        permission_ids = role['permission_set'] or []
+                    
+                    # Convert permission IDs to permission names
+                    role['permission_names'] = [permissions_lookup.get(pid, f"Unknown permission {pid}") for pid in permission_ids]
+                else:
+                    role['permission_names'] = []
 
             cursor.close()
             conn.close()
