@@ -465,6 +465,12 @@
         cursor: pointer;
       }
       
+      .role-actions {
+        display: flex;
+        align-items: center;
+        margin-left: 10px;
+      }
+      
       .role-name {
         font-weight: bold;
         font-size: 16px;
@@ -594,6 +600,15 @@
         height: 100%;
         background-color: rgba(0, 0, 0, 0.5);
         z-index: 999;
+      }
+      
+      .permission-popup-actions {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid var(--gray-med);
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
       }
 
 
@@ -789,7 +804,10 @@ function displayRoles() {
             <input type="checkbox" id="role-${role.rid}" value="${role.rid}" ${isChecked ? 'checked' : ''}>
             <div class="role-content">
                 <div class="role-name">${role.role_name}</div>
-                <div class="role-description"><span class="permissions-link" data-role-id="${role.rid}" data-role-name="${role.role_name.replace(/'/g, "\\'")}"> ${getPermissionCount(role.permission_set)} permissions</span></div>
+                <div class="role-description">${getPermissionCount(role.permission_set)} permissions</div>
+            </div>
+            <div class="role-actions">
+                <span class="permissions-link" data-role-id="${role.rid}" data-role-name="${role.role_name.replace(/'/g, "\\'")}">view</span>
             </div>
         `;
         
@@ -806,14 +824,11 @@ function displayRoles() {
             }
         });
         
-        // Add click event listener to role content (excluding permissions link)
+        // Add click event listener to role content
         const roleContent = roleDiv.querySelector('.role-content');
         roleContent.addEventListener('click', function(e) {
-            // Don't toggle if clicking on permissions link
-            if (!e.target.classList.contains('permissions-link')) {
-                checkbox.checked = !checkbox.checked;
-                checkbox.dispatchEvent(new Event('change'));
-            }
+            checkbox.checked = !checkbox.checked;
+            checkbox.dispatchEvent(new Event('change'));
         });
         
         // Add click event listener to permissions link
@@ -822,7 +837,8 @@ function displayRoles() {
             e.stopPropagation();
             const roleId = parseInt(this.dataset.roleId);
             const roleName = this.dataset.roleName;
-            showPermissions(roleId, roleName, null);
+            const isCurrentlyChecked = checkbox.checked;
+            showPermissions(roleId, roleName, isCurrentlyChecked);
         });
         
         rolesList.appendChild(roleDiv);
@@ -914,7 +930,7 @@ function localerror(msg) {
     }
 }
 
-function showPermissions(roleId, roleName, permissionSetJson) {
+function showPermissions(roleId, roleName, isCurrentlyAssigned) {
     // Find the role object to get permission_names
     const role = roles.find(r => r.rid === roleId);
     let permissions = [];
@@ -924,10 +940,12 @@ function showPermissions(roleId, roleName, permissionSetJson) {
     } else {
         // Fallback to parsing permission_set if permission_names not available
         try {
-            if (typeof permissionSetJson === 'string') {
-                permissions = JSON.parse(permissionSetJson);
-            } else if (Array.isArray(permissionSetJson)) {
-                permissions = permissionSetJson;
+            if (role && role.permission_set) {
+                if (typeof role.permission_set === 'string') {
+                    permissions = JSON.parse(role.permission_set);
+                } else if (Array.isArray(role.permission_set)) {
+                    permissions = role.permission_set;
+                }
             }
         } catch (e) {
             console.error('Error parsing permissions:', e);
@@ -956,6 +974,13 @@ function showPermissions(roleId, roleName, permissionSetJson) {
                 permissions.map(permission => `<div class="permission-item">${permission}</div>`).join('') :
                 '<div class="permission-item">No permissions assigned</div>'
             }
+            <div class="permission-popup-actions">
+                ${!isCurrentlyAssigned ? 
+                    `<button class="btn-primary" onclick="assignRoleFromPopup(${roleId})">Assign Role</button>` :
+                    `<button class="btn-secondary" onclick="unassignRoleFromPopup(${roleId})">Remove Role</button>`
+                }
+                <button class="btn-secondary" onclick="closePermissionsPopup()">Cancel</button>
+            </div>
         </div>
     `;
     
@@ -987,5 +1012,25 @@ document.addEventListener('keydown', function(e) {
         closePermissionsPopup();
     }
 });
+
+function assignRoleFromPopup(roleId) {
+    // Find and check the checkbox
+    const checkbox = document.querySelector(`#role-${roleId}`);
+    if (checkbox && !checkbox.checked) {
+        checkbox.checked = true;
+        checkbox.dispatchEvent(new Event('change'));
+    }
+    closePermissionsPopup();
+}
+
+function unassignRoleFromPopup(roleId) {
+    // Find and uncheck the checkbox
+    const checkbox = document.querySelector(`#role-${roleId}`);
+    if (checkbox && checkbox.checked) {
+        checkbox.checked = false;
+        checkbox.dispatchEvent(new Event('change'));
+    }
+    closePermissionsPopup();
+}
 
 </script>{% endblock %}
