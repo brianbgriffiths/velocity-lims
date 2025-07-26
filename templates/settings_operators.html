@@ -805,8 +805,8 @@ function displayRoles() {
             <div class="role-content">
                 <div class="role-name">${role.role_name}</div>
                 <div class="role-description">
-                    <span class="permissions-link" data-role-id="${role.rid}" data-role-name="${role.role_name.replace(/'/g, "\\'")}"><i class="fa-solid fa-circle-caret-down"></i></span>
-                    ${getPermissionCount(role.permission_set)} permissions
+                    <span class="permissions-link" data-role-id="${role.rid}" data-role-name="${role.role_name.replace(/'/g, "\\'")}"><i class="fa-solid fa-circle-caret-down"></i> ${getPermissionCount(role.permission_set)} permissions</span>
+                    
                 </div>
             </div>
         `;
