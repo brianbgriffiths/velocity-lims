@@ -446,7 +446,7 @@ function clicksample(sample,event) {
         const clicked_sample_state = sample.selected;
         for (let sample in samples) {
             if (samples[sample].selected) {
-                console.log('clear selection',samples[sample].sample_name);
+                console.log('clear selection',samples[sample].specimen_name);
                 samples[sample].selected=false;
                 samples[sample].element.classList.remove('selectedsample');  
                 update_selected_samples('remove',sample);
@@ -615,7 +615,7 @@ class QueuedSample {
         this.element.dataset.did=this.did;
 
         this.samplename = document.createElement('samplename');
-        this.samplename.textContent = this.sample_name;
+        this.samplename.textContent = this.specimen_name;
         this.element.appendChild(this.samplename);
 
         this.reserve = document.createElement('reserve');
@@ -678,7 +678,7 @@ class QueuedControl {
         this.element.dataset.did=this.did;
 
         this.samplename = document.createElement('samplename');
-        this.samplename.textContent = this.sample_name;
+        this.samplename.textContent = this.specimen_name;
         this.element.appendChild(this.samplename);
 
         this.reserve = document.createElement('reserve');
@@ -743,11 +743,11 @@ class QueuedControl {
                     samples[result['qdid']].element.remove();
                     delete samples[result['qdid']];
                     // add back to control Options
-                    const does_control_exist = Array.from(control_select.options).find(option => option.text === this.sample_name);
+                    const does_control_exist = Array.from(control_select.options).find(option => option.text === this.specimen_name);
                     if (!does_control_exist) {
                         const option = document.createElement('option');
                         option.value=this.control;
-                        option.textContent=this.sample_name;
+                        option.textContent=this.specimen_name;
                         control_select.appendChild(option);
                     }
                     control_select.disabled=false;

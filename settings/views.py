@@ -82,55 +82,7 @@ def login_required(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
-def get_sample_count(request):
-    """
-    Query to get the total count of samples in the database.
-    
-    Args:
-        request: Django HttpRequest object
-        
-    Returns:
-        JsonResponse: JSON response containing the sample count
-    """
-    try:
-        conn = psycopg.connect(
-            dbname=pylims.dbname, 
-            user=pylims.dbuser, 
-            password=pylims.dbpass, 
-            host=pylims.dbhost, 
-            port=pylims.dbport, 
-            row_factory=dict_row
-        )
-        cursor = conn.cursor()
-        
-        # Query to count total samples
-        cursor.execute("SELECT COUNT(*) as total_samples FROM samples;")
-        result = cursor.fetchone()
-        
-        # Also get count from velocity.samples if it exists
-        try:
-            cursor.execute("SELECT COUNT(*) as velocity_samples FROM velocity.samples;")
-            velocity_result = cursor.fetchone()
-        except:
-            velocity_result = {'velocity_samples': 0}
-        
-        cursor.close()
-        conn.close()
-        
-        response = {
-            'status': 'success',
-            'total_samples': result['total_samples'],
-            'velocity_samples': velocity_result['velocity_samples']
-        }
-        
-        return JsonResponse(response)
-        
-    except Exception as e:
-        response = {
-            'status': 'error',
-            'error': f'Database error: {str(e)}'
-        }
-        return JsonResponse(response, status=500)
+
 
 def handlePost(request):
     if request.method == 'POST':
@@ -161,17 +113,18 @@ def home(request):
         )
         cursor = conn.cursor
         
-        # Also get count from velocity.samples if it exists
+        # Query to count total samples
+        cursor.execute("SELECT COUNT(*) as total_samples FROM samples;")
+        result = cursor.fetchone()
+        
+        # Also get count from velocity.specimens if it exists
         try:
-            cursor.execute("SELECT COUNT(*) as velocity_samples FROM velocity.samples;")
+            cursor.execute("SELECT COUNT(*) as total_specimens FROM velocity.specimens;")
             velocity_result = cursor.fetchone()
-            context['info'].append(['Total Samples', velocity_result['velocity_samples']])
+            context['info'].append(['Sample Count', velocity_result['total_specimens']])
         except:
-            pass  # velocity.samples table might not exist
-        
-        cursor.close()
-        conn.close()
-        
+            context['info'].append(['Sample Count', 0])
+
     except Exception as e:
         context['info'].append(['Sample Count', f'Error: {str(e)}'])
 

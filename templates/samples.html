@@ -330,7 +330,7 @@ class Sample {
 		}
         this.selected=false;
 		this.element = document.createElement('reqsample');
-        this.element.textContent=data.sample_name;
+        this.element.textContent=data.specimen_name;
         this.element.addEventListener('mouseup',()=> {
             if (dragging!=2) {
                 this.selected=!this.selected;

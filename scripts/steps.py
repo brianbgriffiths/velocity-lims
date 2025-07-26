@@ -58,7 +58,7 @@ def begin_step(request):
     cursor.execute("SELECT * FROM velocity.step_config WHERE scid=%s",(json_data['step'],))
     response['config']=cursor.fetchone()
    
-    cursor.execute("SELECT * FROM velocity.reserved_derivatives rd JOIN velocity.derivatives vd ON vd.did=rd.derivative JOIN velocity.samples vs ON vs.smid = vd.sample WHERE rd.step = %s and rd.operator=%s AND rd.status=1 ORDER BY rdid ASC;",(json_data['step'],request.session['userid']))
+    cursor.execute("SELECT * FROM velocity.reserved_derivatives rd JOIN velocity.derivatives vd ON vd.did=rd.derivative JOIN velocity.specimens vs ON vs.smid = vd.sample WHERE rd.step = %s and rd.operator=%s AND rd.status=1 ORDER BY rdid ASC;",(json_data['step'],request.session['userid']))
     samples = cursor.fetchall()
     response['samples'] = json.dumps(samples)
     response['reserved']=len(samples)
@@ -163,7 +163,7 @@ def load_step(request, step, page=None):
     if len(response['script_runs']) > 0:
         response['script_runs'] = parse_json_list(response['script_runs'])
 
-    cursor.execute("SELECT sio.*, vwf.wfid, vwf.workflow_steps as output_steps, vdi.did as input_id, vdi.container as inputcontainer, vdo.did as output_id, vdo.container as outputcontainer, vdo.placement_string as output_well, vdo.placement_index as output_placement_index, vs.* FROM velocity.step_io sio JOIN velocity.derivatives vdi ON vdi.did=sio.input_derivative JOIN velocity.derivatives vdo ON vdo.did=sio.output_derivative JOIN velocity.samples vs ON vs.smid=vdi.sample JOIN velocity.workflows vwf ON vwf.wfid=vdo.derivative_wf WHERE sio.step=%s",(step,))
+    cursor.execute("SELECT sio.*, vwf.wfid, vwf.workflow_steps as output_steps, vdi.did as input_id, vdi.container as inputcontainer, vdo.did as output_id, vdo.container as outputcontainer, vdo.placement_string as output_well, vdo.placement_index as output_placement_index, vs.* FROM velocity.step_io sio JOIN velocity.derivatives vdi ON vdi.did=sio.input_derivative JOIN velocity.derivatives vdo ON vdo.did=sio.output_derivative JOIN velocity.specimens vs ON vs.smid=vdi.sample JOIN velocity.workflows vwf ON vwf.wfid=vdo.derivative_wf WHERE sio.step=%s",(step,))
     temp['io'] = cursor.fetchall()
     response['io'] = json.dumps(temp['io'])
 
@@ -212,7 +212,7 @@ def load_step(request, step, page=None):
         
         for config_id in gen_system_data:
             if config_id==1: # Sample Name
-                output[config_id]=io['sample_name']
+                output[config_id]=io['specimen_name']
                 continue
             elif config_id==2:
                 output[config_id]=io['output_well']
@@ -359,7 +359,7 @@ def next_step(request):
     cursor.execute("SELECT vs.*, vps.*, vsc.*, vp.*, vpc.* FROM velocity.steps vs JOIN velocity.page_config vpc ON vpc.pcid = vs.on_page JOIN velocity.protocol_steps vps ON vps.sid=vs.step_type JOIN velocity.step_config vsc ON vsc.scid=vps.step_type JOIN velocity.protocols vp ON vp.pid=vps.protocol WHERE vs.stepid=%s;",(step,))
     config=cursor.fetchone()
 
-    cursor.execute("SELECT sio.*, vdi.did as input_id, vdi.container as inputcontainer, vdo.did as output_id, vdo.container as outputcontainer, vs.* FROM velocity.step_io sio JOIN velocity.derivatives vdi ON vdi.did=sio.input_derivative JOIN velocity.derivatives vdo ON vdo.did=sio.output_derivative JOIN velocity.samples vs ON vs.smid=vdi.sample WHERE sio.step=%s",(step,))
+    cursor.execute("SELECT sio.*, vdi.did as input_id, vdi.container as inputcontainer, vdo.did as output_id, vdo.container as outputcontainer, vs.* FROM velocity.step_io sio JOIN velocity.derivatives vdi ON vdi.did=sio.input_derivative JOIN velocity.derivatives vdo ON vdo.did=sio.output_derivative JOIN velocity.specimens vs ON vs.smid=vdi.sample WHERE sio.step=%s",(step,))
     temp['io'] = cursor.fetchall()
     response['io'] = json.dumps(temp['io'])
 
@@ -482,7 +482,7 @@ def save_placements(request):
     response = {}
     temp = {}
     print('Checking placements')
-    cursor.execute("SELECT sio.*, vdi.did as input_id, vdi.container as inputcontainer, vdo.did as output_id, vdo.container as outputcontainer, vs.* FROM velocity.step_io sio JOIN velocity.derivatives vdi ON vdi.did=sio.input_derivative JOIN velocity.derivatives vdo ON vdo.did=sio.output_derivative JOIN velocity.samples vs ON vs.smid=vdi.sample WHERE sio.step=%s",(step,))
+    cursor.execute("SELECT sio.*, vdi.did as input_id, vdi.container as inputcontainer, vdo.did as output_id, vdo.container as outputcontainer, vs.* FROM velocity.step_io sio JOIN velocity.derivatives vdi ON vdi.did=sio.input_derivative JOIN velocity.derivatives vdo ON vdo.did=sio.output_derivative JOIN velocity.specimens vs ON vs.smid=vdi.sample WHERE sio.step=%s",(step,))
     temp['io'] = cursor.fetchall()
     response['io'] = json.dumps(temp['io'])
 

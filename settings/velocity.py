@@ -117,7 +117,7 @@ class VelocityScript:
         temp_rows = self.cursor.fetchall()
         self.derivative_data_config = {row['key']: row for row in temp_rows}
 
-        self.cursor.execute("SELECT sio.*, vwf.workflow_steps as output_steps, vdi.did as input_id, vdi.container as inputcontainer, vdo.did as output_id, vdo.container as outputcontainer, vdo.placement_string as output_well, vs.* FROM velocity.step_io sio JOIN velocity.derivatives vdi ON vdi.did=sio.input_derivative JOIN velocity.derivatives vdo ON vdo.did=sio.output_derivative JOIN velocity.samples vs ON vs.smid=vdi.sample JOIN velocity.workflows vwf ON vwf.wfid=vdo.derivative_wf WHERE sio.step=%s",(self.step.id,))
+        self.cursor.execute("SELECT sio.*, vwf.workflow_steps as output_steps, vdi.did as input_id, vdi.container as inputcontainer, vdo.did as output_id, vdo.container as outputcontainer, vdo.placement_string as output_well, vs.* FROM velocity.step_io sio JOIN velocity.derivatives vdi ON vdi.did=sio.input_derivative JOIN velocity.derivatives vdo ON vdo.did=sio.output_derivative JOIN velocity.specimens vs ON vs.smid=vdi.sample JOIN velocity.workflows vwf ON vwf.wfid=vdo.derivative_wf WHERE sio.step=%s",(self.step.id,))
         self.io = self.cursor.fetchall()
 
         self.cursor.execute('SELECT scid, step_name FROM velocity.step_config')
@@ -134,7 +134,7 @@ class VelocityScript:
 
         self.outputs=VelocityList(self, 'derivatives')
         for sample in self.io:
-            self.outputs.append(Sample(self, id=sample['output_id'], name=sample['sample_name'], steps=sample['output_steps']))
+            self.outputs.append(Sample(self, id=sample['output_id'], name=sample['specimen_name'], steps=sample['output_steps']))
 
     def __del__(self):
         self.cursor.close()

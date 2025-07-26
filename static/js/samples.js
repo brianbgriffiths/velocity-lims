@@ -13,7 +13,7 @@ function newSamplePopup(projectid) {
         popups['newSample'] = new popup({id:'newSample',title:`New sample in project ${projects[projectid].project_name}`,size:'large'});
     }
     popups['newSample'].clear();
-    const name = new label_container({name:'Name:',input: new textbox({id:'new_sample_name'}).element, width:100})
+    const name = new label_container({name:'Name:',input: new textbox({id:'new_specimen_name'}).element, width:100})
     new_workflow = new dropdown({id:'new_sample_wf'})
     const workflow = new label_container({name:'Workflow:',input: new_workflow.element, width:100})
     var refactor=[]
@@ -69,7 +69,7 @@ function sendMessage(type,msg,data) {
 }
 
 function createNewSample() {
-    const name = document.getElementById('new_sample_name');
+    const name = document.getElementById('new_specimen_name');
     const popuperror=document.getElementById('pylims_popup_error');
     popuperror.classList.add('localerror');
     popuperror.style.display='none';

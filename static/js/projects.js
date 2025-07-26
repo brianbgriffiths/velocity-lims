@@ -34,7 +34,7 @@ const Project = class {
             console.log('show',this.samples,this)
             for (let sample of this.samples) {
                 let s = document.createElement('sample');
-                s.innerHTML='<i class="fa-light fa-vial-circle-check"></i> '+sample.sample_name;
+                s.innerHTML='<i class="fa-light fa-vial-circle-check"></i> '+sample.specimen_name;
                 this.samplelist_element.appendChild(s)
                 let workflow_element = document.createElement('sampleworkflow');
                 workflow_element.innerHTML = workflows[sample.workflow].name+'<i class="fa-regular fa-clock"></i>';

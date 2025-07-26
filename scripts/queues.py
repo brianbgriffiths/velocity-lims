@@ -89,7 +89,7 @@ def load_queue(params):
     cursor.execute("SELECT * FROM velocity.controls WHERE ctrlid = ANY(%s);",(response['queue']['controls'],))
     response['controls'] = json.dumps(cursor.fetchall())
 
-    cursor.execute("SELECT * FROM velocity.queued_derivatives qd JOIN velocity.derivatives vd ON vd.did=qd.derivative JOIN velocity.samples vs ON vs.smid = vd.sample LEFT JOIN velocity.reserved_derivatives rd ON rd.step = qd.queue and rd.derivative=qd.derivative and rd.operator=%s and rd.status=1 WHERE qd.queue = %s ORDER BY qdid",(params['userid'],params['queue']))
+    cursor.execute("SELECT * FROM velocity.queued_derivatives qd JOIN velocity.derivatives vd ON vd.did=qd.derivative JOIN velocity.specimens vs ON vs.smid = vd.sample LEFT JOIN velocity.reserved_derivatives rd ON rd.step = qd.queue and rd.derivative=qd.derivative and rd.operator=%s and rd.status=1 WHERE qd.queue = %s ORDER BY qdid",(params['userid'],params['queue']))
     response['samples'] = json.dumps(cursor.fetchall())
 
     # print('sample list',response['samples'])
@@ -118,7 +118,7 @@ def load_reserved(params):
     cursor.execute("SELECT * FROM velocity.container_config WHERE cid = ANY(%s);",(response['queue']['containers'],))
     response['containers'] = json.dumps(cursor.fetchall())
 
-    cursor.execute("SELECT * FROM velocity.reserved_derivatives rd JOIN velocity.derivatives vd ON vd.did=rd.derivative JOIN velocity.samples vs ON vs.smid = vd.sample WHERE rd.step = %s and rd.operator=%s and rd.status=1 ORDER BY rdid ASC;",(params['reserved'],params['userid']))
+    cursor.execute("SELECT * FROM velocity.reserved_derivatives rd JOIN velocity.derivatives vd ON vd.did=rd.derivative JOIN velocity.specimens vs ON vs.smid = vd.sample WHERE rd.step = %s and rd.operator=%s and rd.status=1 ORDER BY rdid ASC;",(params['reserved'],params['userid']))
     samples = cursor.fetchall()
     response['samples'] = json.dumps(samples)
     response['reserved']=len(samples)
@@ -309,7 +309,7 @@ def add_control(request):
     temp['control'] = cursor.fetchone()
     print('control',temp['control'])
     
-    cursor.execute("INSERT INTO velocity.samples (req, sample_name, control) VALUES (-1, %s, %s) RETURNING smid",(temp['control']['control_type'],temp['control']['ctrlid']))
+    cursor.execute("INSERT INTO velocity.specimens (req, specimen_name, control) VALUES (-1, %s, %s) RETURNING smid",(temp['control']['control_type'],temp['control']['ctrlid']))
     temp['sample_id'] = cursor.fetchone()['smid']
 
     cursor.execute("INSERT INTO velocity.derivatives (sample,derivative_step) VALUES (%s, -1) RETURNING did",(temp['sample_id'],))
@@ -321,7 +321,7 @@ def add_control(request):
     cursor.execute("INSERT INTO velocity.reserved_derivatives (derivative, step, operator) VALUES (%s, %s, %s) RETURNING rdid",(temp['did'], json_data['step'],request.session['userid']))
     conn.commit()
 
-    cursor.execute("SELECT * FROM velocity.queued_derivatives qd JOIN velocity.derivatives vd ON vd.did=qd.derivative JOIN velocity.samples vs ON vs.smid = vd.sample LEFT JOIN velocity.reserved_derivatives rd ON rd.step = qd.queue and rd.derivative=qd.derivative and rd.operator=%s WHERE qd.qdid = %s",(request.session['userid'],temp['queued_derivative']))
+    cursor.execute("SELECT * FROM velocity.queued_derivatives qd JOIN velocity.derivatives vd ON vd.did=qd.derivative JOIN velocity.specimens vs ON vs.smid = vd.sample LEFT JOIN velocity.reserved_derivatives rd ON rd.step = qd.queue and rd.derivative=qd.derivative and rd.operator=%s WHERE qd.qdid = %s",(request.session['userid'],temp['queued_derivative']))
     response['samples'] = json.dumps(cursor.fetchall())
 
     response['status']='success'
@@ -349,7 +349,7 @@ def remove_controls(request):
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM velocity.queued_derivatives qd JOIN velocity.derivatives vd ON vd.did=qd.derivative JOIN velocity.samples vs ON vs.smid=vd.sample WHERE qd.qdid = %s;",(json_data['queue_id'],))
+    cursor.execute("SELECT * FROM velocity.queued_derivatives qd JOIN velocity.derivatives vd ON vd.did=qd.derivative JOIN velocity.specimens vs ON vs.smid=vd.sample WHERE qd.qdid = %s;",(json_data['queue_id'],))
     temp['control'] = cursor.fetchone()
 
     if temp['control'] == None:
