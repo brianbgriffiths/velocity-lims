@@ -443,7 +443,7 @@
       
       .role-item {
         display: flex;
-        align-items: center;
+        align-items: flex-start;
         margin-bottom: 12px;
         padding: 8px;
         border-radius: 3px;
@@ -456,7 +456,13 @@
       
       .role-item input[type="checkbox"] {
         margin-right: 12px;
+        margin-top: 2px;
         transform: scale(1.2);
+      }
+      
+      .role-content {
+        flex: 1;
+        cursor: pointer;
       }
       
       .role-name {
@@ -781,13 +787,13 @@ function displayRoles() {
         
         roleDiv.innerHTML = `
             <input type="checkbox" id="role-${role.rid}" value="${role.rid}" ${isChecked ? 'checked' : ''}>
-            <label for="role-${role.rid}">
+            <div class="role-content">
                 <div class="role-name">${role.role_name}</div>
-                <div class="role-description"><span class="permissions-link" onclick="event.stopPropagation(); showPermissions(${role.rid}, '${role.role_name.replace(/'/g, "\\'")}', '${JSON.stringify(role.permission_set).replace(/'/g, "\\'")}')"> ${getPermissionCount(role.permission_set)} permissions</span></div>
-            </label>
+                <div class="role-description"><span class="permissions-link" data-role-id="${role.rid}" data-role-name="${role.role_name.replace(/'/g, "\\'")}"> ${getPermissionCount(role.permission_set)} permissions</span></div>
+            </div>
         `;
         
-        // Add change event listener
+        // Add change event listener to checkbox
         const checkbox = roleDiv.querySelector('input[type="checkbox"]');
         checkbox.addEventListener('change', function() {
             const roleId = parseInt(this.value);
@@ -798,6 +804,25 @@ function displayRoles() {
             } else {
                 selectedUserRoles = selectedUserRoles.filter(id => id !== roleId);
             }
+        });
+        
+        // Add click event listener to role content (excluding permissions link)
+        const roleContent = roleDiv.querySelector('.role-content');
+        roleContent.addEventListener('click', function(e) {
+            // Don't toggle if clicking on permissions link
+            if (!e.target.classList.contains('permissions-link')) {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        });
+        
+        // Add click event listener to permissions link
+        const permissionsLink = roleDiv.querySelector('.permissions-link');
+        permissionsLink.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const roleId = parseInt(this.dataset.roleId);
+            const roleName = this.dataset.roleName;
+            showPermissions(roleId, roleName, null);
         });
         
         rolesList.appendChild(roleDiv);
