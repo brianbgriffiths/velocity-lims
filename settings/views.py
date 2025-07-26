@@ -98,7 +98,7 @@ def home(request):
     context={}
     context['info']=[]
     with open("VERSION", 'r') as file:
-        context['info'].append(['Pylims Version',file.read()])
+        context['info'].append(['Velocity LIMS Version',file.read()])
     context['info'].append(['Python Version',".".join(sys.version.split()[0].split('.')[:2])])
     
     # Add sample count to info
