@@ -783,7 +783,7 @@ function displayRoles() {
             <input type="checkbox" id="role-${role.rid}" value="${role.rid}" ${isChecked ? 'checked' : ''}>
             <label for="role-${role.rid}">
                 <div class="role-name">${role.role_name}</div>
-                <div class="role-description"><span class="permissions-link" onclick="showPermissions(${role.rid}, '${role.role_name.replace(/'/g, "\\'")}', '${JSON.stringify(role.permission_set).replace(/'/g, "\\'")}')"> ${getPermissionCount(role.permission_set)} permissions</span></div>
+                <div class="role-description"><span class="permissions-link" onclick="event.stopPropagation(); showPermissions(${role.rid}, '${role.role_name.replace(/'/g, "\\'")}', '${JSON.stringify(role.permission_set).replace(/'/g, "\\'")}')"> ${getPermissionCount(role.permission_set)} permissions</span></div>
             </label>
         `;
         
