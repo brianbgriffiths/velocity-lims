@@ -203,6 +203,45 @@ def settings_roles(request):
 
     return render(request, 'settings_roles.html', context)
 
+@login_required
+def save_role(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        role_name = data.get('role_name')
+        permission_set = data.get('permission_set', [])
+
+        if not role_name:
+            return JsonResponse({'error': 'Role name is required'}, status=400)
+
+        if not permission_set:
+            return JsonResponse({'error': 'At least one permission must be selected'}, status=400)
+
+        try:
+            conn = psycopg.connect(
+                dbname=pylims.dbname,
+                user=pylims.dbuser,
+                password=pylims.dbpass,
+                host=pylims.dbhost,
+                port=pylims.dbport,
+                row_factory=dict_row
+            )
+            cursor = conn.cursor()
+
+            # Insert or update role in the database
+            cursor.execute("""
+                INSERT INTO velocity.roles (name, permission_set)
+                VALUES (%s, %s)
+                ON CONFLICT (name) DO UPDATE SET permission_set = EXCLUDED.permission_set
+            """, (role_name, permission_set))
+
+            conn.commit()
+            cursor.close()
+            conn.close()
+
+            return JsonResponse({'status': 'success'}, status=200)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
 def setup(request):
     print(pylims.term(),pylims.info('building module list'))
     context={}

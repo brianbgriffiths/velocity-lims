@@ -727,13 +727,16 @@ function hidePermissionsModal() {
 
 function saveRole() {
     console.log('saveRole called, currentRoleName:', currentRoleName); // Debug log
+    console.log('selectedPermissions:', selectedPermissions); // Debug log
     
     if (!currentRoleName) {
+        console.log('Error: currentRoleName is empty'); // Debug log
         localerror('Role name is required');
         return;
     }
     
     if (selectedPermissions.length === 0) {
+        console.log('Error: no permissions selected'); // Debug log
         localerror('Please select at least one permission');
         return;
     }
@@ -752,7 +755,10 @@ function saveRole() {
         submit_mode: 'silent'
     };
     
+    console.log('About to call pylims_post'); // Debug log
+    
     pylims_post(pyoptions).then(result => {
+        console.log('pylims_post success:', result); // Debug log
         if (result.status === 'success') {
             // Add the new role to the roles array
             roles.push({
@@ -769,7 +775,7 @@ function saveRole() {
             localerror(result.error || 'Failed to save role');
         }
     }).catch(error => {
-        console.error(error);
+        console.error('pylims_post error:', error);
         localerror('Error saving role: ' + error.message);
     });
 }

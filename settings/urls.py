@@ -40,6 +40,7 @@ urlpatterns = [
     path('view_settings/', views.view_settings, name="view_settings"),
     path('settings_operators/', views.settings_operators, name="settings_operators"),
     path('settings_roles/', views.settings_roles, name="settings_roles"),
+    path('save_role/', views.save_role, name="save_role"),
 
     #queues
     path("queues/", queues.display_queues, name="display_queues"),
