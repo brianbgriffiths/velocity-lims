@@ -804,10 +804,10 @@ function displayRoles() {
             <input type="checkbox" id="role-${role.rid}" value="${role.rid}" ${isChecked ? 'checked' : ''}>
             <div class="role-content">
                 <div class="role-name">${role.role_name}</div>
-                <div class="role-description">${getPermissionCount(role.permission_set)} permissions</div>
-            </div>
-            <div class="role-actions">
-                <span class="permissions-link" data-role-id="${role.rid}" data-role-name="${role.role_name.replace(/'/g, "\\'")}">view</span>
+                <div class="role-description">
+                    <span class="permissions-link" data-role-id="${role.rid}" data-role-name="${role.role_name.replace(/'/g, "\\'")}"><i class="fa-solid fa-circle-caret-down"></i></span>
+                    ${getPermissionCount(role.permission_set)} permissions
+                </div>
             </div>
         `;
         
@@ -827,8 +827,11 @@ function displayRoles() {
         // Add click event listener to role content
         const roleContent = roleDiv.querySelector('.role-content');
         roleContent.addEventListener('click', function(e) {
-            checkbox.checked = !checkbox.checked;
-            checkbox.dispatchEvent(new Event('change'));
+            // Don't toggle if clicking on permissions link
+            if (!e.target.classList.contains('permissions-link')) {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            }
         });
         
         // Add click event listener to permissions link
