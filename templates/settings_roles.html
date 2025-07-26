@@ -745,14 +745,22 @@ function showPermissionsModal() {
     if (!permissions || permissions.length === 0) {
         permissionsList.innerHTML = '<p>No permissions available</p>';
     } else {
+        // Clear and rebuild selectedPermissions array properly
+        selectedPermissions = [];
+        
         permissions.forEach(permission => {
             const permissionDiv = document.createElement('div');
             permissionDiv.className = 'permission-item';
             
             // Check if this permission should be pre-selected
             // Convert both to numbers for comparison since they might be different types
-            const isSelected = existingPermissions.some(existingPid => parseInt(existingPid) === parseInt(permission.pid));
-            console.log(`Permission ${permission.pid} (${permission.permission}): isSelected = ${isSelected}, existingPermissions contains:`, existingPermissions);
+            const isSelected = existingPermissions.some(existingPid => {
+                const existingAsNum = parseInt(existingPid);
+                const permissionAsNum = parseInt(permission.pid);
+                console.log(`Comparing existingPid: ${existingPid} (${existingAsNum}) with permission.pid: ${permission.pid} (${permissionAsNum})`);
+                return existingAsNum === permissionAsNum;
+            });
+            console.log(`Permission ${permission.pid} (${permission.permission}): isSelected = ${isSelected}, existingPermissions:`, existingPermissions);
             
             permissionDiv.innerHTML = `
                 <input type="checkbox" id="perm-${permission.pid}" value="${permission.pid}" ${isSelected ? 'checked' : ''}>
@@ -763,19 +771,26 @@ function showPermissionsModal() {
             
             // Initialize selectedPermissions array with existing permissions
             if (isSelected) {
-                selectedPermissions.push(permission.pid);
+                selectedPermissions.push(parseInt(permission.pid));
+                console.log(`Added permission ${permission.pid} to selectedPermissions`);
             }
             
             checkbox.addEventListener('change', function() {
+                const permId = parseInt(this.value);
                 if (this.checked) {
-                    selectedPermissions.push(permission.pid);
+                    if (!selectedPermissions.includes(permId)) {
+                        selectedPermissions.push(permId);
+                    }
                 } else {
-                    selectedPermissions = selectedPermissions.filter(id => id !== permission.pid);
+                    selectedPermissions = selectedPermissions.filter(id => id !== permId);
                 }
+                console.log('Updated selectedPermissions:', selectedPermissions);
             });
             
             permissionsList.appendChild(permissionDiv);
         });
+        
+        console.log('Final selectedPermissions after initialization:', selectedPermissions);
     }
     
     document.getElementById('permissions-modal').style.display = 'flex';
