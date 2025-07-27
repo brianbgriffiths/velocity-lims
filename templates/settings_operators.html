@@ -734,7 +734,7 @@
                 </div>
                 <div class="form-group">
                     <label for="username">Username:</label>
-                    <input type="text" id="username" placeholder="Enter username">
+                    <input type="text" id="username" placeholder="Will auto-generate from full name">
                 </div>
             </div>
             <div class="form-row">
@@ -809,6 +809,9 @@ function setupEventListeners() {
     document.getElementById('cancel-role-edit').addEventListener('click', cancelRoleEdit);
     document.getElementById('create-account-btn').addEventListener('click', createAccount);
     document.getElementById('clear-form-btn').addEventListener('click', clearCreateForm);
+    
+    // Auto-generate username from full name
+    document.getElementById('full-name').addEventListener('input', autoGenerateUsername);
 }
 
 function loadUsers() {
@@ -1065,6 +1068,41 @@ function cancelRoleEdit() {
     });
 }
 
+function autoGenerateUsername() {
+    const fullNameInput = document.getElementById('full-name');
+    const usernameInput = document.getElementById('username');
+    const fullName = fullNameInput.value.trim();
+    
+    // Only auto-generate if username field is empty or contains a previously auto-generated value
+    // This allows users to manually edit the username without it being overwritten
+    const currentUsername = usernameInput.value.trim();
+    const shouldAutoGenerate = !currentUsername || currentUsername === usernameInput.dataset.lastGenerated;
+    
+    if (fullName && shouldAutoGenerate) {
+        // Split name into parts and clean them
+        const nameParts = fullName.toLowerCase()
+            .replace(/[^a-z\s]/g, '') // Remove non-alphabetic characters except spaces
+            .split(/\s+/) // Split on whitespace
+            .filter(part => part.length > 0); // Remove empty parts
+        
+        if (nameParts.length >= 2) {
+            // Take first initial + last name
+            const firstInitial = nameParts[0].charAt(0);
+            const lastName = nameParts[nameParts.length - 1];
+            const generatedUsername = firstInitial + lastName;
+            
+            // Store the generated value so we can track if user has manually edited it
+            usernameInput.value = generatedUsername;
+            usernameInput.dataset.lastGenerated = generatedUsername;
+        } else if (nameParts.length === 1) {
+            // If only one name part, use it as is
+            const generatedUsername = nameParts[0];
+            usernameInput.value = generatedUsername;
+            usernameInput.dataset.lastGenerated = generatedUsername;
+        }
+    }
+}
+
 function localerror(msg) {
     error_element = document.getElementById('pylims_request_error');
     if (error_element) {
@@ -1239,6 +1277,26 @@ function createAccount() {
         return;
     }
     
+    // Check if username or email already exists
+    console.log('Checking for existing users...');
+    const existingUser = users.find(user => 
+        user.username === username || user.email === email
+    );
+    
+    if (existingUser) {
+        console.log('ERROR: User already exists:', existingUser);
+        if (existingUser.username === username && existingUser.email === email) {
+            localerror(`Both username "${username}" and email "${email}" are already in use.`);
+        } else if (existingUser.username === username) {
+            localerror(`Username "${username}" is already in use. Please choose a different username.`);
+        } else {
+            localerror(`Email "${email}" is already in use. Please use a different email address.`);
+        }
+        return;
+    }
+    
+    console.log('No existing users found with that username or email.');
+    
     // Get selected roles
     const selectedRoles = [];
     const roleCheckboxes = document.querySelectorAll('#create-account-roles input[type="checkbox"]:checked');
@@ -1323,7 +1381,13 @@ function createAccount() {
         } else {
             console.log('ERROR: Server returned error');
             console.log('Error message:', result.error);
-            localerror(result.error || 'Failed to create account');
+            
+            // Handle specific error types with better messaging
+            if (result.error === 'Username or email already exists') {
+                localerror(`Account creation failed: A user with username "${username}" or email "${email}" already exists. Please use a different username or email.`);
+            } else {
+                localerror(result.error || 'Failed to create account');
+            }
         }
     }).catch(error => {
         console.log('CATCH: Request failed');
@@ -1345,6 +1409,9 @@ function clearCreateForm() {
     document.getElementById('full-name').value = '';
     document.getElementById('username').value = '';
     document.getElementById('email').value = '';
+    
+    // Clear auto-generation tracking
+    document.getElementById('username').dataset.lastGenerated = '';
     
     // Uncheck all role checkboxes
     document.querySelectorAll('#create-account-roles input[type="checkbox"]').forEach(checkbox => {
