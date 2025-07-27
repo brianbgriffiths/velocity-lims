@@ -639,11 +639,11 @@ def create_account(request):
 
             try:
                 conn = psycopg.connect(
-                    dbname=pylims.dbname,
-                    user=pylims.dbuser,
-                    password=pylims.dbpass,
-                    host=pylims.dbhost,
-                    port=pylims.dbport,
+                    host=settings.DATABASES['default']['HOST'],
+                    port=settings.DATABASES['default']['PORT'],
+                    dbname=settings.DATABASES['default']['NAME'],
+                    user=settings.DATABASES['default']['USER'],
+                    password=settings.DATABASES['default']['PASSWORD'],
                     row_factory=dict_row
                 )
                 cursor = conn.cursor()
@@ -659,37 +659,16 @@ def create_account(request):
                 import string
                 login_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
-                # Create user account
-                try:
-                    # Try inserting with roles column first
-                    roles_json = json.dumps(role_ids) if role_ids else '[]'
-                    cursor.execute("""
-                        INSERT INTO velocity.accounts (username, email, full_name, roles, login_code, created_at)
-                        VALUES (%s, %s, %s, %s, %s, NOW())
-                        RETURNING userid
-                    """, (username, email, full_name, roles_json, login_code))
-                    
-                    result = cursor.fetchone()
-                    user_id = result['userid']
-                    
-                except Exception as accounts_error:
-                    # If roles column doesn't exist, create without it
-                    cursor.execute("""
-                        INSERT INTO velocity.accounts (username, email, full_name, login_code, created_at)
-                        VALUES (%s, %s, %s, %s, NOW())
-                        RETURNING userid
-                    """, (username, email, full_name, login_code))
-                    
-                    result = cursor.fetchone()
-                    user_id = result['userid']
-                    
-                    # Try to insert roles in junction table
-                    if role_ids:
-                        try:
-                            for role_id in role_ids:
-                                cursor.execute("INSERT INTO velocity.user_roles (user_id, role_id) VALUES (%s, %s)", (user_id, role_id))
-                        except Exception as junction_error:
-                            print(f"Warning: Could not assign roles via junction table: {junction_error}")
+                # Create user account - match exact table structure
+                roles_json = json.dumps(role_ids) if role_ids else '[]'
+                cursor.execute("""
+                    INSERT INTO velocity.accounts (full_name, username, email, password, roles)
+                    VALUES (%s, %s, %s, %s, %s)
+                    RETURNING userid
+                """, (full_name, username, email, login_code, roles_json))
+                
+                result = cursor.fetchone()
+                user_id = result['userid']
 
                 # Send login email
                 try:
@@ -708,6 +687,7 @@ def create_account(request):
                     'user_id': user_id,
                     'login_code': login_code,
                     'email_status': email_status,
+                    'role_ids': role_ids,
                     'message': f'Account created for {full_name} with {len(role_ids)} roles assigned'
                 }, status=200)
                 
@@ -787,11 +767,11 @@ def login_with_code(request, code):
         )
         cursor = conn.cursor()
         
-        # Look up user by login code
+        # Look up user by login code (stored in password field for new accounts)
         cursor.execute("""
             SELECT userid, email, username, full_name, roles 
             FROM velocity.accounts 
-            WHERE login_code = %s
+            WHERE password = %s
         """, (code,))
         
         user = cursor.fetchone()
@@ -807,10 +787,10 @@ def login_with_code(request, code):
             from scripts.login import load_user_permissions
             load_user_permissions(request, user['userid'])
             
-            # Clear the login code (one-time use)
+            # Clear the login code by setting password to NULL (user will need to set a real password later)
             cursor.execute("""
                 UPDATE velocity.accounts 
-                SET login_code = NULL 
+                SET password = NULL 
                 WHERE userid = %s
             """, (user['userid'],))
             

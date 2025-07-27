@@ -1262,16 +1262,16 @@ function createAccount() {
             // Determine email status message
             let emailStatusMsg = '';
             if (result.email_status === 'sent successfully') {
-                emailStatusMsg = `<small style="color: var(--green-dark);"><i class="fa-solid fa-check-circle"></i> Login email sent successfully to ${email}</small>`;
+                emailStatusMsg = `<small style="color: var(--green-dark);"><i class="fa-solid fa-check-circle"></i> Login email sent successfully to ${email}. User can click the link to activate account.</small>`;
             } else {
-                emailStatusMsg = `<small style="color: var(--orange-dark);"><i class="fa-solid fa-exclamation-triangle"></i> Account created but email failed to send. Login code: <code>${result.login_code}</code></small>`;
+                emailStatusMsg = `<small style="color: var(--orange-dark);"><i class="fa-solid fa-exclamation-triangle"></i> Account created but email failed to send. Direct login link: <a href="http://localhost:8000/login/${result.login_code}" target="_blank">http://localhost:8000/login/${result.login_code}</a></small>`;
             }
             
             successMessage.innerHTML = `
                 <strong>Account Created Successfully!</strong><br>
                 User: ${fullName} (${username})<br>
                 Email: ${email}<br>
-                Login code: <code>${result.login_code}</code><br>
+                Roles: ${result.role_ids ? result.role_ids.length : 0} assigned<br>
                 ${emailStatusMsg}
             `;
             
