@@ -47,6 +47,7 @@ urlpatterns = [
     path('get_user_roles/', views.get_user_roles, name="get_user_roles"),
     path('get_all_users/', views.get_all_users, name="get_all_users"),
     path('get_all_roles/', views.get_all_roles, name="get_all_roles"),
+    path('create_account/', views.create_account, name="create_account"),
 
     #queues
     path("queues/", queues.display_queues, name="display_queues"),

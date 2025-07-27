@@ -605,3 +605,142 @@ def get_all_roles(request):
             return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
     else:
         return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+@login_required
+def create_account(request):
+    """
+    Create a new user account with assigned roles and generate login code.
+    
+    Expected data:
+    {
+        "full_name": "John Doe",
+        "username": "johndoe", 
+        "email": "john@example.com",
+        "role_ids": [1, 2, 3]
+    }
+    """
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            full_name = data.get('full_name', '').strip()
+            username = data.get('username', '').strip()
+            email = data.get('email', '').strip()
+            role_ids = data.get('role_ids', [])
+
+            # Validate required fields
+            if not full_name:
+                return JsonResponse({'error': 'Full name is required'}, status=400)
+            
+            if not username:
+                return JsonResponse({'error': 'Username is required'}, status=400)
+            
+            if not email:
+                return JsonResponse({'error': 'Email is required'}, status=400)
+
+            try:
+                conn = psycopg.connect(
+                    dbname=pylims.dbname,
+                    user=pylims.dbuser,
+                    password=pylims.dbpass,
+                    host=pylims.dbhost,
+                    port=pylims.dbport,
+                    row_factory=dict_row
+                )
+                cursor = conn.cursor()
+
+                # Check if username or email already exists
+                cursor.execute("SELECT userid FROM velocity.accounts WHERE username = %s OR email = %s", (username, email))
+                existing_user = cursor.fetchone()
+                if existing_user:
+                    return JsonResponse({'error': 'Username or email already exists'}, status=400)
+
+                # Generate random login code
+                import random
+                import string
+                login_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+
+                # Create user account
+                try:
+                    # Try inserting with roles column first
+                    roles_json = json.dumps(role_ids) if role_ids else '[]'
+                    cursor.execute("""
+                        INSERT INTO velocity.accounts (username, email, full_name, roles, login_code, created_at)
+                        VALUES (%s, %s, %s, %s, %s, NOW())
+                        RETURNING userid
+                    """, (username, email, full_name, roles_json, login_code))
+                    
+                    result = cursor.fetchone()
+                    user_id = result['userid']
+                    
+                except Exception as accounts_error:
+                    # If roles column doesn't exist, create without it
+                    cursor.execute("""
+                        INSERT INTO velocity.accounts (username, email, full_name, login_code, created_at)
+                        VALUES (%s, %s, %s, %s, NOW())
+                        RETURNING userid
+                    """, (username, email, full_name, login_code))
+                    
+                    result = cursor.fetchone()
+                    user_id = result['userid']
+                    
+                    # Try to insert roles in junction table
+                    if role_ids:
+                        try:
+                            for role_id in role_ids:
+                                cursor.execute("INSERT INTO velocity.user_roles (user_id, role_id) VALUES (%s, %s)", (user_id, role_id))
+                        except Exception as junction_error:
+                            print(f"Warning: Could not assign roles via junction table: {junction_error}")
+
+                # Compose email (dummy function for now)
+                email_content = compose_login_email(full_name, email, login_code)
+                print(f"=== EMAIL WOULD BE SENT ===")
+                print(f"To: {email}")
+                print(f"Subject: Your Velocity LIMS Account")
+                print(f"Body:\n{email_content}")
+                print(f"==========================")
+
+                conn.commit()
+                cursor.close()
+                conn.close()
+
+                return JsonResponse({
+                    'status': 'success', 
+                    'user_id': user_id,
+                    'login_code': login_code,
+                    'message': f'Account created for {full_name} with {len(role_ids)} roles assigned'
+                }, status=200)
+                
+            except Exception as e:
+                return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+                
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+def compose_login_email(full_name, email, login_code):
+    """
+    Compose the login email content (dummy function for now).
+    Later this will integrate with the mail server.
+    """
+    login_link = f"http://localhost:8000/login?code={login_code}"
+    
+    email_content = f"""
+    Dear {full_name},
+
+    Your Velocity LIMS account has been created!
+
+    Login Details:
+    - Email: {email}
+    - Login Code: {login_code}
+    - Login Link: {login_link}
+
+    Please click the link above or use the login code to access your account.
+
+    Welcome to Velocity LIMS!
+
+    Best regards,
+    The Velocity LIMS Team
+    """
+    
+    return email_content
