@@ -136,6 +136,8 @@ def home(request):
         context['userid'] = None
     else:
         context['userid'] = request.session.get('userid', None)
+        context['full_name'] = request.session.get('full_name', None)
+        context['permissions'] = get_user_permissions(request)
     return render(request, 'index.html', context)
 
 def show_login(request):
@@ -325,12 +327,14 @@ def resend_activation_code(request):
 def show_logout(request):
     context = {}
     context['userid'] = request.session.get('userid', None)
+    context['full_name'] = request.session.get('full_name', None)
     return render(request, 'logout.html', context)
 
 @login_required
 def view_settings(request):
     context = {}
     context['userid'] = request.session.get('userid', None)
+    context['full_name'] = request.session.get('full_name', None)
 
     return render(request, 'settings.html', context)
 
@@ -338,6 +342,7 @@ def view_settings(request):
 def settings_operators(request):
     context = {}
     context['userid'] = request.session.get('userid', None)
+    context['full_name'] = request.session.get('full_name', None)
 
     return render(request, 'settings_operators.html', context)
 
@@ -345,6 +350,7 @@ def settings_operators(request):
 def settings_roles(request):
     context = {}
     context['userid'] = request.session.get('userid', None)
+    context['full_name'] = request.session.get('full_name', None)
 
     # Fetch roles from the database
     try:

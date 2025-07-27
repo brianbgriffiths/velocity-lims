@@ -3,6 +3,7 @@
 {% block title %}Velocity LIMS - Enter Activation Code{% endblock %}
 {% block headdata %}
 <script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
 <style>
 	#pylims_request_error {
 		border:solid 1px #ff0000;
@@ -146,7 +147,7 @@ function activateAccount() {
 	const code = document.getElementById('activation-code').value.trim().toUpperCase();
 	
 	if (!code) {
-		showError('Please enter the activation code');
+		error('Please enter the activation code');
 		return;
 	}
 	
@@ -173,13 +174,15 @@ function activateAccount() {
 				window.location.href = '/';
 			}, 2000);
 		} else {
-			showError(result.error || 'Invalid activation code');
+			// Use pylims_ui error function
+			error(result.error || 'Invalid activation code');
 			activateBtn.disabled = false;
 			activateBtn.textContent = 'Activate Account';
 		}
 	}).catch(error => {
 		console.error('Activation error:', error);
-		showError('Error activating account: ' + error.message);
+		// Use pylims_ui error function
+		error('Error activating account: ' + error.message);
 		activateBtn.disabled = false;
 		activateBtn.textContent = 'Activate Account';
 	});
@@ -205,7 +208,8 @@ function resendActivationCode() {
 		if (result.status === 'success') {
 			showSuccess('Activation code resent to your email');
 		} else {
-			showError(result.error || 'Failed to resend activation code');
+			// Use pylims_ui error function
+			error(result.error || 'Failed to resend activation code');
 		}
 		
 		// Re-enable link after 30 seconds
@@ -216,24 +220,11 @@ function resendActivationCode() {
 		
 	}).catch(error => {
 		console.error('Resend error:', error);
-		showError('Error resending code: ' + error.message);
+		// Use pylims_ui error function
+		error('Error resending code: ' + error.message);
 		resendLink.style.pointerEvents = 'auto';
 		resendLink.textContent = 'Resend activation email';
 	});
-}
-
-function showError(message) {
-	const errorDiv = document.getElementById('pylims_request_error');
-	const successDiv = document.getElementById('pylims_request_success');
-	
-	successDiv.style.display = 'none';
-	errorDiv.textContent = message;
-	errorDiv.style.display = 'block';
-	
-	// Hide after 5 seconds
-	setTimeout(() => {
-		errorDiv.style.display = 'none';
-	}, 5000);
 }
 
 function showSuccess(message) {
