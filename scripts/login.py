@@ -167,7 +167,7 @@ def login_submit(request):
     if result and 'password' in result:
         hashed_password_from_db = result['password']
         if hashed_password_from_db is None:
-            response['error']='Account not yet activated. Please check your email for the activation link.'
+            response['error']='Please set a password for your account. Contact an administrator.'
             return JsonResponse(response)
             
         valid_password = bcrypt.checkpw(data['password'].encode('utf-8'), hashed_password_from_db)

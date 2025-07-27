@@ -181,16 +181,24 @@ def activate_account(request):
                 
                 # Look up user by email and activation code (stored in password field)
                 cursor.execute("""
-                    SELECT userid, username, full_name, roles, activated 
+                    SELECT userid, username, full_name, roles, activated, password
                     FROM velocity.accounts 
-                    WHERE email = %s AND password = %s
-                """, (email, activation_code))
+                    WHERE email = %s
+                """, (email,))
                 
                 user = cursor.fetchone()
                 
                 if user:
                     if user['activated']:
                         return JsonResponse({'error': 'Account is already activated'}, status=400)
+                    
+                    # Check if the activation code matches
+                    stored_code = user['password']
+                    if isinstance(stored_code, bytes):
+                        stored_code = stored_code.decode('utf-8')
+                    
+                    if stored_code != activation_code:
+                        return JsonResponse({'error': 'Invalid activation code'}, status=400)
                     
                     # Activate the account and clear the activation code
                     cursor.execute("""
@@ -285,6 +293,9 @@ def resend_activation_code(request):
                         activation_code = new_code
                     else:
                         activation_code = user['password']
+                        # Convert bytes to string if needed
+                        if isinstance(activation_code, bytes):
+                            activation_code = activation_code.decode('utf-8')
                     
                     # Send activation email
                     try:
@@ -986,12 +997,22 @@ def login_with_code(request, code):
         
         # Look up user by login code (stored in password field for new accounts)
         cursor.execute("""
-            SELECT userid, email, username, full_name, roles 
+            SELECT userid, email, username, full_name, roles, password 
             FROM velocity.accounts 
-            WHERE password = %s
-        """, (code,))
+            WHERE activated = FALSE
+        """)
         
-        user = cursor.fetchone()
+        users = cursor.fetchall()
+        user = None
+        
+        # Find user with matching activation code (handling bytes)
+        for u in users:
+            stored_code = u['password']
+            if isinstance(stored_code, bytes):
+                stored_code = stored_code.decode('utf-8')
+            if stored_code == code:
+                user = u
+                break
         
         if user:
             # Set session variables
