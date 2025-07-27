@@ -142,6 +142,179 @@ def show_login(request):
     context = {}
     return render(request, 'login.html', context)
 
+def enter_activation_code(request):
+    """
+    Show the activation code entry page for unactivated accounts.
+    """
+    context = {}
+    return render(request, 'enter_activation_code.html', context)
+
+def activate_account(request):
+    """
+    Activate an account using the activation code.
+    
+    Expected data:
+    {
+        "email": "user@example.com",
+        "activation_code": "ABC12345"
+    }
+    """
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            email = data.get('email', '').strip()
+            activation_code = data.get('activation_code', '').strip().upper()
+            
+            if not email or not activation_code:
+                return JsonResponse({'error': 'Email and activation code are required'}, status=400)
+            
+            try:
+                conn = psycopg.connect(
+                    host=settings.DATABASES['default']['HOST'],
+                    port=settings.DATABASES['default']['PORT'],
+                    dbname=settings.DATABASES['default']['NAME'],
+                    user=settings.DATABASES['default']['USER'],
+                    password=settings.DATABASES['default']['PASSWORD'],
+                    row_factory=dict_row
+                )
+                cursor = conn.cursor()
+                
+                # Look up user by email and activation code (stored in password field)
+                cursor.execute("""
+                    SELECT userid, username, full_name, roles, activated 
+                    FROM velocity.accounts 
+                    WHERE email = %s AND password = %s
+                """, (email, activation_code))
+                
+                user = cursor.fetchone()
+                
+                if user:
+                    if user['activated']:
+                        return JsonResponse({'error': 'Account is already activated'}, status=400)
+                    
+                    # Activate the account and clear the activation code
+                    cursor.execute("""
+                        UPDATE velocity.accounts 
+                        SET activated = TRUE, password = NULL 
+                        WHERE userid = %s
+                    """, (user['userid'],))
+                    
+                    # Set session variables to log the user in
+                    request.session['userid'] = user['userid']
+                    request.session['email'] = email
+                    request.session['username'] = user['username']
+                    request.session['full_name'] = user['full_name']
+                    
+                    # Load user permissions
+                    from scripts.login import load_user_permissions
+                    load_user_permissions(request, user['userid'])
+                    
+                    conn.commit()
+                    cursor.close()
+                    conn.close()
+                    
+                    print(f"Account activated for user {user['username']} ({email})")
+                    return JsonResponse({'status': 'success', 'message': 'Account activated successfully'}, status=200)
+                else:
+                    cursor.close()
+                    conn.close()
+                    return JsonResponse({'error': 'Invalid activation code or email'}, status=400)
+                    
+            except Exception as e:
+                return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+                
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+def resend_activation_code(request):
+    """
+    Resend the activation code to the user's email.
+    
+    Expected data:
+    {
+        "email": "user@example.com"
+    }
+    """
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            email = data.get('email', '').strip()
+            
+            if not email:
+                return JsonResponse({'error': 'Email is required'}, status=400)
+            
+            try:
+                conn = psycopg.connect(
+                    host=settings.DATABASES['default']['HOST'],
+                    port=settings.DATABASES['default']['PORT'],
+                    dbname=settings.DATABASES['default']['NAME'],
+                    user=settings.DATABASES['default']['USER'],
+                    password=settings.DATABASES['default']['PASSWORD'],
+                    row_factory=dict_row
+                )
+                cursor = conn.cursor()
+                
+                # Look up user by email
+                cursor.execute("""
+                    SELECT userid, full_name, password, activated 
+                    FROM velocity.accounts 
+                    WHERE email = %s
+                """, (email,))
+                
+                user = cursor.fetchone()
+                
+                if user:
+                    if user['activated']:
+                        return JsonResponse({'error': 'Account is already activated'}, status=400)
+                    
+                    if not user['password']:
+                        # Generate new activation code
+                        import random
+                        import string
+                        new_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+                        
+                        # Update the activation code
+                        cursor.execute("""
+                            UPDATE velocity.accounts 
+                            SET password = %s 
+                            WHERE userid = %s
+                        """, (new_code, user['userid']))
+                        
+                        activation_code = new_code
+                    else:
+                        activation_code = user['password']
+                    
+                    # Send activation email
+                    try:
+                        send_login_email(user['full_name'], email, activation_code)
+                        email_status = "sent successfully"
+                    except Exception as email_error:
+                        print(f"Warning: Failed to send email: {email_error}")
+                        email_status = "failed to send"
+                    
+                    conn.commit()
+                    cursor.close()
+                    conn.close()
+                    
+                    if email_status == "sent successfully":
+                        return JsonResponse({'status': 'success', 'message': 'Activation code resent to your email'}, status=200)
+                    else:
+                        return JsonResponse({'error': 'Failed to send activation email'}, status=500)
+                else:
+                    cursor.close()
+                    conn.close()
+                    return JsonResponse({'error': 'Email not found'}, status=404)
+                    
+            except Exception as e:
+                return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+                
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    else:
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
 @login_required
 def show_logout(request):
     context = {}
@@ -689,8 +862,8 @@ def create_account(request):
                 print(f"Roles JSON: {roles_json}")
                 
                 cursor.execute("""
-                    INSERT INTO velocity.accounts (full_name, username, email, password, roles)
-                    VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO velocity.accounts (full_name, username, email, password, roles, activated)
+                    VALUES (%s, %s, %s, %s, %s, FALSE)
                     RETURNING userid
                 """, (full_name, username, email, login_code, roles_json))
                 
@@ -747,11 +920,11 @@ def send_login_email(full_name, email, login_code):
     """
     Send the login email using the system mail command.
     """
-    login_link = f"http://localhost:8000/login/{login_code}"
-    
+    login_link = f"{settings.SERVER_URL}/login/{login_code}"
+
     # Compose email content
-    email_body = f"Dear {full_name},\n\nYour Velocity LIMS account has been created!\n\nClick the link below to activate your account:\n{login_link}\n\nAlternatively, you can login manually at http://localhost:8000/login with code: {login_code}\n\nWelcome to Velocity LIMS!\n\nBest regards,\nThe Velocity LIMS Team"
-    
+    email_body = f"Dear {full_name},\n\nYour Velocity LIMS account has been created!\n\nClick the link below to activate your account:\n{login_link}\n\nAlternatively, you can login manually at {settings.SERVER_URL}/login with code: {login_code}\n\nWelcome to Velocity LIMS!\n\nBest regards,\nThe Velocity LIMS Team"
+
     # Prepare mail command
     subject = "Activate your Velocity LIMS Account"
     from_address = "Velocity LIMS <noreply@velocitylims.com>"
@@ -831,10 +1004,10 @@ def login_with_code(request, code):
             from scripts.login import load_user_permissions
             load_user_permissions(request, user['userid'])
             
-            # Clear the login code by setting password to NULL (user will need to set a real password later)
+            # Clear the login code and set account as activated
             cursor.execute("""
                 UPDATE velocity.accounts 
-                SET password = NULL 
+                SET password = NULL, activated = TRUE 
                 WHERE userid = %s
             """, (user['userid'],))
             
@@ -842,7 +1015,7 @@ def login_with_code(request, code):
             cursor.close()
             conn.close()
             
-            print(f"User {user['username']} logged in via email verification")
+            print(f"User {user['username']} logged in via email verification and account activated")
             return redirect('home')
         else:
             cursor.close()

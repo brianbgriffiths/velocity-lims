@@ -78,7 +78,14 @@ function login() {
 	const pyoptions={data,csrf,url:'login_submit',submit_id:'login-button',submit_mode:'success'}
 	pylims_post(pyoptions).then(result => {
 	  console.log('pylims.post result',result);
-	  setTimeout(function() { window.location.href=`https://${window.location.hostname}`; }, 1000);  
+	  if (result.status === 'activation_required') {
+	    // Store email in sessionStorage for the activation page
+	    sessionStorage.setItem('activation_email', result.email);
+	    // Redirect to activation code entry page
+	    window.location.href = result.redirect_url;
+	  } else if (result.status === 'success') {
+	    setTimeout(function() { window.location.href=`https://${window.location.hostname}`; }, 1000);
+	  }
 	}).catch(error => {
         console.error(error);
       });

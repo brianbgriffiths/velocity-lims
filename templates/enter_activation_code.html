@@ -1,0 +1,248 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}Velocity LIMS - Enter Activation Code{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<style>
+	#pylims_request_error {
+		border:solid 1px #ff0000;
+		color:#ff0000;
+		background:#660000;
+		padding:10px;
+		display:none;
+		margin:10px 0px;
+	}
+	#pylims_request_success {
+		border:solid 1px #00ff00;
+		color:#00ff00;
+		background:#006600;
+		padding:10px;
+		display:none;
+		margin:10px 0px;
+	}
+	.activation-container {
+		max-width: 500px;
+		margin: 50px auto;
+		padding: 30px;
+		background-color: var(--gray-lightest);
+		border: 1px solid var(--gray-med);
+		border-radius: 8px;
+		text-align: center;
+	}
+	.activation-container h2 {
+		color: var(--gray-darkest);
+		margin-bottom: 20px;
+	}
+	.activation-container p {
+		color: var(--gray-dark);
+		margin-bottom: 20px;
+		line-height: 1.5;
+	}
+	.activation-form {
+		display: flex;
+		flex-direction: column;
+		gap: 15px;
+		align-items: center;
+	}
+	.code-input {
+		padding: 12px 15px;
+		border: 2px solid var(--gray-med);
+		border-radius: 5px;
+		font-size: 16px;
+		text-align: center;
+		letter-spacing: 2px;
+		text-transform: uppercase;
+		width: 200px;
+		font-family: monospace;
+	}
+	.code-input:focus {
+		outline: none;
+		border-color: var(--accent3);
+		box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+	}
+	.activation-btn {
+		background-color: var(--blue-med);
+		color: white;
+		border: none;
+		padding: 12px 30px;
+		border-radius: 5px;
+		cursor: pointer;
+		font-size: 16px;
+		font-weight: bold;
+	}
+	.activation-btn:hover {
+		background-color: var(--blue-dark);
+	}
+	.activation-btn:disabled {
+		background-color: var(--gray-med);
+		cursor: not-allowed;
+	}
+	.email-info {
+		background-color: var(--blue-lightest);
+		border: 1px solid var(--blue-light);
+		border-radius: 5px;
+		padding: 15px;
+		margin-bottom: 20px;
+	}
+	.resend-link {
+		color: var(--blue-med);
+		cursor: pointer;
+		text-decoration: underline;
+		margin-top: 15px;
+		font-size: 14px;
+	}
+	.resend-link:hover {
+		color: var(--blue-dark);
+	}
+</style>
+{% endblock %}
+{% block centercontent %}
+
+<div class="activation-container">
+	<h2>Account Activation Required</h2>
+	
+	<div class="email-info">
+		<p><strong>Account:</strong> <span id="user-email"></span></p>
+		<p>Your account requires activation. Please check your email for the activation code or enter it below.</p>
+	</div>
+	
+	<div class="activation-form">
+		<input type="text" id="activation-code" class="code-input" placeholder="Enter Code" maxlength="8">
+		
+		<div id="pylims_request_error"></div>
+		<div id="pylims_request_success"></div>
+		
+		<button id="activate-btn" class="activation-btn">Activate Account</button>
+		
+		<div class="resend-link" id="resend-code">Resend activation email</div>
+	</div>
+</div>
+
+{% endblock %}
+
+{% block javascript %}
+<script>
+const csrf = '{{ csrf_token }}';
+
+// Get email from sessionStorage (set by login page)
+const userEmail = sessionStorage.getItem('activation_email');
+if (userEmail) {
+	document.getElementById('user-email').textContent = userEmail;
+} else {
+	// If no email found, redirect back to login
+	window.location.href = '/login';
+}
+
+// Event listeners
+document.getElementById('activate-btn').addEventListener('click', activateAccount);
+document.getElementById('resend-code').addEventListener('click', resendActivationCode);
+document.getElementById('activation-code').addEventListener('keypress', function(e) {
+	if (e.key === 'Enter') {
+		activateAccount();
+	}
+});
+
+function activateAccount() {
+	const code = document.getElementById('activation-code').value.trim().toUpperCase();
+	
+	if (!code) {
+		showError('Please enter the activation code');
+		return;
+	}
+	
+	const activateBtn = document.getElementById('activate-btn');
+	activateBtn.disabled = true;
+	activateBtn.textContent = 'Activating...';
+	
+	let data = {
+		email: userEmail,
+		activation_code: code
+	};
+	
+	const pyoptions = {
+		data,
+		csrf,
+		url: 'activate_account',
+		submit_mode: 'silent'
+	};
+	
+	pylims_post(pyoptions).then(result => {
+		if (result.status === 'success') {
+			showSuccess('Account activated successfully! Redirecting...');
+			setTimeout(() => {
+				window.location.href = '/';
+			}, 2000);
+		} else {
+			showError(result.error || 'Invalid activation code');
+			activateBtn.disabled = false;
+			activateBtn.textContent = 'Activate Account';
+		}
+	}).catch(error => {
+		console.error('Activation error:', error);
+		showError('Error activating account: ' + error.message);
+		activateBtn.disabled = false;
+		activateBtn.textContent = 'Activate Account';
+	});
+}
+
+function resendActivationCode() {
+	const resendLink = document.getElementById('resend-code');
+	resendLink.style.pointerEvents = 'none';
+	resendLink.textContent = 'Sending...';
+	
+	let data = {
+		email: userEmail
+	};
+	
+	const pyoptions = {
+		data,
+		csrf,
+		url: 'resend_activation_code',
+		submit_mode: 'silent'
+	};
+	
+	pylims_post(pyoptions).then(result => {
+		if (result.status === 'success') {
+			showSuccess('Activation code resent to your email');
+		} else {
+			showError(result.error || 'Failed to resend activation code');
+		}
+		
+		// Re-enable link after 30 seconds
+		setTimeout(() => {
+			resendLink.style.pointerEvents = 'auto';
+			resendLink.textContent = 'Resend activation email';
+		}, 30000);
+		
+	}).catch(error => {
+		console.error('Resend error:', error);
+		showError('Error resending code: ' + error.message);
+		resendLink.style.pointerEvents = 'auto';
+		resendLink.textContent = 'Resend activation email';
+	});
+}
+
+function showError(message) {
+	const errorDiv = document.getElementById('pylims_request_error');
+	const successDiv = document.getElementById('pylims_request_success');
+	
+	successDiv.style.display = 'none';
+	errorDiv.textContent = message;
+	errorDiv.style.display = 'block';
+	
+	// Hide after 5 seconds
+	setTimeout(() => {
+		errorDiv.style.display = 'none';
+	}, 5000);
+}
+
+function showSuccess(message) {
+	const errorDiv = document.getElementById('pylims_request_error');
+	const successDiv = document.getElementById('pylims_request_success');
+	
+	errorDiv.style.display = 'none';
+	successDiv.textContent = message;
+	successDiv.style.display = 'block';
+}
+</script>
+{% endblock %}

@@ -142,7 +142,7 @@ def login_submit(request):
     cursor = conn.cursor()
 
     column_name = selectdata['type']
-    query = sql.SQL("SELECT userid, password FROM velocity.accounts WHERE {} = %s").format(sql.Identifier(column_name))
+    query = sql.SQL("SELECT userid, password, activated, email, username FROM velocity.accounts WHERE {} = %s").format(sql.Identifier(column_name))
 
     cursor.execute(query, (data['login'],))
 
@@ -154,8 +154,22 @@ def login_submit(request):
         response['error']='Email not found'
         return JsonResponse(response)
     
+    # Check if account is activated
+    if not result.get('activated', False):
+        print('Account not activated, redirecting to code entry')
+        cursor.close()
+        conn.close()
+        response['status'] = 'activation_required'
+        response['redirect_url'] = '/enter_activation_code'
+        response['email'] = result['email']
+        return JsonResponse(response)
+    
     if result and 'password' in result:
         hashed_password_from_db = result['password']
+        if hashed_password_from_db is None:
+            response['error']='Account not yet activated. Please check your email for the activation link.'
+            return JsonResponse(response)
+            
         valid_password = bcrypt.checkpw(data['password'].encode('utf-8'), hashed_password_from_db)
         print('valid password:',valid_password)
         if valid_password==False:
