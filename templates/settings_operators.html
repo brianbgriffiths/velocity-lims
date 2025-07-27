@@ -1201,22 +1201,32 @@ function populateCreateAccountRoles() {
 }
 
 function createAccount() {
+    console.log('=== CREATE ACCOUNT DEBUG START ===');
+    
     const fullName = document.getElementById('full-name').value.trim();
     const username = document.getElementById('username').value.trim();
     const email = document.getElementById('email').value.trim();
     
+    console.log('Form values:');
+    console.log('- Full Name:', fullName);
+    console.log('- Username:', username);
+    console.log('- Email:', email);
+    
     // Validate required fields
     if (!fullName) {
+        console.log('ERROR: Full name is required');
         localerror('Full name is required');
         return;
     }
     
     if (!username) {
+        console.log('ERROR: Username is required');
         localerror('Username is required');
         return;
     }
     
     if (!email) {
+        console.log('ERROR: Email is required');
         localerror('Email is required');
         return;
     }
@@ -1224,14 +1234,20 @@ function createAccount() {
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+        console.log('ERROR: Invalid email format');
         localerror('Please enter a valid email address');
         return;
     }
     
     // Get selected roles
     const selectedRoles = [];
-    document.querySelectorAll('#create-account-roles input[type="checkbox"]:checked').forEach(checkbox => {
-        selectedRoles.push(parseInt(checkbox.value));
+    const roleCheckboxes = document.querySelectorAll('#create-account-roles input[type="checkbox"]:checked');
+    console.log('Role checkboxes found:', roleCheckboxes.length);
+    
+    roleCheckboxes.forEach(checkbox => {
+        const roleId = parseInt(checkbox.value);
+        console.log('- Selected role ID:', roleId);
+        selectedRoles.push(roleId);
     });
     
     const data = {
@@ -1241,6 +1257,9 @@ function createAccount() {
         role_ids: selectedRoles
     };
     
+    console.log('Data to be sent:');
+    console.log(JSON.stringify(data, null, 2));
+    
     const pyoptions = {
         data,
         csrf,
@@ -1248,13 +1267,25 @@ function createAccount() {
         submit_mode: 'silent'
     };
     
+    console.log('PyLIMS options:');
+    console.log('- URL:', pyoptions.url);
+    console.log('- CSRF:', csrf);
+    console.log('- Submit mode:', pyoptions.submit_mode);
+    
     // Disable button during creation
     const createBtn = document.getElementById('create-account-btn');
     createBtn.disabled = true;
     createBtn.textContent = 'Creating Account...';
     
+    console.log('Making pylims_post request...');
+    
     pylims_post(pyoptions).then(result => {
+        console.log('PyLIMS response received:');
+        console.log(JSON.stringify(result, null, 2));
+        
         if (result.status === 'success') {
+            console.log('SUCCESS: Account created successfully');
+            
             // Show success message
             const successMessage = document.createElement('div');
             successMessage.style.cssText = 'background-color: var(--green-light); color: var(--green-dark); padding: 15px; border-radius: 5px; margin: 15px 0; border: 1px solid var(--green-med);';
@@ -1290,16 +1321,24 @@ function createAccount() {
                 }
             }, 10000);
         } else {
+            console.log('ERROR: Server returned error');
+            console.log('Error message:', result.error);
             localerror(result.error || 'Failed to create account');
         }
     }).catch(error => {
-        console.error('Error creating account:', error);
+        console.log('CATCH: Request failed');
+        console.error('Full error object:', error);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
         localerror('Error creating account: ' + error.message);
     }).finally(() => {
+        console.log('FINALLY: Re-enabling button');
         // Re-enable button
         createBtn.disabled = false;
         createBtn.textContent = 'Create Account & Send Login Link';
     });
+    
+    console.log('=== CREATE ACCOUNT DEBUG END ===');
 }
 
 function clearCreateForm() {

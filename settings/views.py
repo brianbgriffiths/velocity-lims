@@ -619,24 +619,43 @@ def create_account(request):
         "role_ids": [1, 2, 3]
     }
     """
+    print("=== CREATE ACCOUNT DEBUG START ===")
+    print(f"Request method: {request.method}")
+    print(f"Request headers: {dict(request.headers)}")
+    print(f"Request body: {request.body}")
+    
     if request.method == 'POST':
         try:
+            print("Attempting to parse JSON data...")
             data = json.loads(request.body)
+            print(f"Parsed data: {data}")
+            
             full_name = data.get('full_name', '').strip()
             username = data.get('username', '').strip()
             email = data.get('email', '').strip()
             role_ids = data.get('role_ids', [])
+            
+            print(f"Extracted values:")
+            print(f"- full_name: '{full_name}'")
+            print(f"- username: '{username}'")
+            print(f"- email: '{email}'")
+            print(f"- role_ids: {role_ids}")
 
             # Validate required fields
             if not full_name:
+                print("ERROR: Full name is required")
                 return JsonResponse({'error': 'Full name is required'}, status=400)
             
             if not username:
+                print("ERROR: Username is required")
                 return JsonResponse({'error': 'Username is required'}, status=400)
             
             if not email:
+                print("ERROR: Email is required")
                 return JsonResponse({'error': 'Email is required'}, status=400)
 
+            print("Validation passed, attempting database connection...")
+            
             try:
                 conn = psycopg.connect(
                     host=settings.DATABASES['default']['HOST'],
@@ -647,20 +666,28 @@ def create_account(request):
                     row_factory=dict_row
                 )
                 cursor = conn.cursor()
+                print("Database connection successful")
 
                 # Check if username or email already exists
+                print("Checking for existing users...")
                 cursor.execute("SELECT userid FROM velocity.accounts WHERE username = %s OR email = %s", (username, email))
                 existing_user = cursor.fetchone()
                 if existing_user:
+                    print(f"ERROR: User already exists with userid: {existing_user['userid']}")
                     return JsonResponse({'error': 'Username or email already exists'}, status=400)
 
+                print("No existing users found, generating login code...")
                 # Generate random login code
                 import random
                 import string
                 login_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+                print(f"Generated login code: {login_code}")
 
                 # Create user account - match exact table structure
+                print("Creating user account...")
                 roles_json = json.dumps(role_ids) if role_ids else '[]'
+                print(f"Roles JSON: {roles_json}")
+                
                 cursor.execute("""
                     INSERT INTO velocity.accounts (full_name, username, email, password, roles)
                     VALUES (%s, %s, %s, %s, %s)
@@ -669,11 +696,14 @@ def create_account(request):
                 
                 result = cursor.fetchone()
                 user_id = result['userid']
+                print(f"User created with ID: {user_id}")
 
                 # Send login email
+                print("Attempting to send login email...")
                 try:
                     send_login_email(full_name, email, login_code)
                     email_status = "sent successfully"
+                    print("Email sent successfully")
                 except Exception as email_error:
                     print(f"Warning: Failed to send email: {email_error}")
                     email_status = "failed to send"
@@ -681,22 +711,36 @@ def create_account(request):
                 conn.commit()
                 cursor.close()
                 conn.close()
+                print("Database transaction committed")
 
-                return JsonResponse({
+                response_data = {
                     'status': 'success', 
                     'user_id': user_id,
                     'login_code': login_code,
                     'email_status': email_status,
                     'role_ids': role_ids,
                     'message': f'Account created for {full_name} with {len(role_ids)} roles assigned'
-                }, status=200)
+                }
+                print(f"Returning success response: {response_data}")
+                return JsonResponse(response_data, status=200)
                 
             except Exception as e:
+                print(f"Database error: {str(e)}")
+                print(f"Exception type: {type(e)}")
+                import traceback
+                print(f"Traceback: {traceback.format_exc()}")
                 return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
                 
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as json_error:
+            print(f"JSON decode error: {json_error}")
             return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+        except Exception as general_error:
+            print(f"General error: {general_error}")
+            import traceback
+            print(f"Traceback: {traceback.format_exc()}")
+            return JsonResponse({'error': f'Server error: {str(general_error)}'}, status=500)
     else:
+        print(f"ERROR: Invalid method {request.method}")
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 def send_login_email(full_name, email, login_code):
