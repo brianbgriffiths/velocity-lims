@@ -1258,12 +1258,21 @@ function createAccount() {
             // Show success message
             const successMessage = document.createElement('div');
             successMessage.style.cssText = 'background-color: var(--green-light); color: var(--green-dark); padding: 15px; border-radius: 5px; margin: 15px 0; border: 1px solid var(--green-med);';
+            
+            // Determine email status message
+            let emailStatusMsg = '';
+            if (result.email_status === 'sent successfully') {
+                emailStatusMsg = `<small style="color: var(--green-dark);"><i class="fa-solid fa-check-circle"></i> Login email sent successfully to ${email}</small>`;
+            } else {
+                emailStatusMsg = `<small style="color: var(--orange-dark);"><i class="fa-solid fa-exclamation-triangle"></i> Account created but email failed to send. Login code: <code>${result.login_code}</code></small>`;
+            }
+            
             successMessage.innerHTML = `
                 <strong>Account Created Successfully!</strong><br>
                 User: ${fullName} (${username})<br>
                 Email: ${email}<br>
                 Login code: <code>${result.login_code}</code><br>
-                <small>Login link has been composed and would be sent to ${email}</small>
+                ${emailStatusMsg}
             `;
             
             document.querySelector('.create-account-form').appendChild(successMessage);

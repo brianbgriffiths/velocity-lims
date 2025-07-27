@@ -691,13 +691,13 @@ def create_account(request):
                         except Exception as junction_error:
                             print(f"Warning: Could not assign roles via junction table: {junction_error}")
 
-                # Compose email (dummy function for now)
-                email_content = compose_login_email(full_name, email, login_code)
-                print(f"=== EMAIL WOULD BE SENT ===")
-                print(f"To: {email}")
-                print(f"Subject: Your Velocity LIMS Account")
-                print(f"Body:\n{email_content}")
-                print(f"==========================")
+                # Send login email
+                try:
+                    send_login_email(full_name, email, login_code)
+                    email_status = "sent successfully"
+                except Exception as email_error:
+                    print(f"Warning: Failed to send email: {email_error}")
+                    email_status = "failed to send"
 
                 conn.commit()
                 cursor.close()
@@ -707,6 +707,7 @@ def create_account(request):
                     'status': 'success', 
                     'user_id': user_id,
                     'login_code': login_code,
+                    'email_status': email_status,
                     'message': f'Account created for {full_name} with {len(role_ids)} roles assigned'
                 }, status=200)
                 
@@ -718,29 +719,115 @@ def create_account(request):
     else:
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
-def compose_login_email(full_name, email, login_code):
+def send_login_email(full_name, email, login_code):
     """
-    Compose the login email content (dummy function for now).
-    Later this will integrate with the mail server.
+    Send the login email using the system mail command.
     """
-    login_link = f"http://localhost:8000/login?code={login_code}"
+    login_link = f"http://localhost:8000/login/{login_code}"
     
-    email_content = f"""
-    Dear {full_name},
-
-    Your Velocity LIMS account has been created!
-
-    Login Details:
-    - Email: {email}
-    - Login Code: {login_code}
-    - Login Link: {login_link}
-
-    Please click the link above or use the login code to access your account.
-
-    Welcome to Velocity LIMS!
-
-    Best regards,
-    The Velocity LIMS Team
-    """
+    # Compose email content
+    email_body = f"Dear {full_name},\n\nYour Velocity LIMS account has been created!\n\nClick the link below to activate your account:\n{login_link}\n\nAlternatively, you can login manually at http://localhost:8000/login with code: {login_code}\n\nWelcome to Velocity LIMS!\n\nBest regards,\nThe Velocity LIMS Team"
     
-    return email_content
+    # Prepare mail command
+    subject = "Activate your Velocity LIMS Account"
+    from_address = "Velocity LIMS <noreply@velocitylims.com>"
+    
+    # Use subprocess to send email via mail command
+    try:
+        # Create the mail command
+        mail_cmd = [
+            'mail',
+            '-a', f'From: {from_address}',
+            '-s', subject,
+            email
+        ]
+        
+        # Send email using subprocess
+        process = subprocess.run(
+            mail_cmd,
+            input=email_body,
+            text=True,
+            capture_output=True,
+            check=True
+        )
+        
+        print(f"Email sent successfully to {email}")
+        print(f"Subject: {subject}")
+        print(f"Login code: {login_code}")
+        return True
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to send email: {e}")
+        print(f"Error output: {e.stderr}")
+        raise Exception(f"Mail command failed: {e}")
+    except Exception as e:
+        print(f"Email sending error: {e}")
+        raise
+
+def login_with_code(request, code):
+    """
+    Handle login via email verification code.
+    
+    Args:
+        request: Django HttpRequest object
+        code: The login code from the URL
+        
+    Returns:
+        HttpResponse: Redirect to home if successful, login page if failed
+    """
+    try:
+        # Connect to database
+        conn = psycopg.connect(
+            host=settings.DATABASES['default']['HOST'],
+            port=settings.DATABASES['default']['PORT'],
+            dbname=settings.DATABASES['default']['NAME'],
+            user=settings.DATABASES['default']['USER'],
+            password=settings.DATABASES['default']['PASSWORD'],
+            row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Look up user by login code
+        cursor.execute("""
+            SELECT userid, email, username, full_name, roles 
+            FROM velocity.accounts 
+            WHERE login_code = %s
+        """, (code,))
+        
+        user = cursor.fetchone()
+        
+        if user:
+            # Set session variables
+            request.session['userid'] = user['userid']
+            request.session['email'] = user['email']
+            request.session['username'] = user['username']
+            request.session['full_name'] = user['full_name']
+            
+            # Load user permissions (reuse existing logic from scripts/login.py)
+            from scripts.login import load_user_permissions
+            load_user_permissions(request, user['userid'])
+            
+            # Clear the login code (one-time use)
+            cursor.execute("""
+                UPDATE velocity.accounts 
+                SET login_code = NULL 
+                WHERE userid = %s
+            """, (user['userid'],))
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            print(f"User {user['username']} logged in via email verification")
+            return redirect('home')
+        else:
+            cursor.close()
+            conn.close()
+            
+            # Invalid or expired code
+            print(f"Invalid login code attempted: {code}")
+            return redirect('show_login')
+            
+    except Exception as e:
+        print(f"Error during code-based login: {e}")
+        return redirect('show_login')
