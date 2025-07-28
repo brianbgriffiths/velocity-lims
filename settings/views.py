@@ -344,6 +344,7 @@ def settings_operators(request):
     context = {}
     context['userid'] = request.session.get('userid', None)
     context['full_name'] = request.session.get('full_name', None)
+    context['permissions'] = get_user_permissions(request)
 
     return render(request, 'settings_operators.html', context)
 
@@ -352,6 +353,7 @@ def settings_roles(request):
     context = {}
     context['userid'] = request.session.get('userid', None)
     context['full_name'] = request.session.get('full_name', None)
+    context['permissions'] = get_user_permissions(request)
 
     # Fetch roles from the database
     try:
@@ -375,7 +377,7 @@ def settings_roles(request):
         conn.close()
         
         context['roles'] = roles
-        context['permissions'] = permissions
+        context['role_permissions'] = permissions
     except Exception as e:
         context['error'] = f"Error fetching roles: {str(e)}"
 

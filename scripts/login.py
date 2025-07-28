@@ -90,6 +90,19 @@ def load_user_permissions(request, user_id):
                 for perm in permissions_result:
                     user_permissions[perm['permission']] = True
             
+            # Create meta permissions based on prefixes
+            permission_prefixes = set()
+            for permission_name in user_permissions.keys():
+                if '_' in permission_name:
+                    prefix = permission_name.split('_')[0]
+                    permission_prefixes.add(prefix)
+            
+            # Add "any_[prefix]" meta permissions
+            for prefix in permission_prefixes:
+                meta_permission = f"any_{prefix}"
+                user_permissions[meta_permission] = True
+                print(f"Added meta permission: {meta_permission}")
+            
             print(f"Final user permissions: {user_permissions}")
         else:
             print(f"No roles assigned to user {user_id}")

@@ -555,7 +555,7 @@
 const csrf = '{{ csrf_token }}';
 const main = document.getElementById('main');
 const roles = {{ roles|safe }};
-const permissions = {{ permissions|safe }};
+const permissions = {{ role_permissions|safe }};
 
 // State variables
 var currentRoleName = '';
