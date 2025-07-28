@@ -681,3 +681,14 @@ wftitle {
 	font-weight: bold;
 	color: white;
 }
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+	.center-border {
+		margin: 10px 5px;
+	}
+	
+	#footer {
+		width: 100%;
+	}
+}
