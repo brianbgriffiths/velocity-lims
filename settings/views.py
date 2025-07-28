@@ -335,6 +335,7 @@ def view_settings(request):
     context = {}
     context['userid'] = request.session.get('userid', None)
     context['full_name'] = request.session.get('full_name', None)
+    context['permissions'] = get_user_permissions(request)
 
     return render(request, 'settings.html', context)
 

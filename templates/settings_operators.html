@@ -723,8 +723,15 @@
 <div id="main" class="center-border">
     <breadcrumbs><a href="{% url 'view_settings' %}">Settings</a> / <b><a href="{% url 'settings_operators' %}">Operators</a></b></breadcrumbs>
     
+    <!-- Create Account Toggle Button -->
+    <div style="margin-bottom: 20px;">
+        <button id="toggle-create-account" class="btn-primary">
+            <i class="fa-solid fa-plus"></i> Create New Account
+        </button>
+    </div>
+    
     <!-- Create Account Section -->
-    <div class="create-account-section">
+    <div id="create-account-section" class="create-account-section" style="display: none;">
         <h3>Create New Account</h3>
         <div class="create-account-form">
             <div class="form-row">
@@ -809,6 +816,7 @@ function setupEventListeners() {
     document.getElementById('cancel-role-edit').addEventListener('click', cancelRoleEdit);
     document.getElementById('create-account-btn').addEventListener('click', createAccount);
     document.getElementById('clear-form-btn').addEventListener('click', clearCreateForm);
+    document.getElementById('toggle-create-account').addEventListener('click', toggleCreateAccountSection);
     
     // Auto-generate username from full name
     document.getElementById('full-name').addEventListener('input', autoGenerateUsername);
@@ -1366,8 +1374,10 @@ function createAccount() {
             
             document.querySelector('.create-account-form').appendChild(successMessage);
             
-            // Clear form
+            // Clear form and hide section
             clearCreateForm();
+            document.getElementById('create-account-section').style.display = 'none';
+            document.getElementById('toggle-create-account').innerHTML = '<i class="fa-solid fa-plus"></i> Create New Account';
             
             // Refresh users list
             loadUsers();
@@ -1417,6 +1427,21 @@ function clearCreateForm() {
     document.querySelectorAll('#create-account-roles input[type="checkbox"]').forEach(checkbox => {
         checkbox.checked = false;
     });
+}
+
+function toggleCreateAccountSection() {
+    const section = document.getElementById('create-account-section');
+    const button = document.getElementById('toggle-create-account');
+    
+    if (section.style.display === 'none') {
+        section.style.display = 'block';
+        button.innerHTML = '<i class="fa-solid fa-minus"></i> Hide Create Account';
+    } else {
+        section.style.display = 'none';
+        button.innerHTML = '<i class="fa-solid fa-plus"></i> Create New Account';
+        // Clear form when hiding
+        clearCreateForm();
+    }
 }
 
 </script>{% endblock %}

@@ -1,3 +1,8 @@
 setup_updated.py
 *.pyc
 *.cpython-312.pyc
+/.vscode
+/.github
+db_analysis_tool.py
+db_schema_discovery.py
+db_schema_map.json
