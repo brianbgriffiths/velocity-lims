@@ -155,7 +155,7 @@ def login_submit(request):
     cursor = conn.cursor()
 
     column_name = selectdata['type']
-    query = sql.SQL("SELECT userid, password, activated, email, username FROM velocity.accounts WHERE {} = %s").format(sql.Identifier(column_name))
+    query = sql.SQL("SELECT userid, password, activated, email, username, full_name FROM velocity.accounts WHERE {} = %s").format(sql.Identifier(column_name))
 
     cursor.execute(query, (data['login'],))
 
@@ -190,6 +190,8 @@ def login_submit(request):
             return JsonResponse(response)
     # bcrypt.checkpw(input_password.encode('utf-8'), hashed_password)
     request.session['userid']=result['userid']
+    request.session['full_name']=result['full_name']
+    request.session['username']=result['username']
 
     # Load roles and permissions for the user
     load_user_permissions(request, result['userid'])
