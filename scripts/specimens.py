@@ -56,7 +56,7 @@ def display_specimens(request):
 
     cursor.execute('SELECT * FROM velocity.requisitions ORDER BY reqid DESC LIMIT 20;')
     temp_last_projects = cursor.fetchall()
-    response['last_20'] = json.dumps(temp_last_projects)
+    context['last_20'] = json.dumps(temp_last_projects)
 
     
 
@@ -64,14 +64,14 @@ def display_specimens(request):
     print(reqids)
 
     cursor.execute('SELECT * FROM velocity.specimens WHERE req = ANY(%s)', (reqids,))
-    response['specimens']=json.dumps(cursor.fetchall())
+    context['specimens']=json.dumps(cursor.fetchall())
 
     cursor.execute("SELECT * FROM velocity.assay JOIN velocity.workflows ON wfid = active_workflow")
     temp_assays = cursor.fetchall()
-    response['assays'] = parse_json_list(temp_assays)
-    
+    context['assays'] = parse_json_list(temp_assays)
+
     conn.close()
-    return render(request, 'specimens.html', response)
+    return render(request, 'specimens.html', context)
 
 def add_to_assay(request):
     response_code = handlePost(request)
