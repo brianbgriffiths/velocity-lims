@@ -57,7 +57,7 @@ def load_queues(request):
     cursor = conn.cursor()
     
    
-    cursor.execute("SELECT *, (select count(*) FROM velocity.queued_derivatives qd WHERE qd.queue=vs.sid) as samples FROM velocity.protocol_steps vs JOIN velocity.step_config sc ON sc.scid=vs.step_type JOIN velocity.protocols vp ON vp.pid = vs.protocol ORDER BY vs.protocol, vs.order_in_protocol;")
+    cursor.execute("SELECT *, (select count(*) FROM velocity.queued_samples qd WHERE qd.queue=vs.sid) as samples FROM velocity.protocol_steps vs JOIN velocity.step_config sc ON sc.scid=vs.step_type JOIN velocity.protocols vp ON vp.pid = vs.protocol ORDER BY vs.protocol, vs.order_in_protocol;")
     response['queues'] = cursor.fetchall()    
     
     cursor.execute("SELECT va.assay_name, vsc.step_name, vsu.step FROM velocity.step_users vsu JOIN velocity.steps ON steps.stepid=vsu.step JOIN velocity.step_config vsc ON vsc.scid=steps.step_type JOIN LATERAL jsonb_array_elements(steps.workflow::jsonb) AS wf_id ON TRUE JOIN velocity.workflows vwf ON vwf.wfid = (wf_id)::int JOIN velocity.assay va ON va.assayid=vwf.assay WHERE vsu.userid=%s AND steps.status=1 GROUP BY vsu.step, vsc.step_name, va.assay_name",(request.session['userid'],))
@@ -79,7 +79,7 @@ def load_queue(params):
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
     cursor = conn.cursor()
    
-    cursor.execute("SELECT *, (select count(*) FROM velocity.queued_derivatives qd WHERE qd.queue=vs.sid) as samples FROM velocity.protocol_steps vs JOIN velocity.step_config sc ON sc.scid=vs.step_type JOIN velocity.protocols vp ON vp.pid = vs.protocol WHERE vs.sid=%s LIMIT 1;",(params['queue'],))
+    cursor.execute("SELECT *, (select count(*) FROM velocity.queued_samples qd WHERE qd.queue=vs.sid) as samples FROM velocity.protocol_steps vs JOIN velocity.step_config sc ON sc.scid=vs.step_type JOIN velocity.protocols vp ON vp.pid = vs.protocol WHERE vs.sid=%s LIMIT 1;",(params['queue'],))
     response['queue'] = cursor.fetchone()
 
     # print('samples',response['queue']['samples'])
@@ -89,7 +89,7 @@ def load_queue(params):
     cursor.execute("SELECT * FROM velocity.controls WHERE ctrlid = ANY(%s);",(response['queue']['controls'],))
     response['controls'] = json.dumps(cursor.fetchall())
 
-    cursor.execute("SELECT * FROM velocity.queued_derivatives qd JOIN velocity.derivatives vd ON vd.did=qd.derivative JOIN velocity.specimens vs ON vs.smid = vd.sample LEFT JOIN velocity.reserved_derivatives rd ON rd.step = qd.queue and rd.derivative=qd.derivative and rd.operator=%s and rd.status=1 WHERE qd.queue = %s ORDER BY qdid",(params['userid'],params['queue']))
+    cursor.execute("SELECT * FROM velocity.queued_samples qd JOIN velocity.samples vd ON vd.sampleid=qd.sample JOIN velocity.specimens vs ON vs.smid = vd.requisition LEFT JOIN velocity.reserved_samples rd ON rd.step = qd.queue and rd.sample=qd.sample and rd.operator=%s and rd.status=1 WHERE qd.queue = %s ORDER BY qsid",(params['userid'],params['queue']))
     response['samples'] = json.dumps(cursor.fetchall())
 
     # print('sample list',response['samples'])
@@ -118,7 +118,7 @@ def load_reserved(params):
     cursor.execute("SELECT * FROM velocity.container_config WHERE cid = ANY(%s);",(response['queue']['containers'],))
     response['containers'] = json.dumps(cursor.fetchall())
 
-    cursor.execute("SELECT * FROM velocity.reserved_derivatives rd JOIN velocity.derivatives vd ON vd.did=rd.derivative JOIN velocity.specimens vs ON vs.smid = vd.sample WHERE rd.step = %s and rd.operator=%s and rd.status=1 ORDER BY rdid ASC;",(params['reserved'],params['userid']))
+    cursor.execute("SELECT * FROM velocity.reserved_samples rd JOIN velocity.samples vd ON vd.sampleid=rd.sample JOIN velocity.specimens vs ON vs.smid = vd.requisition WHERE rd.step = %s and rd.operator=%s and rd.status=1 ORDER BY rsid ASC;",(params['reserved'],params['userid']))
     samples = cursor.fetchall()
     response['samples'] = json.dumps(samples)
     response['reserved']=len(samples)
@@ -166,7 +166,7 @@ def reserve_sample(request):
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
     cursor = conn.cursor()
    
-    cursor.execute("INSERT INTO velocity.reserved_derivatives (derivative, step, operator) VALUES (%s,%s,%s) ON CONFLICT (step, derivative) DO NOTHING;",(json_data['sample'],json_data['step'],request.session['userid']))
+    cursor.execute("INSERT INTO velocity.reserved_samples (sample, step, operator) VALUES (%s,%s,%s) ON CONFLICT (step, sample) DO NOTHING;",(json_data['sample'],json_data['step'],request.session['userid']))
     conn.commit()
 
     response={}
@@ -191,7 +191,7 @@ def reserve_samples(request):
     print(json_data['samples'])
    
     cursor.executemany(
-        "INSERT INTO velocity.reserved_derivatives (derivative, step, operator) VALUES (%s, %s, %s) ON CONFLICT (step, derivative) DO NOTHING;",
+        "INSERT INTO velocity.reserved_samples (sample, step, operator) VALUES (%s, %s, %s) ON CONFLICT (step, sample) DO NOTHING;",
         [(sample, json_data['step'], request.session['userid']) for sample in json_data['samples']]
     )
     conn.commit()
@@ -216,7 +216,7 @@ def remove_samples(request):
     cursor = conn.cursor()
 
     cursor.execute(
-        "DELETE FROM velocity.queued_derivatives WHERE queue = %s AND derivative = ANY(%s);",
+        "DELETE FROM velocity.queued_samples WHERE queue = %s AND sample = ANY(%s);",
         (json_data['step'], json_data['samples'])
     )
     conn.commit()
@@ -242,7 +242,7 @@ def release_sample(request):
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
     cursor = conn.cursor()
    
-    cursor.execute("DELETE FROM velocity.reserved_derivatives rd WHERE rd.derivative = %s and rd.step=%s and rd.operator = %s and rd.status=1;",(json_data['sample'],json_data['step'],request.session['userid']))
+    cursor.execute("DELETE FROM velocity.reserved_samples rd WHERE rd.sample = %s and rd.step=%s and rd.operator = %s and rd.status=1;",(json_data['sample'],json_data['step'],request.session['userid']))
     conn.commit()
 
     response={}
@@ -263,7 +263,7 @@ def release_all_samples(request):
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
     cursor = conn.cursor()
    
-    cursor.execute("DELETE FROM velocity.reserved_derivatives rd WHERE rd.step=%s and rd.operator = %s AND rd.status=1;",(json_data['step'],request.session['userid']))
+    cursor.execute("DELETE FROM velocity.reserved_samples rd WHERE rd.step=%s and rd.operator = %s AND rd.status=1;",(json_data['step'],request.session['userid']))
     conn.commit()
 
     response={}
@@ -289,7 +289,7 @@ def add_control(request):
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
     cursor = conn.cursor()
 
-    cursor.execute("SELECT *, (select count(*) FROM velocity.queued_derivatives qd WHERE qd.queue=vs.sid) as samples FROM velocity.protocol_steps vs JOIN velocity.step_config sc ON sc.scid=vs.step_type JOIN velocity.protocols vp ON vp.pid = vs.protocol WHERE vs.sid=%s LIMIT 1;",(json_data['step'],))
+    cursor.execute("SELECT *, (select count(*) FROM velocity.queued_samples qs WHERE qs.queue=vs.sid) as samples FROM velocity.protocol_steps vs JOIN velocity.step_config sc ON sc.scid=vs.step_type JOIN velocity.protocols vp ON vp.pid = vs.protocol WHERE vs.sid=%s LIMIT 1;",(json_data['step'],))
     temp['queue'] = cursor.fetchone()
 
     print('step controls',temp['queue']['controls'])
@@ -312,16 +312,16 @@ def add_control(request):
     cursor.execute("INSERT INTO velocity.specimens (req, specimen_name, control) VALUES (-1, %s, %s) RETURNING smid",(temp['control']['control_type'],temp['control']['ctrlid']))
     temp['sample_id'] = cursor.fetchone()['smid']
 
-    cursor.execute("INSERT INTO velocity.derivatives (sample,derivative_step) VALUES (%s, -1) RETURNING did",(temp['sample_id'],))
-    temp['did'] = cursor.fetchone()['did']
+    cursor.execute("INSERT INTO velocity.samples (sample_name,requisition,creation_step) VALUES (%s, %s, -1) RETURNING sampleid",(temp['sample_id'],-1))
+    temp['did'] = cursor.fetchone()['sampleid']
 
-    cursor.execute("INSERT INTO velocity.queued_derivatives (derivative, queue) VALUES (%s, %s) RETURNING qdid",(temp['did'], json_data['step']))
-    temp['queued_derivative'] = cursor.fetchone()['qdid']
+    cursor.execute("INSERT INTO velocity.queued_samples (sample, queue) VALUES (%s, %s) RETURNING qsid",(temp['did'], json_data['step']))
+    temp['queued_derivative'] = cursor.fetchone()['qsid']
 
-    cursor.execute("INSERT INTO velocity.reserved_derivatives (derivative, step, operator) VALUES (%s, %s, %s) RETURNING rdid",(temp['did'], json_data['step'],request.session['userid']))
+    cursor.execute("INSERT INTO velocity.reserved_samples (sample, step, operator) VALUES (%s, %s, %s) RETURNING rsid",(temp['did'], json_data['step'],request.session['userid']))
     conn.commit()
 
-    cursor.execute("SELECT * FROM velocity.queued_derivatives qd JOIN velocity.derivatives vd ON vd.did=qd.derivative JOIN velocity.specimens vs ON vs.smid = vd.sample LEFT JOIN velocity.reserved_derivatives rd ON rd.step = qd.queue and rd.derivative=qd.derivative and rd.operator=%s WHERE qd.qdid = %s",(request.session['userid'],temp['queued_derivative']))
+    cursor.execute("SELECT * FROM velocity.queued_samples qd JOIN velocity.samples vd ON vd.sampleid=qd.sample JOIN velocity.specimens vs ON vs.smid = vd.requisition LEFT JOIN velocity.reserved_samples rd ON rd.step = qd.queue and rd.sample=qd.sample and rd.operator=%s WHERE qd.qsid = %s",(request.session['userid'],temp['queued_derivative']))
     response['samples'] = json.dumps(cursor.fetchall())
 
     response['status']='success'
@@ -349,24 +349,24 @@ def remove_controls(request):
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM velocity.queued_derivatives qd JOIN velocity.derivatives vd ON vd.did=qd.derivative JOIN velocity.specimens vs ON vs.smid=vd.sample WHERE qd.qdid = %s;",(json_data['queue_id'],))
+    cursor.execute("SELECT * FROM velocity.queued_samples qd JOIN velocity.samples vd ON vd.sampleid=qd.sample JOIN velocity.specimens vs ON vs.smid=vd.requisition WHERE qd.qsid = %s;",(json_data['queue_id'],))
     temp['control'] = cursor.fetchone()
 
     if temp['control'] == None:
         response_data = {'error': 'no control', 'message': 'Queued Control not found'}
         return JsonResponse(response_data)
     
-    print(f'DELETE FROM velocity.reserved_derivatives rd WHERE rd.derivative = {temp['control']['derivative']} and step={temp['control']['queue']} and operator={request.session['userid']}')
-    cursor.execute("DELETE FROM velocity.reserved_derivatives rd WHERE rd.derivative=%s and rd.step=%s and rd.operator=%s;",(temp['control']['derivative'],temp['control']['queue'],request.session['userid']))
+    print(f'DELETE FROM velocity.reserved_samples rd WHERE rd.sample = {temp['control']['sample']} and step={temp['control']['queue']} and operator={request.session['userid']}')
+    cursor.execute("DELETE FROM velocity.reserved_samples rd WHERE rd.sample=%s and rd.step=%s and rd.operator=%s;",(temp['control']['sample'],temp['control']['queue'],request.session['userid']))
     conn.commit()
 
-    cursor.execute("DELETE FROM velocity.queued_derivatives qd WHERE qd.qdid = %s;",(temp['control']['qdid'],))
+    cursor.execute("DELETE FROM velocity.queued_samples qd WHERE qd.qsid = %s;",(temp['control']['qsid'],))
     conn.commit()
     
     
     print('removing control',temp['control'])
 
-    response['qdid']=temp['control']['qdid']
+    response['qsid']=temp['control']['qsid']
 
     response['status']='success'
     conn.close()
