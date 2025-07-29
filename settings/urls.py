@@ -24,7 +24,7 @@ from colorama import Fore, Back, Style, just_fix_windows_console
 just_fix_windows_console()
 import pylims
 from django.views import static
-from scripts import login, queues, steps, samples, specimens, user_scripts, logout
+from scripts import login, queues, steps, samples, specimens, user_scripts, logout, roles
 
 
 print(pylims.term(),"Starting Pylims Server v1.1")
@@ -37,21 +37,21 @@ urlpatterns = [
     path('activate_account/', views.activate_account, name='activate_account'),
     path('resend_activation_code/', views.resend_activation_code, name='resend_activation_code'),
     path('logout/', views.show_logout, name='show_logout'),
-    path('setup/', views.setup, name="setup"),
-    path('setup_save/', views.setup_save, name="setup_save"),
     path('login_submit/', login.login_submit, name="login_submit"),
     path('logout_submit/', logout.logout_submit, name="submit"),
     path('view_settings/', views.view_settings, name="view_settings"),
     path('settings_operators/', views.settings_operators, name="settings_operators"),
-    path('settings_roles/', views.settings_roles, name="settings_roles"),
-    path('save_role/', views.save_role, name="save_role"),
-    path('edit_role/', views.edit_role, name="edit_role"),
-    path('delete_role/', views.delete_role, name="delete_role"),
-    path('assign_user_roles/', views.assign_user_roles, name="assign_user_roles"),
-    path('get_user_roles/', views.get_user_roles, name="get_user_roles"),
-    path('get_all_users/', views.get_all_users, name="get_all_users"),
-    path('get_all_roles/', views.get_all_roles, name="get_all_roles"),
-    path('create_account/', views.create_account, name="create_account"),
+    path('settings_roles/', roles.settings_roles, name="settings_roles"),
+    
+    #roles
+    path('save_role/', roles.save_role, name="save_role"),
+    path('edit_role/', roles.edit_role, name="edit_role"),
+    path('delete_role/', roles.delete_role, name="delete_role"),
+    path('assign_user_roles/', roles.assign_user_roles, name="assign_user_roles"),
+    path('get_user_roles/', roles.get_user_roles, name="get_user_roles"),
+    path('get_all_users/', roles.get_all_users, name="get_all_users"),
+    path('get_all_roles/', roles.get_all_roles, name="get_all_roles"),
+    path('create_account/', roles.create_account, name="create_account"),
 
 
     #queues
