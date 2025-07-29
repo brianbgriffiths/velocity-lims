@@ -82,7 +82,12 @@ def login_required(view_func):
         return view_func(request, *args, **kwargs)
     return wrapper
 
-
+def context_init(request):
+    context = {}
+    context['userid'] = request.session.get('userid', None)
+    context['full_name'] = request.session.get('full_name', None)
+    context['permissions'] = get_user_permissions(request)
+    return context
 
 def handlePost(request):
     if request.method == 'POST':
@@ -325,35 +330,23 @@ def resend_activation_code(request):
 
 @login_required
 def show_logout(request):
-    context = {}
-    context['userid'] = request.session.get('userid', None)
-    context['full_name'] = request.session.get('full_name', None)
+    context = context_init(request)
     return render(request, 'logout.html', context)
 
 @login_required
 def view_settings(request):
-    context = {}
-    context['userid'] = request.session.get('userid', None)
-    context['full_name'] = request.session.get('full_name', None)
-    context['permissions'] = get_user_permissions(request)
-
+    context = context_init(request)
     return render(request, 'settings.html', context)
 
 @login_required
 def settings_operators(request):
-    context = {}
-    context['userid'] = request.session.get('userid', None)
-    context['full_name'] = request.session.get('full_name', None)
-    context['permissions'] = get_user_permissions(request)
+    context = context_init(request)
 
     return render(request, 'settings_operators.html', context)
 
 @login_required
 def settings_roles(request):
-    context = {}
-    context['userid'] = request.session.get('userid', None)
-    context['full_name'] = request.session.get('full_name', None)
-    context['permissions'] = get_user_permissions(request)
+    context = context_init(request)
 
     # Fetch roles from the database
     try:
@@ -668,41 +661,6 @@ def get_user_roles(request):
             return JsonResponse({'error': 'Invalid JSON data'}, status=400)
     else:
         return JsonResponse({'error': 'Method not allowed'}, status=405)
-
-def setup(request):
-    print(pylims.term(),pylims.info('building module list'))
-    context={}
-    #get all available modules 
-    context['modules'] = pylims.build_module_dict()
-    context['setup']=pylims.get_setup_options()
-    context['links']=pylims.build_module_links(request)
-    # print(context['modules'])
-    return render(request, 'setup.html', context)
-
-def setup_save(request):
-    response={}
-    response_code = handlePost(request)
-    if response_code==400:
-        response_data = {'error': 'Invalid JSON data', 'message': 'JSON decode error'}
-        return JsonResponse(response_data, status=400)
-    elif response_code==405:
-        response_data = {'error': 'Invalid request method', 'message': 'Method not allowed'}
-        return JsonResponse(response_data, status=405)
-    json_data = json.loads(request.body)
-    # print(json_data)
-    
-    file_path = settings.BASE_DIR / 'json/module_setup.json'
-    with open(file_path, 'w+') as json_file:
-        json.dump(json_data, json_file, indent=4)
-    file_path = settings.BASE_DIR / 'setup_updated.py'
-    current_datetime = datetime.datetime.now()
-    formatted_datetime = current_datetime.strftime('%Y-%m-%d %H:%M:%S')
-    with open(file_path, 'w+') as setupfile:
-        setupfile.write(f'updated_datetime = "{formatted_datetime}"\n')
-        
-    response['msg_success']='Setup saved'
-    response['status']='success';
-    return JsonResponse(response)
     
 def login_password_reset(request):
     return render(request, 'index.html')

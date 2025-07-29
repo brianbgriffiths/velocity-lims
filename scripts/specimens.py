@@ -10,6 +10,7 @@ from datetime import datetime
 from django.urls import reverse
 
 import bcrypt
+from settings.views import context_init, login_required
 
 def handlePost(request):
     if request.method == 'POST':
@@ -43,15 +44,13 @@ def load_in_progress(request):
     cursor.execute("SELECT steps.* FROM velocity.step_users vsu JOIN velocity.steps ON steps.stepid=vsu.step WHERE vsu.userid=%s AND steps.status=1 GROUP BY steps.stepid;",(request.session['userid'],))
     return cursor.fetchall()
 
-
+@login_required
 def display_specimens(request):
+    context = context_init(request)
     response={}
 
-    if not 'userid' in request.session:
-        return redirect('/modules/login')
+    print(f'Loading specimens for {context['userid']}')
 
-    print(f'Loading in-progress for {request.session['userid']}')
-    
     conn = psycopg.connect(dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row)
     cursor = conn.cursor()
 
