@@ -1,6 +1,6 @@
 {% extends 'index.html' %}
 {% load static %}
-{% block title %}Velocity LIMS{% endblock %}
+{% block title %}Velocity LIMS - Specimens{% endblock %}
 {% block headdata %}
 <script src="{% static 'js/pylims_common.js' %}"></script>
 <script src="{% static 'js/pylims_request.js' %}"></script>
@@ -207,7 +207,7 @@
         width:calc(100% - 30px);
         margin-left:30px;
     }
-    .selected-sample {
+    .selected-specimen {
         background-color:var(--accent3);
     }
     dragsamplecount {
@@ -247,7 +247,7 @@
 <div class="center-border" style="display:flex;">
 	<div class="searchtype"> Find a Requisition:
         <br><input type="text"></div>
-    <div class="searchtype"> Find a Sample:
+    <div class="searchtype"> Find a Specimen:
         <br><input type="text"></div>
     <div class="searchtype"> Find a Container:
         <br><input type="text"></div>
@@ -273,7 +273,7 @@
 <script>
 const csrf = '{{ csrf_token }}';
 const default_reqs = {{ last_20 | safe }};
-const default_samples = {{ samples | safe }};
+const default_specimens = {{ specimens | safe }};
 const main = document.getElementById('queues');
 const requisitions = document.getElementById('requisitions');
 const velocity_assays = {{ assays | safe }};
@@ -281,7 +281,7 @@ const active_assays = document.getElementById('active_assays');
 const dragsamplecount = document.querySelector('dragsamplecount');
 const selectedsamples = document.querySelector('selectedsamples');
 
-var selected_samples = []
+var selected_specimens = []
 var dragging=0;
 
 for (let req of default_reqs) {
@@ -300,30 +300,30 @@ document.addEventListener('mouseup', (event) => {
     reset_potential_drops();
 });
 
-function update_selected_samples(action,sampleid) {
-    console.log(action,sampleid)
-    sampleid = parseInt(sampleid);
+function update_selected_specimens(action,specimenid) {
+    console.log(action,specimenid)
+    specimenid = parseInt(specimenid);
     if (action=='add') {
-        const index = selected_samples.indexOf(sampleid);
+        const index = selected_specimens.indexOf(specimenid);
         if (index == -1) {
-            selected_samples.push(sampleid);
+            selected_specimens.push(specimenid);
         }
     } else {
-        const index = selected_samples.indexOf(sampleid);
+        const index = selected_specimens.indexOf(specimenid);
         console.log(index)
         if (index > -1) {
             console.log('splicing')
-            selected_samples.splice(index, 1);
+            selected_specimens.splice(index, 1);
         }
     }
-    selectedsamples.textContent = `${selected_samples.length} Selected`;
+    selectedsamples.textContent = `${selected_specimens.length} Selected`;
 }
 
 function reset_potential_drops() {
    
     dragsamplecount.style.backgroundColor='var(--accent1)';
 }
-class Sample {
+class Specimen {
 	constructor(data) {
 		for (let datum in data) {
 			this[datum] = data[datum];
@@ -334,18 +334,18 @@ class Sample {
         this.element.addEventListener('mouseup',()=> {
             if (dragging!=2) {
                 this.selected=!this.selected;
-                const sample_index = selected_samples.indexOf(this.smid)
+                const specimen_index = selected_specimens.indexOf(this.smid)
                 if (this.selected) {
-                    if (sample_index==-1) {
-                        selected_samples.push(this.smid)
+                    if (specimen_index==-1) {
+                        selected_specimens.push(this.smid)
                     }
-                    this.element.classList.add('selected-sample');
+                    this.element.classList.add('selected-specimen');
                 } else {
                     
-                    if (sample_index>-1) {
-                        selected_samples.splice(sample_index,1);
+                    if (specimen_index>-1) {
+                        selected_specimens.splice(specimen_index,1);
                     }
-                    this.element.classList.remove('selected-sample');
+                    this.element.classList.remove('selected-specimen');
                 }
             }
         })
@@ -361,12 +361,12 @@ class Sample {
             if (dragging===1) {
                 console.log('dragging');
                 dragging=2;
-                if (!this.selected && selected_samples.length==0) {
+                if (!this.selected && selected_specimens.length==0) {
                     this.selected=true;
-                    update_selected_samples('add',this.smid);
-                    this.element.classList.add('selected-sample');
+                    update_selected_specimens('add',this.smid);
+                    this.element.classList.add('selected-specimen');
                 }
-                dragsamplecount.textContent=selected_samples.length;
+                dragsamplecount.textContent=selected_specimens.length;
                 dragsamplecount.style.left = event.pageX;
                 dragsamplecount.style.top = event.pageY;
                 dragsamplecount.style.display='block';
@@ -377,11 +377,11 @@ class Sample {
     }
     
 }
-var samples = {}
-for (let sample of default_samples) {
-    samples[sample.smid] = new Sample(sample)
-    const sample_req = document.getElementById('req_'+sample.req)
-    sample_req.appendChild(samples[sample.smid].element)
+var specimens = {}
+for (let specimen of default_specimens) {
+    specimens[specimen.smid] = new Specimen(specimen)
+    const specimen_req = document.getElementById('req_'+specimen.req)
+    specimen_req.appendChild(specimens[specimen.smid].element)
 }
 
 class Assay {
@@ -401,7 +401,7 @@ class Assay {
         })
         this.element.addEventListener('mouseup',()=> {
             if (dragging==2) {
-                const data={"assay":this.assayid, samples:selected_samples}
+                const data={"assay":this.assayid, samples:selected_specimens}
                 const pyoptions={data,csrf,urlprefix:'..',url:'add_to_assay',submit_mode:'silent'}
                 pylims_post(pyoptions).then(result => {
                     

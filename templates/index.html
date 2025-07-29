@@ -25,7 +25,7 @@
 	<div id="login-pylims-logo"><a href="{% url 'home' %}"><img  src="{% static 'themes/pylims_velocity_v1.0/logo.svg' %}" alt="pylims logo"></a></div>
 	<div id="header">
 		{% if userid %}Hi {{ full_name }}!
-		<a href="{% url 'show_logout' %}">Logout</a> | <a href="{% url 'display_queues' %}">Lab Queues</a> | <a href="{% url 'display_samples' %}">Samples</a>{% if permissions and permissions|length > 0 %} | <a href="{% url 'view_settings' %}">Settings</a>{% endif %}  
+		<a href="{% url 'show_logout' %}">Logout</a> | <a href="{% url 'display_queues' %}">Lab Queues</a> | <a href="{% url 'display_specimens' %}">Specimens</a>{% if permissions and permissions|length > 0 %} | <a href="{% url 'view_settings' %}">Settings</a>{% endif %}  
 		{% endif %}
 		{% if not userid %}
 			<a href="{% url 'show_login' %}">Login</a>
