@@ -94,12 +94,12 @@ def add_to_assay(request):
     print('specimens requested:',json_data['samples'])
 
     cursor.execute(
-        "SELECT vd.sample FROM velocity.queued_derivatives qd JOIN velocity.derivatives vd ON vd.did=qd.derivative WHERE queue = %s AND vd.sample = ANY(%s::BIGINT[])",
+        "SELECT vs.smid FROM velocity.queued_samples qd JOIN velocity.samples vd ON vd.sampleid=qd.sample JOIN velocity.specimens vs ON vs.smid=vd.requisition WHERE queue = %s AND vs.smid = ANY(%s::BIGINT[])",
         (first_step, json_data['samples'])
     )
     queued_specimens = cursor.fetchall()
 
-    queued_specimens_list = [specimen['sample'] for specimen in queued_specimens]
+    queued_specimens_list = [specimen['smid'] for specimen in queued_specimens]
     print('queued specimens',queued_specimens_list)
 
     specimens_to_add = [item for item in json_data['samples'] if item not in queued_specimens_list]
@@ -109,15 +109,15 @@ def add_to_assay(request):
 
     if len(specimens_to_add) > 0:
         cursor.execute(
-            "INSERT INTO velocity.derivatives (sample, derivative_wf) VALUES " +
-            ", ".join(["(%s, %s)"] * len(specimens_to_add)) + 
-            " RETURNING did;",
-            [val for specimen in specimens_to_add for val in (specimen, assay['active_workflow'])]
+            "INSERT INTO velocity.samples (sample_name, requisition, sample_wf) VALUES " +
+            ", ".join(["(%s, %s, %s)"] * len(specimens_to_add)) + 
+            " RETURNING sampleid;",
+            [val for specimen in specimens_to_add for val in (f"Sample from specimen {specimen}", specimen, assay['active_workflow'])]
         )
-        new_ids = [row['did'] for row in cursor.fetchall()]
+        new_ids = [row['sampleid'] for row in cursor.fetchall()]
 
         cursor.executemany(
-            "INSERT INTO velocity.queued_derivatives (derivative, queue) VALUES (%s, %s)",
+            "INSERT INTO velocity.queued_samples (sample, queue) VALUES (%s, %s)",
             [(new_id, first_step) for new_id in new_ids]
         )
         conn.commit()
