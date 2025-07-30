@@ -312,16 +312,16 @@ def add_control(request):
     cursor.execute("INSERT INTO velocity.specimens (req, specimen_name, control) VALUES (-1, %s, %s) RETURNING smid",(temp['control']['control_type'],temp['control']['ctrlid']))
     temp['sample_id'] = cursor.fetchone()['smid']
 
-    cursor.execute("INSERT INTO velocity.samples (sample_name,requisition,creation_step) VALUES (%s, %s, -1) RETURNING sampleid",(temp['sample_id'],-1))
-    temp['did'] = cursor.fetchone()['sampleid']
+    cursor.execute("INSERT INTO velocity.samples (sample_name,requisition,creation_step) VALUES (%s, %s, -1) RETURNING sampleid",(temp['control']['control_type'],temp['sample_id']))
+    temp['created_sample_id'] = cursor.fetchone()['sampleid']
 
-    cursor.execute("INSERT INTO velocity.queued_samples (sample, queue) VALUES (%s, %s) RETURNING qsid",(temp['did'], json_data['step']))
-    temp['queued_derivative'] = cursor.fetchone()['qsid']
+    cursor.execute("INSERT INTO velocity.queued_samples (sample, queue) VALUES (%s, %s) RETURNING qsid",(temp['created_sample_id'], json_data['step']))
+    temp['queued_sample'] = cursor.fetchone()['qsid']
 
-    cursor.execute("INSERT INTO velocity.reserved_samples (sample, step, operator) VALUES (%s, %s, %s) RETURNING rsid",(temp['did'], json_data['step'],request.session['userid']))
+    cursor.execute("INSERT INTO velocity.reserved_samples (sample, step, operator) VALUES (%s, %s, %s) RETURNING rsid",(temp['created_sample_id'], json_data['step'],request.session['userid']))
     conn.commit()
 
-    cursor.execute("SELECT * FROM velocity.queued_samples qd JOIN velocity.samples vd ON vd.sampleid=qd.sample JOIN velocity.specimens vs ON vs.smid = vd.requisition LEFT JOIN velocity.reserved_samples rd ON rd.step = qd.queue and rd.sample=qd.sample and rd.operator=%s WHERE qd.qsid = %s",(request.session['userid'],temp['queued_derivative']))
+    cursor.execute("SELECT * FROM velocity.queued_samples qd JOIN velocity.samples vd ON vd.sampleid=qd.sample JOIN velocity.specimens vs ON vs.smid = vd.requisition LEFT JOIN velocity.reserved_samples rd ON rd.step = qd.queue and rd.sample=qd.sample and rd.operator=%s WHERE qd.qsid = %s",(request.session['userid'],temp['queued_sample']))
     response['samples'] = json.dumps(cursor.fetchall())
 
     response['status']='success'
