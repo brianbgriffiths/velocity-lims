@@ -6,3 +6,6 @@ setup_updated.py
 db_analysis_tool.py
 db_schema_discovery.py
 db_schema_map.json
+check_permissions.py
+memory_cache_helper.py
+setup_assay_permissions.py

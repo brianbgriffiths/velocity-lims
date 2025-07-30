@@ -570,7 +570,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function setupEventListeners() {
     // Add Role button
-    document.getElementById('add-role-btn').addEventListener('click', showPermissionsModal);
+    document.getElementById('add-role-btn').addEventListener('click', function() {
+        showPermissionsModal();
+    });
     
     // Permissions modal buttons
     document.getElementById('permissions-save').addEventListener('click', saveRole);
