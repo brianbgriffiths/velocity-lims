@@ -56,7 +56,10 @@ urlpatterns = [
 
     #assays
     path('save_assay/', assays.save_assay, name="save_assay"),
+    path('create_assay/', assays.create_assay, name="create_assay"),
     path('get_assay_details/', assays.get_assay_details, name="get_assay_details"),
+    path('archive_assay/', assays.archive_assay, name="archive_assay"),
+    path('unarchive_assay/', assays.unarchive_assay, name="unarchive_assay"),
 
 
     #queues

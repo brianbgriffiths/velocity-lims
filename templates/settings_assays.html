@@ -448,6 +448,9 @@ const csrf = '{{ csrf_token }}';
 let currentAssayId = null;
 let currentView = 'active'; // Track current view state
 
+// Store all assays data
+let allAssays = [];
+
 // View toggle functionality
 function changeView(view) {
     if (currentView === view) return; // No change needed
@@ -462,24 +465,44 @@ function changeView(view) {
         }
     });
     
-    // Fetch and display assays for the selected view
-    loadAssays(view);
+    // Filter and display assays for the selected view
+    filterAndDisplayAssays(view);
 }
 
-function loadAssays(view) {
+function filterAndDisplayAssays(view) {
+    let filteredAssays;
+    
+    switch(view) {
+        case 'active':
+            filteredAssays = allAssays.filter(assay => !assay.archived && assay.visible);
+            break;
+        case 'archived':
+            filteredAssays = allAssays.filter(assay => assay.archived);
+            break;
+        case 'all':
+        default:
+            filteredAssays = allAssays.filter(assay => assay.visible);
+            break;
+    }
+    
+    updateAssaysList(filteredAssays);
+}
+
+function loadAllAssays() {
     const pyoptions = {
         data: { 
             action: 'load_view',
-            view: view
+            view: 'all_data' // Load everything for client-side filtering
         },
         csrf: csrf,
-        url: '{% url "settings_assays" %}',
+        url: 'settings_assays',
         submit_mode: 'silent'
     };
     
     pylims_post(pyoptions).then(result => {
         if (result.success) {
-            updateAssaysList(result.assays);
+            allAssays = result.assays || [];
+            filterAndDisplayAssays(currentView); // Display filtered view
         } else {
             pylims_ui.error(result.error || 'Failed to load assays');
         }
@@ -643,18 +666,17 @@ function archiveAssay(assayId, assayName) {
     if (confirm(`Are you sure you want to archive the assay "${assayName}"? This will mark it as inactive.`)) {
         const pyoptions = {
             data: { 
-                action: 'archive',
                 assay_id: assayId
             },
-            csrf: '{{ csrf_token }}',
-            url: '{% url "settings_assays" %}',
+            csrf: csrf,
+            url: 'archive_assay',
             submit_mode: 'silent'
         };
         
         pylims_post(pyoptions).then(result => {
             if (result.success) {
                 pylims_ui.success('Assay archived successfully');
-                loadAssays(currentView); // Reload current view
+                loadAllAssays(); // Reload all data and refresh current view
             } else {
                 pylims_ui.error(result.error || 'Failed to archive assay');
             }
@@ -669,18 +691,17 @@ function unarchiveAssay(assayId, assayName) {
     if (confirm(`Are you sure you want to unarchive the assay "${assayName}"? This will make it active again.`)) {
         const pyoptions = {
             data: { 
-                action: 'unarchive',
                 assay_id: assayId
             },
-            csrf: '{{ csrf_token }}',
-            url: '{% url "settings_assays" %}',
+            csrf: csrf,
+            url: 'unarchive_assay',
             submit_mode: 'silent'
         };
         
         pylims_post(pyoptions).then(result => {
             if (result.success) {
                 pylims_ui.success('Assay unarchived successfully');
-                loadAssays(currentView); // Reload current view
+                loadAllAssays(); // Reload all data and refresh current view
             } else {
                 pylims_ui.error(result.error || 'Failed to unarchive assay');
             }
@@ -745,28 +766,34 @@ document.getElementById('assayForm').addEventListener('submit', function(e) {
         assay_name: assayName
     };
     
+    let endpoint, successMessage;
+    
     if (currentAssayId) {
-        // Editing existing assay
+        // Editing existing assay - use save_assay endpoint
         data.assayid = currentAssayId;
         const activeVersion = document.getElementById('activeVersion').value || null;
         data.active_version = activeVersion;
+        endpoint = 'save_assay';
+        successMessage = 'Assay updated successfully';
     } else {
-        // Creating new assay - will auto-create version 1.0 with "{name} init"
+        // Creating new assay - use create_assay endpoint
         data.create_initial_version = true;
+        endpoint = 'create_assay';
+        successMessage = 'Assay created successfully';
     }
     
     const pyoptions = {
         data: data,
         csrf: csrf,
-        url: '{% url "save_assay" %}',
+        url: endpoint,
         submit_mode: 'silent'
     };
     
     pylims_post(pyoptions).then(result => {
         if (result.success) {
-            pylims_ui.success(result.message);
+            pylims_ui.success(result.message || successMessage);
             closeAssayModal();
-            location.reload(); // Refresh the page to show updated list
+            loadAllAssays(); // Reload all data instead of page refresh
         } else {
             pylims_ui.error(result.error || 'Failed to save assay');
         }
@@ -789,5 +816,11 @@ window.addEventListener('click', function(event) {
 function localerror(msg) {
     pylims_ui.error(msg);
 }
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', function() {
+    // Load all assays data for client-side filtering
+    loadAllAssays();
+});
 </script>
 {% endblock %}

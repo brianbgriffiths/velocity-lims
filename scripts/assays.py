@@ -173,25 +173,22 @@ def settings_assays(request):
 
 @login_required
 @csrf_exempt
-def save_assay(request):
+def create_assay(request):
     """
-    Save a new assay or update an existing one
+    Create a new assay with initial version
+    This function is specifically for creating new assays and can be expanded later
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'POST method required'}, status=405)
     
     # Check permissions
-    if not (has_permission(request, 'super_user') or 
-            has_permission(request, 'assayconfig_create') or 
-            has_permission(request, 'assayconfig_edit')):
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_create')):
         return JsonResponse({'error': 'Insufficient permissions'}, status=403)
     
     try:
         data = json.loads(request.body)
         assay_name = data.get('assay_name', '').strip()
-        active_version = data.get('active_version')
-        assayid = data.get('assayid')
-        create_initial_version = data.get('create_initial_version', False)
+        create_initial_version = data.get('create_initial_version', True)  # Default to True for new assays
         
         if not assay_name:
             return JsonResponse({'error': 'Assay name is required'}, status=400)
@@ -206,52 +203,50 @@ def save_assay(request):
         )
         cursor = conn.cursor()
         
-        if assayid:
-            # Update existing assay
+        # Check if assay name already exists
+        cursor.execute("""
+            SELECT assayid FROM velocity.assay 
+            WHERE LOWER(assay_name) = LOWER(%s) AND visible = true
+        """, (assay_name,))
+        
+        if cursor.fetchone():
+            return JsonResponse({'error': 'An assay with this name already exists'}, status=400)
+        
+        # Create new assay with default values
+        cursor.execute("""
+            INSERT INTO velocity.assay (assay_name, active_version, archived, visible)
+            VALUES (%s, %s, %s, %s)
+            RETURNING assayid, assay_name, modified, active_version, archived, visible
+        """, (assay_name, None, False, True))  # Start with no active version, not archived, visible
+        
+        result = cursor.fetchone()
+        new_assayid = result['assayid']
+        
+        # Create initial version if requested
+        if create_initial_version:
+            version_name = f"{assay_name} init"
+            cursor.execute("""
+                INSERT INTO velocity.assay_versions 
+                (assay, version_name, version_major, version_minor, version_patch, status)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                RETURNING avid, version_name, version_major, version_minor, version_patch
+            """, (new_assayid, version_name, 1, 0, 0, 'active'))
+            
+            version_result = cursor.fetchone()
+            new_avid = version_result['avid']
+            
+            # Update the assay to set this as the active version
             cursor.execute("""
                 UPDATE velocity.assay 
-                SET assay_name = %s, active_version = %s, modified = CURRENT_TIMESTAMP
+                SET active_version = %s, modified = CURRENT_TIMESTAMP
                 WHERE assayid = %s
                 RETURNING assayid, assay_name, modified, active_version
-            """, (assay_name, active_version, assayid))
+            """, (new_avid, new_assayid))
+            
             result = cursor.fetchone()
-            message = 'Assay updated successfully'
+            message = f'Assay "{assay_name}" created successfully with initial version 1.0'
         else:
-            # Create new assay with default values
-            cursor.execute("""
-                INSERT INTO velocity.assay (assay_name, active_version, archived, visible)
-                VALUES (%s, %s, %s, %s)
-                RETURNING assayid, assay_name, modified, active_version, archived, visible
-            """, (assay_name, None, False, True))  # Start with no active version, not archived, visible
-            
-            result = cursor.fetchone()
-            new_assayid = result['assayid']
-            
-            # If creating initial version, create version 1.0
-            if create_initial_version:
-                version_name = f"{assay_name} init"
-                cursor.execute("""
-                    INSERT INTO velocity.assay_versions 
-                    (assay, version_name, version_major, version_minor, version_patch, status)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    RETURNING avid, version_name, version_major, version_minor, version_patch
-                """, (new_assayid, version_name, 1, 0, 0, 'active'))
-                
-                version_result = cursor.fetchone()
-                new_avid = version_result['avid']
-                
-                # Update the assay to set this as the active version
-                cursor.execute("""
-                    UPDATE velocity.assay 
-                    SET active_version = %s, modified = CURRENT_TIMESTAMP
-                    WHERE assayid = %s
-                    RETURNING assayid, assay_name, modified, active_version
-                """, (new_avid, new_assayid))
-                
-                result = cursor.fetchone()
-                message = f'Assay created successfully with initial version 1.0 ("{version_name}")'
-            else:
-                message = 'Assay created successfully'
+            message = f'Assay "{assay_name}" created successfully'
         
         conn.commit()
         conn.close()
@@ -260,6 +255,66 @@ def save_assay(request):
             'success': True,
             'assay': result,
             'message': message
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+
+
+@login_required
+@csrf_exempt
+def save_assay(request):
+    """
+    Update an existing assay (editing only, not creation)
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_edit')):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        assay_name = data.get('assay_name', '').strip()
+        active_version = data.get('active_version')
+        assayid = data.get('assayid')
+        
+        if not assay_name:
+            return JsonResponse({'error': 'Assay name is required'}, status=400)
+        
+        if not assayid:
+            return JsonResponse({'error': 'Assay ID is required for updates'}, status=400)
+        
+        conn = psycopg.connect(
+            dbname=pylims.dbname, 
+            user=pylims.dbuser, 
+            password=pylims.dbpass, 
+            host=pylims.dbhost, 
+            port=pylims.dbport, 
+            row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Update existing assay
+        cursor.execute("""
+            UPDATE velocity.assay 
+            SET assay_name = %s, active_version = %s, modified = CURRENT_TIMESTAMP
+            WHERE assayid = %s
+            RETURNING assayid, assay_name, modified, active_version
+        """, (assay_name, active_version, assayid))
+        
+        result = cursor.fetchone()
+        if not result:
+            return JsonResponse({'error': 'Assay not found'}, status=404)
+        
+        conn.commit()
+        conn.close()
+        
+        return JsonResponse({
+            'success': True,
+            'assay': result,
+            'message': f'Assay "{assay_name}" updated successfully'
         })
         
     except Exception as e:
@@ -328,6 +383,114 @@ def get_assay_details(request):
         return JsonResponse({
             'success': True,
             'assay': assay
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+
+
+@login_required
+@csrf_exempt
+def archive_assay(request):
+    """
+    Archive an assay by setting archived = true
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_edit')):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        assay_id = data.get('assay_id')
+        
+        if not assay_id:
+            return JsonResponse({'error': 'Assay ID is required'}, status=400)
+        
+        conn = psycopg.connect(
+            dbname=pylims.dbname, 
+            user=pylims.dbuser, 
+            password=pylims.dbpass, 
+            host=pylims.dbhost, 
+            port=pylims.dbport, 
+            row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Archive assay by setting archived to true
+        cursor.execute("""
+            UPDATE velocity.assay 
+            SET archived = true, modified = CURRENT_TIMESTAMP
+            WHERE assayid = %s
+            RETURNING assayid, assay_name
+        """, (assay_id,))
+        
+        result = cursor.fetchone()
+        if not result:
+            return JsonResponse({'error': 'Assay not found'}, status=404)
+        
+        conn.commit()
+        conn.close()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Assay "{result["assay_name"]}" archived successfully'
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+
+
+@login_required
+@csrf_exempt
+def unarchive_assay(request):
+    """
+    Unarchive an assay by setting archived = false
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_edit')):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        assay_id = data.get('assay_id')
+        
+        if not assay_id:
+            return JsonResponse({'error': 'Assay ID is required'}, status=400)
+        
+        conn = psycopg.connect(
+            dbname=pylims.dbname, 
+            user=pylims.dbuser, 
+            password=pylims.dbpass, 
+            host=pylims.dbhost, 
+            port=pylims.dbport, 
+            row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Unarchive assay by setting archived to false
+        cursor.execute("""
+            UPDATE velocity.assay 
+            SET archived = false, modified = CURRENT_TIMESTAMP
+            WHERE assayid = %s
+            RETURNING assayid, assay_name
+        """, (assay_id,))
+        
+        result = cursor.fetchone()
+        if not result:
+            return JsonResponse({'error': 'Assay not found'}, status=404)
+        
+        conn.commit()
+        conn.close()
+        
+        return JsonResponse({
+            'success': True,
+            'message': f'Assay "{result["assay_name"]}" unarchived successfully'
         })
         
     except Exception as e:
