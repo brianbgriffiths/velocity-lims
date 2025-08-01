@@ -482,6 +482,8 @@ function changeView(view) {
 function filterAndDisplayAssays(view) {
     let filteredAssays;
     
+    console.log(`Filtering for view: ${view}, total assays:`, allAssays.length);
+    
     switch(view) {
         case 'active':
             filteredAssays = allAssays.filter(assay => !assay.archived && assay.visible);
@@ -495,6 +497,7 @@ function filterAndDisplayAssays(view) {
             break;
     }
     
+    console.log(`Filtered ${filteredAssays.length} assays for view: ${view}`);
     updateAssaysList(filteredAssays);
 }
 
@@ -687,6 +690,7 @@ function archiveAssay(assayId, assayName) {
         
         pylims_post(pyoptions).then(result => {
             if (result.status === 'success') {
+                console.log('Archive operation successful, reloading data...');
                 pylims_ui.success('Assay archived successfully');
                 loadAllAssays(); // Reload all data and refresh current view
             } else {
@@ -711,7 +715,8 @@ function unarchiveAssay(assayId, assayName) {
         };
         
         pylims_post(pyoptions).then(result => {
-            if (result.success) {
+            if (result.status === 'success') {
+                console.log('Unarchive operation successful, reloading data...');
                 pylims_ui.success('Assay unarchived successfully');
                 loadAllAssays(); // Reload all data and refresh current view
             } else {
