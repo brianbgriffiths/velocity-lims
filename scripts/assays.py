@@ -402,23 +402,6 @@ def settings_assay_view(request, assay_id):
 
 
 @login_required
-def settings_assay_configure(request, assay_id):
-    """
-    Configuration page for draft assay version
-    """
-    # Check permissions
-    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_edit')):
-        return redirect('home')
-    
-    # TODO: Implement assay configuration page
-    # For now, just return a placeholder
-    return render(request, 'assay_configure_placeholder.html', {
-        'assay_id': assay_id,
-        'page_title': f'Assay Configuration - ID {assay_id}'
-    })
-
-
-@login_required
 
 def save_assay(request):
     """
@@ -699,10 +682,11 @@ def settings_assay_configure(request, assay_id):
                            pages, sample_data, step_scripts
                     FROM velocity.step_config
                     WHERE scid IN ({placeholders})
-                    ORDER BY step_name ASC
                 """, step_ids)
                 
-                steps = cursor.fetchall()
+                # Get the steps and maintain the order from assay_steps
+                steps_dict = {row['scid']: row for row in cursor.fetchall()}
+                steps = [steps_dict[step_id] for step_id in step_ids if step_id in steps_dict]
             else:
                 steps = []
         else:
@@ -773,10 +757,11 @@ def settings_assay_view(request, assay_id):
                            pages, sample_data, step_scripts
                     FROM velocity.step_config
                     WHERE scid IN ({placeholders})
-                    ORDER BY step_name ASC
                 """, step_ids)
                 
-                steps = cursor.fetchall()
+                # Get the steps and maintain the order from assay_steps
+                steps_dict = {row['scid']: row for row in cursor.fetchall()}
+                steps = [steps_dict[step_id] for step_id in step_ids if step_id in steps_dict]
             else:
                 steps = []
         else:
@@ -818,6 +803,8 @@ def save_step_order(request):
         assay_id = data.get('assay_id')
         step_order = data.get('step_order')  # List of step IDs in new order
         
+        print(f"DEBUG: Received assay_id={assay_id}, step_order={step_order}")
+        
         if not assay_id:
             return JsonResponse({'error': 'Assay ID is required'}, status=400)
         
@@ -836,31 +823,57 @@ def save_step_order(request):
         
         # Get the development version for this assay
         cursor.execute("""
-            SELECT avid FROM velocity.assay_versions 
+            SELECT avid, assay_steps FROM velocity.assay_versions 
             WHERE assay = %s AND status IN (1, 2, 3)
             LIMIT 1
         """, (assay_id,))
         
         version_data = cursor.fetchone()
+        print(f"DEBUG: Found version data: {version_data}")
+        
         if not version_data:
             return JsonResponse({'error': 'No development version found for this assay'}, status=404)
+        
+        # Convert step_order to JSON string for storage
+        step_order_json = json.dumps(step_order)
+        print(f"DEBUG: Saving step_order_json: {step_order_json}")
         
         # Update the assay_steps JSON field with the new order
         cursor.execute("""
             UPDATE velocity.assay_versions 
             SET assay_steps = %s, modified = CURRENT_TIMESTAMP
             WHERE avid = %s
-        """, (json.dumps(step_order), version_data['avid']))
+        """, (step_order_json, version_data['avid']))
+        
+        rows_affected = cursor.rowcount
+        print(f"DEBUG: Update affected {rows_affected} rows")
+        
+        # Verify the update
+        cursor.execute("""
+            SELECT assay_steps FROM velocity.assay_versions 
+            WHERE avid = %s
+        """, (version_data['avid'],))
+        
+        updated_data = cursor.fetchone()
+        print(f"DEBUG: After update, assay_steps = {updated_data['assay_steps']}")
         
         conn.commit()
         conn.close()
         
         return JsonResponse({
             'status': 'success',
-            'message': 'Step order updated successfully'
+            'message': 'Step order updated successfully',
+            'debug': {
+                'rows_affected': rows_affected,
+                'saved_order': step_order,
+                'updated_data': updated_data['assay_steps']
+            }
         })
         
     except json.JSONDecodeError as e:
         return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
     except Exception as e:
+        print(f"DEBUG: Exception in save_step_order: {e}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)

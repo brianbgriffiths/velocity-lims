@@ -389,7 +389,7 @@
                         <span><i class="fas fa-list"></i> Assay Steps</span>
                         <div class="lock-toggle" id="stepOrderToggle" onclick="toggleStepOrder()">
                             <i class="fas fa-lock" id="lockIcon"></i>
-                            <span id="lockText" style="font-size: 10px; margin-left: 5px;">LOCKED</span>
+                            <span id="lockText" style="font-size: 10px; margin-left: 5px;">STEP ORDER</span>
                         </div>
                     </div>
                 </div>
@@ -495,14 +495,14 @@ function toggleStepOrder() {
         // Unlock mode - enable drag and drop
         toggle.classList.add('unlocked');
         lockIcon.className = 'fas fa-unlock';
-        lockText.textContent = 'UNLOCKED';
+        lockText.textContent = 'STEP ORDER';
         stepsList.classList.add('reorder-mode');
         enableDragAndDrop();
     } else {
         // Lock mode - disable drag and drop
         toggle.classList.remove('unlocked');
         lockIcon.className = 'fas fa-lock';
-        lockText.textContent = 'LOCKED';
+        lockText.textContent = 'STEP ORDER';
         stepsList.classList.remove('reorder-mode');
         disableDragAndDrop();
     }
