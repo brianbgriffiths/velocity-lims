@@ -524,7 +524,7 @@ function filterAndDisplayAssays(view) {
     updateAssaysList(filteredAssays);
 }
 
-function loadAllAssays() {
+function loadAllAssays(showMessages = false) {
     const pyoptions = {
         data: { 
             action: 'load_view',
@@ -532,7 +532,7 @@ function loadAllAssays() {
         },
         csrf: csrf,
         url: 'settings_assays',
-        submit_mode: 'silent'
+        submit_mode: showMessages ? 'silent' : 'normal'
     };
     
     pylims_post(pyoptions).then(result => {
@@ -713,7 +713,7 @@ function archiveAssay(assayId, assayName) {
         pylims_post(pyoptions).then(result => {
             if (result.status === 'success') {
                 console.log('Archive operation successful, reloading data...');
-                loadAllAssays(); // Reload all data and refresh current view
+                loadAllAssays(true); // Reload all data and refresh current view with messages
             }
         }).catch(error => {
             console.error('Error archiving assay:', error);
@@ -735,7 +735,7 @@ function unarchiveAssay(assayId, assayName) {
         pylims_post(pyoptions).then(result => {
             if (result.status === 'success') {
                 console.log('Unarchive operation successful, reloading data...');
-                loadAllAssays(); // Reload all data and refresh current view
+                loadAllAssays(true); // Reload all data and refresh current view with messages
             }
         }).catch(error => {
             console.error('Error unarchiving assay:', error);
@@ -823,7 +823,7 @@ document.getElementById('assayForm').addEventListener('submit', function(e) {
     pylims_post(pyoptions).then(result => {
         if (result.status === 'success') {
             closeAssayModal();
-            loadAllAssays(); // Reload all data instead of page refresh
+            loadAllAssays(true); // Reload all data instead of page refresh with messages
         }
     }).catch(error => {
         console.error('Save error:', error);
