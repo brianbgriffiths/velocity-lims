@@ -14,10 +14,108 @@ import pylims
 
 
 @login_required
+@csrf_exempt
 def settings_assays(request):
     """
     Display the assays settings page with list of all assays
+    Also handles POST requests for archive actions
     """
+    # Handle POST requests (archive/unarchive actions and view loading)
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            action = data.get('action')
+            
+            if action == 'load_view':
+                # Handle view loading
+                view = data.get('view', 'active')
+                
+                conn = psycopg.connect(
+                    dbname=pylims.dbname, 
+                    user=pylims.dbuser, 
+                    password=pylims.dbpass, 
+                    host=pylims.dbhost, 
+                    port=pylims.dbport, 
+                    row_factory=dict_row
+                )
+                cursor = conn.cursor()
+                
+                # Build query based on view
+                if view == 'active':
+                    where_clause = "WHERE a.visible = true AND a.archived = false"
+                elif view == 'archived':
+                    where_clause = "WHERE a.visible = true AND a.archived = true"
+                else:  # 'all'
+                    where_clause = "WHERE a.visible = true"
+                
+                cursor.execute(f"""
+                    SELECT a.assayid, a.assay_name, a.modified, a.active_version, a.archived, a.visible,
+                           av.version_name, av.version_major, av.version_minor, av.version_patch,
+                           av.status, av.created as version_created
+                    FROM velocity.assay a
+                    LEFT JOIN velocity.assay_versions av ON a.active_version = av.avid
+                    {where_clause}
+                    ORDER BY a.assay_name
+                """)
+                
+                assays = cursor.fetchall()
+                conn.close()
+                
+                return JsonResponse({
+                    'success': True,
+                    'assays': assays
+                })
+            
+            elif action in ['archive', 'unarchive']:
+                # Check permissions for archive/unarchive actions
+                if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_edit')):
+                    return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+                
+                assay_id = data.get('assay_id')
+                if not assay_id:
+                    return JsonResponse({'error': 'Missing assay ID'}, status=400)
+                
+                conn = psycopg.connect(
+                    dbname=pylims.dbname, 
+                    user=pylims.dbuser, 
+                    password=pylims.dbpass, 
+                    host=pylims.dbhost, 
+                    port=pylims.dbport, 
+                    row_factory=dict_row
+                )
+                cursor = conn.cursor()
+                
+                if action == 'archive':
+                    # Archive assay by setting archived to true
+                    cursor.execute("""
+                        UPDATE velocity.assay 
+                        SET archived = true, modified = CURRENT_TIMESTAMP
+                        WHERE assayid = %s
+                    """, (assay_id,))
+                    message = 'Assay archived successfully'
+                else:  # unarchive
+                    # Unarchive assay by setting archived to false
+                    cursor.execute("""
+                        UPDATE velocity.assay 
+                        SET archived = false, modified = CURRENT_TIMESTAMP
+                        WHERE assayid = %s
+                    """, (assay_id,))
+                    message = 'Assay unarchived successfully'
+                
+                conn.commit()
+                conn.close()
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': message
+                })
+            else:
+                return JsonResponse({'error': 'Invalid action'}, status=400)
+                
+        except Exception as e:
+            return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+    
+    # Handle GET requests (display page)
     context = context_init(request)
     
     # Check if user has permission to view assays
@@ -38,24 +136,26 @@ def settings_assays(request):
         )
         cursor = conn.cursor()
         
-        # Get all assays with their active versions
+        # Get all visible, non-archived assays with their active versions
         cursor.execute("""
-            SELECT a.assayid, a.assay_name, a.modified, a.active_version,
+            SELECT a.assayid, a.assay_name, a.modified, a.active_version, a.archived, a.visible,
                    av.version_name, av.version_major, av.version_minor, av.version_patch,
                    av.status, av.created as version_created
             FROM velocity.assay a
             LEFT JOIN velocity.assay_versions av ON a.active_version = av.avid
+            WHERE a.visible = true AND a.archived = false
             ORDER BY a.assay_name
         """)
         
         context['assays'] = cursor.fetchall()
         
-        # Get all versions for the dropdown (grouped by assay)
+        # Get all versions for the dropdown (only for visible, non-archived assays)
         cursor.execute("""
             SELECT av.avid, av.version_name, av.assay, av.version_major, av.version_minor, av.version_patch,
                    a.assay_name
             FROM velocity.assay_versions av
             JOIN velocity.assay a ON av.assay = a.assayid
+            WHERE a.visible = true AND a.archived = false
             ORDER BY a.assay_name, av.version_major DESC, av.version_minor DESC, av.version_patch DESC
         """)
         
@@ -117,12 +217,12 @@ def save_assay(request):
             result = cursor.fetchone()
             message = 'Assay updated successfully'
         else:
-            # Create new assay
+            # Create new assay with default values
             cursor.execute("""
-                INSERT INTO velocity.assay (assay_name, active_version)
-                VALUES (%s, %s)
-                RETURNING assayid, assay_name, modified, active_version
-            """, (assay_name, None))  # Start with no active version
+                INSERT INTO velocity.assay (assay_name, active_version, archived, visible)
+                VALUES (%s, %s, %s, %s)
+                RETURNING assayid, assay_name, modified, active_version, archived, visible
+            """, (assay_name, None, False, True))  # Start with no active version, not archived, visible
             
             result = cursor.fetchone()
             new_assayid = result['assayid']

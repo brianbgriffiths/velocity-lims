@@ -36,6 +36,43 @@
         align-items: center;
     }
     
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .view-toggle {
+        display: flex;
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .toggle-option {
+        padding: 5px 12px;
+        background-color: transparent;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 12px;
+        transition: background-color 0.2s;
+        border-right: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .toggle-option:last-child {
+        border-right: none;
+    }
+    
+    .toggle-option.active {
+        background-color: rgba(255, 255, 255, 0.3);
+        font-weight: bold;
+    }
+    
+    .toggle-option:hover:not(.active) {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
     .assay-item {
         background-color: var(--gray-lightest);
         border-bottom: solid 1px var(--gray-med);
@@ -304,7 +341,14 @@
     
     <div class="assay-list">
         <div class="assay-header">
-            <span>Assays Management</span>
+            <div class="header-left">
+                <span>Assays Management</span>
+                <div class="view-toggle">
+                    <button class="toggle-option active" data-view="active" onclick="changeView('active')">Active</button>
+                    <button class="toggle-option" data-view="all" onclick="changeView('all')">All</button>
+                    <button class="toggle-option" data-view="archived" onclick="changeView('archived')">Archived</button>
+                </div>
+            </div>
             <button class="btn-add" onclick="showAddAssayModal()">
                 <i class="fas fa-plus"></i> Add New Assay
             </button>
@@ -402,6 +446,139 @@
 <script>
 const csrf = '{{ csrf_token }}';
 let currentAssayId = null;
+let currentView = 'active'; // Track current view state
+
+// View toggle functionality
+function changeView(view) {
+    if (currentView === view) return; // No change needed
+    
+    currentView = view;
+    
+    // Update toggle button states
+    document.querySelectorAll('.toggle-option').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.view === view) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Fetch and display assays for the selected view
+    loadAssays(view);
+}
+
+function loadAssays(view) {
+    const pyoptions = {
+        data: { 
+            action: 'load_view',
+            view: view
+        },
+        csrf: csrf,
+        url: '{% url "settings_assays" %}',
+        submit_mode: 'silent'
+    };
+    
+    pylims_post(pyoptions).then(result => {
+        if (result.success) {
+            updateAssaysList(result.assays);
+        } else {
+            pylims_ui.error(result.error || 'Failed to load assays');
+        }
+    }).catch(error => {
+        console.error('Error loading assays:', error);
+        pylims_ui.error('Error loading assays');
+    });
+}
+
+function updateAssaysList(assays) {
+    const container = document.querySelector('.assay-list');
+    const header = container.querySelector('.assay-header');
+    
+    // Remove existing assay items
+    const existingItems = container.querySelectorAll('.assay-item, .no-assays');
+    existingItems.forEach(item => item.remove());
+    
+    if (assays && assays.length > 0) {
+        assays.forEach(assay => {
+            const assayItem = createAssayItem(assay);
+            container.appendChild(assayItem);
+        });
+    } else {
+        const noAssaysDiv = document.createElement('div');
+        noAssaysDiv.className = 'no-assays';
+        let message = 'No assays found.';
+        if (currentView === 'active') {
+            message = 'No active assays found. Click "Add New Assay" to get started.';
+        } else if (currentView === 'archived') {
+            message = 'No archived assays found.';
+        }
+        noAssaysDiv.textContent = message;
+        container.appendChild(noAssaysDiv);
+    }
+}
+
+function createAssayItem(assay) {
+    const div = document.createElement('div');
+    div.className = 'assay-item';
+    div.setAttribute('data-assayid', assay.assayid);
+    
+    // Build version text
+    let versionText = 'No version assigned';
+    if (assay.version_name) {
+        versionText = `${assay.version_name} (v${assay.version_major}.${assay.version_minor}`;
+        if (assay.version_patch) {
+            versionText += `.${assay.version_patch}`;
+        }
+        versionText += ')';
+    }
+    
+    // Format date
+    const modifiedDate = new Date(assay.modified).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    div.innerHTML = `
+        <div class="assay-actions">
+            <div class="assay-options">
+                <button class="options-dropdown" onclick="toggleOptionsMenu(${assay.assayid})">
+                    <i class="fas fa-cog"></i> Options
+                </button>
+                <div class="options-menu" id="options-menu-${assay.assayid}">
+                    <div class="option-item" onclick="accessAssay(${assay.assayid})">
+                        <i class="fas fa-eye option-icon"></i> Access
+                    </div>
+                    <div class="option-item" onclick="viewConfiguration(${assay.assayid})">
+                        <i class="fas fa-list-alt option-icon"></i> View Configuration
+                    </div>
+                    <div class="option-item" onclick="newVersion(${assay.assayid})">
+                        <i class="fas fa-plus-circle option-icon"></i> New Version
+                    </div>
+                    <div class="option-item" onclick="allVersions(${assay.assayid})">
+                        <i class="fas fa-history option-icon"></i> All Versions
+                    </div>
+                    ${currentView === 'archived' ? 
+                        `<div class="option-item" onclick="unarchiveAssay(${assay.assayid}, '${assay.assay_name.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-undo option-icon"></i> Unarchive
+                        </div>` :
+                        `<div class="option-item" onclick="archiveAssay(${assay.assayid}, '${assay.assay_name.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-archive option-icon"></i> Archive
+                        </div>`
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="assay-info">
+            <div class="assay-name">${assay.assay_name}${assay.archived ? ' <span style="color: var(--red-med); font-size: 12px;">(Archived)</span>' : ''}</div>
+            <div class="assay-version">Active Version: ${versionText}</div>
+            <div class="assay-modified">Last modified: ${modifiedDate}</div>
+        </div>
+    `;
+    
+    return div;
+}
 
 // Modal management
 function showAddAssayModal() {
@@ -477,13 +654,39 @@ function archiveAssay(assayId, assayName) {
         pylims_post(pyoptions).then(result => {
             if (result.success) {
                 pylims_ui.success('Assay archived successfully');
-                refreshAssaysList();
+                loadAssays(currentView); // Reload current view
             } else {
                 pylims_ui.error(result.error || 'Failed to archive assay');
             }
         }).catch(error => {
             console.error('Error archiving assay:', error);
             pylims_ui.error('Error archiving assay');
+        });
+    }
+}
+
+function unarchiveAssay(assayId, assayName) {
+    if (confirm(`Are you sure you want to unarchive the assay "${assayName}"? This will make it active again.`)) {
+        const pyoptions = {
+            data: { 
+                action: 'unarchive',
+                assay_id: assayId
+            },
+            csrf: '{{ csrf_token }}',
+            url: '{% url "settings_assays" %}',
+            submit_mode: 'silent'
+        };
+        
+        pylims_post(pyoptions).then(result => {
+            if (result.success) {
+                pylims_ui.success('Assay unarchived successfully');
+                loadAssays(currentView); // Reload current view
+            } else {
+                pylims_ui.error(result.error || 'Failed to unarchive assay');
+            }
+        }).catch(error => {
+            console.error('Error unarchiving assay:', error);
+            pylims_ui.error('Error unarchiving assay');
         });
     }
 }
