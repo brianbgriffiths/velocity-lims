@@ -799,3 +799,68 @@ def settings_assay_view(request, assay_id):
         return render(request, 'settings_assays.html', {
             'error': f'Database error: {str(e)}'
         })
+
+
+@login_required
+def save_step_order(request):
+    """
+    Save the new order of steps in an assay version
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_edit')):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        assay_id = data.get('assay_id')
+        step_order = data.get('step_order')  # List of step IDs in new order
+        
+        if not assay_id:
+            return JsonResponse({'error': 'Assay ID is required'}, status=400)
+        
+        if not step_order or not isinstance(step_order, list):
+            return JsonResponse({'error': 'Step order must be a list of step IDs'}, status=400)
+        
+        conn = psycopg.connect(
+            dbname=pylims.dbname, 
+            user=pylims.dbuser, 
+            password=pylims.dbpass, 
+            host=pylims.dbhost, 
+            port=pylims.dbport, 
+            row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Get the development version for this assay
+        cursor.execute("""
+            SELECT avid FROM velocity.assay_versions 
+            WHERE assay = %s AND status IN (1, 2, 3)
+            LIMIT 1
+        """, (assay_id,))
+        
+        version_data = cursor.fetchone()
+        if not version_data:
+            return JsonResponse({'error': 'No development version found for this assay'}, status=404)
+        
+        # Update the assay_steps JSON field with the new order
+        cursor.execute("""
+            UPDATE velocity.assay_versions 
+            SET assay_steps = %s, modified = CURRENT_TIMESTAMP
+            WHERE avid = %s
+        """, (json.dumps(step_order), version_data['avid']))
+        
+        conn.commit()
+        conn.close()
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Step order updated successfully'
+        })
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)

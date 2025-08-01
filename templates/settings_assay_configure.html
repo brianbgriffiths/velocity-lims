@@ -256,6 +256,69 @@
         background-color: var(--green-dark);
     }
     
+    .lock-toggle {
+        cursor: pointer;
+        padding: 5px 8px;
+        border-radius: 3px;
+        background-color: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        transition: all 0.2s;
+        font-size: 11px;
+    }
+    
+    .lock-toggle:hover {
+        background-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    .lock-toggle.unlocked {
+        background-color: var(--yellow-light);
+        color: var(--yellow-dark);
+    }
+    
+    .drag-handle {
+        cursor: grab;
+        padding: 0 8px;
+        color: var(--gray-med);
+        display: flex;
+        align-items: center;
+    }
+    
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+    
+    .step-item.dragging {
+        opacity: 0.5;
+        transform: rotate(2deg);
+    }
+    
+    .steps-list.reorder-mode .step-item {
+        cursor: grab;
+    }
+    
+    .steps-list.reorder-mode .step-item:hover {
+        background-color: var(--blue-lightest);
+        border-color: var(--blue-light);
+    }
+    
+    .steps-list.reorder-mode .drag-handle {
+        display: flex !important;
+    }
+    
+    .step-drop-zone {
+        height: 3px;
+        background-color: var(--accent1);
+        margin: 2px 0;
+        border-radius: 2px;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+    
+    .step-drop-zone.active {
+        opacity: 1;
+    }
+    
     #pylims_request_error {
         border: solid 1px var(--red-med);
         color: var(--red-dark);
@@ -322,13 +385,22 @@
         <div class="configure-container">
             <div class="left-panel">
                 <div class="panel-header">
-                    <i class="fas fa-list"></i> Assay Steps
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fas fa-list"></i> Assay Steps</span>
+                        <div class="lock-toggle" id="stepOrderToggle" onclick="toggleStepOrder()">
+                            <i class="fas fa-lock" id="lockIcon"></i>
+                            <span id="lockText" style="font-size: 10px; margin-left: 5px;">LOCKED</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="panel-content">
                     {% if has_steps %}
-                        <div class="steps-list">
+                        <div class="steps-list" id="stepsList">
                             {% for step in steps %}
-                                <div class="step-item" onclick="selectStep({{ step.scid }}, '{{ step.step_name|escapejs }}')">
+                                <div class="step-item" data-step-id="{{ step.scid }}" onclick="selectStep({{ step.scid }}, '{{ step.step_name|escapejs }}')">
+                                    <div class="drag-handle" style="display: none;">
+                                        <i class="fas fa-grip-vertical"></i>
+                                    </div>
                                     <div class="step-order">{{ forloop.counter }}</div>
                                     <div class="step-info">
                                         <div class="step-name">{{ step.step_name }}</div>
@@ -382,6 +454,8 @@
 const csrf = '{{ csrf_token }}';
 const assayId = {{ assay.assayid|default:"null" }};
 let selectedStepId = null;
+let isReorderMode = false;
+let draggedElement = null;
 
 function saveAssayName() {
     const assayName = document.getElementById('assayName').value.trim();
@@ -410,7 +484,153 @@ function saveAssayName() {
     });
 }
 
+function toggleStepOrder() {
+    isReorderMode = !isReorderMode;
+    const toggle = document.getElementById('stepOrderToggle');
+    const lockIcon = document.getElementById('lockIcon');
+    const lockText = document.getElementById('lockText');
+    const stepsList = document.getElementById('stepsList');
+    
+    if (isReorderMode) {
+        // Unlock mode - enable drag and drop
+        toggle.classList.add('unlocked');
+        lockIcon.className = 'fas fa-unlock';
+        lockText.textContent = 'UNLOCKED';
+        stepsList.classList.add('reorder-mode');
+        enableDragAndDrop();
+    } else {
+        // Lock mode - disable drag and drop
+        toggle.classList.remove('unlocked');
+        lockIcon.className = 'fas fa-lock';
+        lockText.textContent = 'LOCKED';
+        stepsList.classList.remove('reorder-mode');
+        disableDragAndDrop();
+    }
+}
+
+function enableDragAndDrop() {
+    const stepItems = document.querySelectorAll('.step-item');
+    stepItems.forEach(item => {
+        item.draggable = true;
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragover', handleDragOver);
+        item.addEventListener('drop', handleDrop);
+        item.addEventListener('dragend', handleDragEnd);
+    });
+}
+
+function disableDragAndDrop() {
+    const stepItems = document.querySelectorAll('.step-item');
+    stepItems.forEach(item => {
+        item.draggable = false;
+        item.removeEventListener('dragstart', handleDragStart);
+        item.removeEventListener('dragover', handleDragOver);
+        item.removeEventListener('drop', handleDrop);
+        item.removeEventListener('dragend', handleDragEnd);
+    });
+}
+
+function handleDragStart(e) {
+    if (!isReorderMode) return;
+    
+    draggedElement = e.target;
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.target.outerHTML);
+}
+
+function handleDragOver(e) {
+    if (!isReorderMode) return;
+    
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    const afterElement = getDragAfterElement(e.currentTarget.parentNode, e.clientY);
+    const stepsList = document.getElementById('stepsList');
+    
+    if (afterElement == null) {
+        stepsList.appendChild(draggedElement);
+    } else {
+        stepsList.insertBefore(draggedElement, afterElement);
+    }
+}
+
+function handleDrop(e) {
+    if (!isReorderMode) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Save the new order
+    saveStepOrder();
+    
+    return false;
+}
+
+function handleDragEnd(e) {
+    if (!isReorderMode) return;
+    
+    e.target.classList.remove('dragging');
+    draggedElement = null;
+    
+    // Update step numbers
+    updateStepNumbers();
+}
+
+function getDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.step-item:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function updateStepNumbers() {
+    const stepItems = document.querySelectorAll('#stepsList .step-item');
+    stepItems.forEach((item, index) => {
+        const orderElement = item.querySelector('.step-order');
+        if (orderElement) {
+            orderElement.textContent = index + 1;
+        }
+    });
+}
+
+function saveStepOrder() {
+    const stepItems = document.querySelectorAll('#stepsList .step-item');
+    const stepOrder = Array.from(stepItems).map(item => parseInt(item.dataset.stepId));
+    
+    const pyoptions = {
+        data: {
+            assay_id: assayId,
+            step_order: stepOrder
+        },
+        csrf: csrf,
+        url: 'save_step_order',
+        submit_mode: 'silent'
+    };
+    
+    pylims_post(pyoptions).then(result => {
+        if (result.status === 'success') {
+            console.log('Step order saved successfully');
+            // Optionally show a brief success message
+        }
+    }).catch(error => {
+        console.error('Save step order error:', error);
+        pylims_ui.error('Failed to save step order');
+    });
+}
+
 function selectStep(stepId, stepName) {
+    // Don't select steps when in reorder mode
+    if (isReorderMode) return;
+    
     selectedStepId = stepId;
     
     // Update active state
