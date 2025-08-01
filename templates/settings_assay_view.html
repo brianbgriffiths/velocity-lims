@@ -238,12 +238,10 @@
                         <div class="steps-list">
                             {% for step in steps %}
                                 <div class="step-item" onclick="selectStep({{ step.scid }}, '{{ step.step_name|escapejs }}')">
-                                    <div class="step-order">{{ step.step_order|default:forloop.counter }}</div>
+                                    <div class="step-order">{{ forloop.counter }}</div>
                                     <div class="step-info">
                                         <div class="step-name">{{ step.step_name }}</div>
-                                        {% if step.step_description %}
-                                            <div class="step-description">{{ step.step_description }}</div>
-                                        {% endif %}
+                                        <div class="step-description">Step configuration available</div>
                                     </div>
                                 </div>
                             {% endfor %}
