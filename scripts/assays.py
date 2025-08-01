@@ -652,3 +652,138 @@ def unarchive_assay(request):
         
     except Exception as e:
         return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+
+
+@login_required
+def settings_assay_configure(request, assay_id):
+    """
+    Configure page for an assay version - shows steps and allows editing
+    """
+    try:
+        conn = psycopg.connect(
+            dbname=pylims.dbname, 
+            user=pylims.dbuser, 
+            password=pylims.dbpass, 
+            host=pylims.dbhost, 
+            port=pylims.dbport, 
+            row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Get the assay details and its current development version
+        cursor.execute("""
+            SELECT a.assayid, a.assay_name, a.modified, a.archived, a.visible,
+                   av.avid, av.version_name, av.version_major, av.version_minor, av.version_patch,
+                   av.status, av.created as version_created, av.modified as version_modified
+            FROM velocity.assay a
+            LEFT JOIN velocity.assay_versions av ON a.assayid = av.assay AND av.status IN (1, 2, 3)
+            WHERE a.assayid = %s AND a.visible = true
+        """, (assay_id,))
+        
+        assay_data = cursor.fetchone()
+        
+        if not assay_data:
+            conn.close()
+            return render(request, 'settings_assays.html', {
+                'error': 'Assay not found or no development version available'
+            })
+        
+        # Get all steps for this assay version
+        if assay_data['avid']:
+            cursor.execute("""
+                SELECT s.stepid, s.step_name, s.step_description, s.step_order, s.status,
+                       s.created, s.modified
+                FROM velocity.assay_steps astp
+                JOIN velocity.steps s ON astp.step = s.stepid
+                WHERE astp.assay_version = %s
+                ORDER BY s.step_order ASC, s.step_name ASC
+            """, (assay_data['avid'],))
+            
+            steps = cursor.fetchall()
+        else:
+            steps = []
+        
+        conn.close()
+        
+        # Initialize context
+        context = context_init(request)
+        context.update({
+            'assay': assay_data,
+            'steps': steps,
+            'has_steps': len(steps) > 0
+        })
+        
+        return render(request, 'settings_assay_configure.html', context)
+        
+    except Exception as e:
+        return render(request, 'settings_assays.html', {
+            'error': f'Database error: {str(e)}'
+        })
+
+
+@login_required
+def settings_assay_view(request, assay_id):
+    """
+    View page for an active assay version - read-only display
+    """
+    try:
+        conn = psycopg.connect(
+            dbname=pylims.dbname, 
+            user=pylims.dbuser, 
+            password=pylims.dbpass, 
+            host=pylims.dbhost, 
+            port=pylims.dbport, 
+            row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Get the assay details and its active version
+        cursor.execute("""
+            SELECT a.assayid, a.assay_name, a.modified, a.archived, a.visible,
+                   av.avid, av.version_name, av.version_major, av.version_minor, av.version_patch,
+                   av.status, av.created as version_created, av.modified as version_modified
+            FROM velocity.assay a
+            LEFT JOIN velocity.assay_versions av ON a.active_version = av.avid
+            WHERE a.assayid = %s AND a.visible = true
+        """, (assay_id,))
+        
+        assay_data = cursor.fetchone()
+        
+        if not assay_data:
+            conn.close()
+            return render(request, 'settings_assays.html', {
+                'error': 'Assay not found'
+            })
+        
+        # Get all steps for this assay version
+        if assay_data['avid']:
+            cursor.execute("""
+                SELECT s.stepid, s.step_name, s.step_description, s.step_order, s.status,
+                       s.created, s.modified
+                FROM velocity.assay_steps astp
+                JOIN velocity.steps s ON astp.step = s.stepid
+                WHERE astp.assay_version = %s
+                ORDER BY s.step_order ASC, s.step_name ASC
+            """, (assay_data['avid'],))
+            
+            steps = cursor.fetchall()
+        else:
+            steps = []
+        
+        conn.close()
+        
+        # Initialize context
+        context = context_init(request)
+        context.update({
+            'assay': assay_data,
+            'steps': steps,
+            'has_steps': len(steps) > 0,
+            'is_view_only': True
+        })
+        
+        return render(request, 'settings_assay_view.html', context)
+        
+    except Exception as e:
+        return render(request, 'settings_assays.html', {
+            'error': f'Database error: {str(e)}'
+        })

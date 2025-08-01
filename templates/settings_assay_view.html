@@ -1,0 +1,319 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}Velocity LIMS - View Assay Version{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_common.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<style>
+    body {
+        counter-reset: assay;
+    }
+    
+    breadcrumbs {
+        border: solid 1px #000000;
+        padding: 3px;
+        display: block;
+        margin-bottom: 15px;
+    }
+    
+    .view-container {
+        display: flex;
+        gap: 20px;
+        height: calc(100vh - 200px);
+        min-height: 600px;
+    }
+    
+    .left-panel {
+        flex: 0 0 300px;
+        background-color: var(--gray-lightest);
+        border: solid 1px var(--gray-med);
+        border-radius: 3px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .right-panel {
+        flex: 1;
+        background-color: var(--gray-lightest);
+        border: solid 1px var(--gray-med);
+        border-radius: 3px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .panel-header {
+        background-color: var(--green-med);
+        color: white;
+        padding: 12px;
+        font-weight: bold;
+        border-radius: 3px 3px 0 0;
+        font-size: 14px;
+    }
+    
+    .panel-content {
+        flex: 1;
+        padding: 15px;
+        overflow-y: auto;
+    }
+    
+    .assay-info {
+        background-color: white;
+        border: solid 1px var(--gray-med);
+        border-radius: 3px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .assay-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: var(--green-dark);
+        margin-bottom: 8px;
+    }
+    
+    .version-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 8px;
+    }
+    
+    .version-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: bold;
+        background-color: var(--green-lightest);
+        color: var(--green-dark);
+        border: 1px solid var(--green-light);
+    }
+    
+    .assay-meta {
+        font-size: 12px;
+        color: var(--gray-dark);
+    }
+    
+    .steps-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+    
+    .step-item {
+        background-color: white;
+        border: solid 1px var(--gray-light);
+        border-radius: 3px;
+        padding: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .step-item:hover {
+        background-color: var(--green-lightest);
+        border-color: var(--green-light);
+    }
+    
+    .step-item.active {
+        background-color: var(--green-light);
+        border-color: var(--green-med);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .step-order {
+        background-color: var(--green-med);
+        color: white;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+        flex-shrink: 0;
+    }
+    
+    .step-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .step-name {
+        font-weight: bold;
+        font-size: 13px;
+        color: var(--text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .step-description {
+        font-size: 11px;
+        color: var(--gray-dark);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 2px;
+    }
+    
+    .no-steps {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--gray-med);
+        font-style: italic;
+        font-size: 14px;
+    }
+    
+    .step-placeholder {
+        text-align: center;
+        padding: 40px;
+        color: var(--gray-med);
+        font-style: italic;
+    }
+    
+    .step-view-header {
+        font-size: 16px;
+        font-weight: bold;
+        color: var(--green-dark);
+        margin-bottom: 15px;
+    }
+    
+    .readonly-badge {
+        background-color: var(--blue-lightest);
+        color: var(--blue-dark);
+        border: 1px solid var(--blue-light);
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: bold;
+        display: inline-block;
+        margin-left: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block centercontent %}
+<div id="main" class="center-border">
+    <breadcrumbs>
+        <a href="{% url 'view_settings' %}">Settings</a> > 
+        <a href="{% url 'settings_assays' %}">Assays</a> > 
+        View Active Version
+    </breadcrumbs>
+    
+    {% if error %}
+        <div class="error-message">{{ error }}</div>
+    {% endif %}
+    
+    {% if assay %}
+        <div class="assay-info">
+            <div class="assay-title">
+                {{ assay.assay_name }}
+                <span class="readonly-badge">READ ONLY</span>
+            </div>
+            <div class="version-info">
+                <span>Active Version:</span>
+                <span class="version-badge">
+                    v{{ assay.version_major }}.{{ assay.version_minor }}{% if assay.version_patch %}.{{ assay.version_patch }}{% endif %}
+                    - {{ assay.version_name }}
+                </span>
+            </div>
+            <div class="assay-meta">
+                Created: {{ assay.version_created|date:"M d, Y H:i" }} | 
+                Modified: {{ assay.version_modified|date:"M d, Y H:i" }}
+            </div>
+        </div>
+        
+        <div class="view-container">
+            <div class="left-panel">
+                <div class="panel-header">
+                    <i class="fas fa-list"></i> Assay Steps
+                </div>
+                <div class="panel-content">
+                    {% if has_steps %}
+                        <div class="steps-list">
+                            {% for step in steps %}
+                                <div class="step-item" onclick="selectStep({{ step.stepid }}, '{{ step.step_name|escapejs }}')">
+                                    <div class="step-order">{{ step.step_order|default:forloop.counter }}</div>
+                                    <div class="step-info">
+                                        <div class="step-name">{{ step.step_name }}</div>
+                                        {% if step.step_description %}
+                                            <div class="step-description">{{ step.step_description }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="no-steps">
+                            No steps are configured for this assay version.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="panel-header">
+                    <i class="fas fa-eye"></i> Step Details
+                </div>
+                <div class="panel-content">
+                    <div class="step-placeholder" id="stepPlaceholder">
+                        <i class="fas fa-arrow-left" style="font-size: 24px; margin-bottom: 10px;"></i>
+                        <div>Select a step from the left panel to view its details</div>
+                    </div>
+                    
+                    <div id="stepViewPanel" style="display: none;">
+                        <div class="step-view-header" id="stepViewTitle">Step Details</div>
+                        <div id="stepViewContent">
+                            <!-- Step view content will be loaded here -->
+                            <p>Step details interface will be implemented here.</p>
+                            <p>Selected Step ID: <span id="selectedStepId"></span></p>
+                            <p>Selected Step Name: <span id="selectedStepName"></span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="error-message">Assay not found or no active version available.</div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+const assayId = {{ assay.assayid|default:"null" }};
+let selectedStepId = null;
+
+function selectStep(stepId, stepName) {
+    selectedStepId = stepId;
+    
+    // Update active state
+    document.querySelectorAll('.step-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    event.currentTarget.classList.add('active');
+    
+    // Hide placeholder and show view panel
+    document.getElementById('stepPlaceholder').style.display = 'none';
+    document.getElementById('stepViewPanel').style.display = 'block';
+    
+    // Update view panel content
+    document.getElementById('stepViewTitle').textContent = `Step Details: ${stepName}`;
+    document.getElementById('selectedStepId').textContent = stepId;
+    document.getElementById('selectedStepName').textContent = stepName;
+    
+    console.log('Viewing step:', stepId, stepName);
+    // TODO: Load actual step details here
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Assay view page loaded for assay ID:', assayId);
+});
+</script>
+{% endblock %}
