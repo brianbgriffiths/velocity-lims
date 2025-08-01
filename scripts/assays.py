@@ -695,10 +695,10 @@ def settings_assay_configure(request, assay_id):
                 # Create placeholders for the IN clause
                 placeholders = ','.join(['%s'] * len(step_ids))
                 cursor.execute(f"""
-                    SELECT stepid, step_name, step_description, step_order, status,
+                    SELECT scid, step_name, step_description, step_order, status,
                            created, modified
                     FROM velocity.step_config
-                    WHERE stepid IN ({placeholders})
+                    WHERE scid IN ({placeholders})
                     ORDER BY step_order ASC, step_name ASC
                 """, step_ids)
                 
@@ -769,10 +769,10 @@ def settings_assay_view(request, assay_id):
                 # Create placeholders for the IN clause
                 placeholders = ','.join(['%s'] * len(step_ids))
                 cursor.execute(f"""
-                    SELECT stepid, step_name, step_description, step_order, status,
+                    SELECT scid, step_name, step_description, step_order, status,
                            created, modified
                     FROM velocity.step_config
-                    WHERE stepid IN ({placeholders})
+                    WHERE scid IN ({placeholders})
                     ORDER BY step_order ASC, step_name ASC
                 """, step_ids)
                 
