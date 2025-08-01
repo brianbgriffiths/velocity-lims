@@ -79,6 +79,80 @@
         gap: 10px;
     }
     
+    .assay-options {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .options-dropdown {
+        background-color: var(--accent1);
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .options-dropdown:hover {
+        background-color: var(--accent2);
+    }
+    
+    .options-dropdown::after {
+        content: "▼";
+        font-size: 10px;
+    }
+    
+    .options-menu {
+        display: none;
+        position: absolute;
+        background-color: white;
+        border: solid 1px var(--gray-med);
+        border-radius: 3px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 100;
+        min-width: 160px;
+        left: 0;
+        top: 100%;
+        margin-top: 2px;
+    }
+    
+    .options-menu.show {
+        display: block;
+    }
+    
+    .option-item {
+        padding: 8px 12px;
+        cursor: pointer;
+        font-size: 12px;
+        border-bottom: solid 1px var(--gray-lightest);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .option-item:last-child {
+        border-bottom: none;
+    }
+    
+    .option-item:hover:not(.disabled) {
+        background-color: var(--accent9);
+    }
+    
+    .option-item.disabled {
+        color: var(--gray-med);
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+    
+    .option-icon {
+        width: 16px;
+        text-align: center;
+    }
+    
     .btn-edit {
         background-color: var(--blue-med);
         color: white;
@@ -131,11 +205,11 @@
         top: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
+        background-color: rgba(0, 0, 0, 0.56);
     }
     
     .modal-content {
-        background-color: var(--background);
+        background-color: white;
         margin: 10% auto;
         padding: 20px;
         border: solid 1px var(--gray-med);
@@ -250,6 +324,34 @@
         {% if assays %}
             {% for assay in assays %}
                 <div class="assay-item" data-assayid="{{ assay.assayid }}">
+                    <div class="assay-actions">
+                        <div class="assay-options">
+                            <button class="options-dropdown" onclick="toggleOptionsMenu({{ assay.assayid }})">
+                                <i class="fas fa-cog"></i> Options
+                            </button>
+                            <div class="options-menu" id="options-menu-{{ assay.assayid }}">
+                                <div class="option-item" onclick="accessAssay({{ assay.assayid }})">
+                                    <i class="fas fa-eye option-icon"></i> Access
+                                </div>
+                                <div class="option-item {% if not permissions.super_user and not permissions.assayconfig_view %}disabled{% endif %}" 
+                                     onclick="{% if permissions.super_user or permissions.assayconfig_view %}viewConfiguration({{ assay.assayid }}){% endif %}">
+                                    <i class="fas fa-list-alt option-icon"></i> View Configuration
+                                </div>
+                                <div class="option-item {% if not permissions.super_user and not permissions.assayconfig_version %}disabled{% endif %}" 
+                                     onclick="{% if permissions.super_user or permissions.assayconfig_version %}newVersion({{ assay.assayid }}){% endif %}">
+                                    <i class="fas fa-plus-circle option-icon"></i> New Version
+                                </div>
+                                <div class="option-item {% if not permissions.super_user and not permissions.assayconfig_view %}disabled{% endif %}" 
+                                     onclick="{% if permissions.super_user or permissions.assayconfig_view %}allVersions({{ assay.assayid }}){% endif %}">
+                                    <i class="fas fa-history option-icon"></i> All Versions
+                                </div>
+                                <div class="option-item {% if not permissions.super_user and not permissions.assayconfig_edit %}disabled{% endif %}" 
+                                     onclick="{% if permissions.super_user or permissions.assayconfig_edit %}archiveAssay({{ assay.assayid }}, '{{ assay.assay_name|escapejs }}'){% endif %}">
+                                    <i class="fas fa-archive option-icon"></i> Archive
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="assay-info">
                         <div class="assay-name">{{ assay.assay_name }}</div>
                         <div class="assay-version">
@@ -258,14 +360,6 @@
                         <div class="assay-modified">
                             Last modified: {{ assay.modified|date:"M d, Y H:i" }}
                         </div>
-                    </div>
-                    <div class="assay-actions">
-                        <button class="btn-edit" onclick="editAssay({{ assay.assayid }}, '{{ assay.assay_name|escapejs }}', {{ assay.active_version|default:'null' }})">>
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
-                        <button class="btn-delete" onclick="deleteAssay({{ assay.assayid }}, '{{ assay.assay_name|escapejs }}')">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
                     </div>
                 </div>
             {% endfor %}
@@ -335,6 +429,77 @@ function showAddAssayModal() {
     currentAssayId = null;
     document.getElementById('assayModal').style.display = 'block';
     filterVersionsForAssay(null); // Show all versions when adding new assay
+}
+
+// Options dropdown menu functionality
+function toggleOptionsMenu(assayId) {
+    const menu = document.getElementById(`options-menu-${assayId}`);
+    const isVisible = menu.style.display === 'block';
+    
+    // Close all other option menus first
+    document.querySelectorAll('.options-menu').forEach(m => {
+        if (m !== menu) m.style.display = 'none';
+    });
+    
+    menu.style.display = isVisible ? 'none' : 'block';
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.assay-options')) {
+        document.querySelectorAll('.options-menu').forEach(menu => {
+            menu.style.display = 'none';
+        });
+    }
+});
+
+function accessAssay(assayId) {
+    // Basic access - go to assay overview/details page
+    window.location.href = `/assay/${assayId}/`;
+}
+
+function viewConfiguration(assayId) {
+    // View the assay configuration details
+    console.log('Viewing configuration for assay:', assayId);
+    // Implementation: could open modal or navigate to config view
+}
+
+function newVersion(assayId) {
+    // Create a new version of the assay
+    console.log('Creating new version for assay:', assayId);
+    // Implementation: open version creation modal
+}
+
+function allVersions(assayId) {
+    // View all versions of this assay
+    console.log('Viewing all versions for assay:', assayId);
+    // Implementation: open versions list modal or navigate to versions page
+}
+
+function archiveAssay(assayId, assayName) {
+    if (confirm(`Are you sure you want to archive the assay "${assayName}"? This will mark it as inactive.`)) {
+        const pyoptions = {
+            data: { 
+                action: 'archive',
+                assay_id: assayId
+            },
+            csrf: '{{ csrf_token }}',
+            url: '../settings_assays',
+            submit_mode: 'silent'
+        };
+        
+        pylims_post(pyoptions).then(result => {
+            if (result.success) {
+                pylims_ui.success('Assay archived successfully');
+                refreshAssaysList();
+            } else {
+                pylims_ui.error(result.error || 'Failed to archive assay');
+            }
+        }).catch(error => {
+            console.error('Error archiving assay:', error);
+            pylims_ui.error('Error archiving assay');
+        });
+    }
 }
 
 function editAssay(assayId, assayName, activeVersion) {
