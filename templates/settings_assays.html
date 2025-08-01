@@ -542,11 +542,10 @@ function loadAllAssays() {
             console.log('Archived assays:', allAssays.filter(a => a.archived)); // Debug: show archived ones
             filterAndDisplayAssays(currentView); // Display filtered view
         } else {
-            pylims_ui.error(result.error || 'Failed to load assays');
+            localerror(result.error || 'Failed to load assays');
         }
     }).catch(error => {
         console.error('Error loading assays:', error);
-        pylims_ui.error('Error loading assays');
     });
 }
 
@@ -714,14 +713,10 @@ function archiveAssay(assayId, assayName) {
         pylims_post(pyoptions).then(result => {
             if (result.status === 'success') {
                 console.log('Archive operation successful, reloading data...');
-                pylims_ui.success('Assay archived successfully');
                 loadAllAssays(); // Reload all data and refresh current view
-            } else {
-                pylims_ui.error(result.error || 'Failed to archive assay');
             }
         }).catch(error => {
             console.error('Error archiving assay:', error);
-            pylims_ui.error('Error archiving assay');
         });
     }
 }
@@ -740,14 +735,10 @@ function unarchiveAssay(assayId, assayName) {
         pylims_post(pyoptions).then(result => {
             if (result.status === 'success') {
                 console.log('Unarchive operation successful, reloading data...');
-                pylims_ui.success('Assay unarchived successfully');
                 loadAllAssays(); // Reload all data and refresh current view
-            } else {
-                pylims_ui.error(result.error || 'Failed to unarchive assay');
             }
         }).catch(error => {
             console.error('Error unarchiving assay:', error);
-            pylims_ui.error('Error unarchiving assay');
         });
     }
 }
@@ -831,15 +822,11 @@ document.getElementById('assayForm').addEventListener('submit', function(e) {
     
     pylims_post(pyoptions).then(result => {
         if (result.status === 'success') {
-            pylims_ui.success(result.message || successMessage);
             closeAssayModal();
             loadAllAssays(); // Reload all data instead of page refresh
-        } else {
-            pylims_ui.error(result.error || 'Failed to save assay');
         }
     }).catch(error => {
         console.error('Save error:', error);
-        pylims_ui.error('Failed to save assay');
     });
 });
 
