@@ -65,7 +65,7 @@ def settings_assays(request):
                 conn.close()
                 
                 return JsonResponse({
-                    'success': True,
+                    'status': 'success',
                     'assays': assays
                 })
             
@@ -109,7 +109,7 @@ def settings_assays(request):
                 conn.close()
                 
                 return JsonResponse({
-                    'success': True,
+                    'status': 'success',
                     'message': message
                 })
             else:
@@ -255,7 +255,7 @@ def create_assay(request):
         conn.close()
         
         return JsonResponse({
-            'success': True,
+            'status': 'success',
             'assay': result,
             'message': message
         })
@@ -315,7 +315,7 @@ def save_assay(request):
         conn.close()
         
         return JsonResponse({
-            'success': True,
+            'status': 'success',
             'assay': result,
             'message': f'Assay "{assay_name}" updated successfully'
         })
@@ -384,7 +384,7 @@ def get_assay_details(request):
         conn.close()
         
         return JsonResponse({
-            'success': True,
+            'status': 'success',
             'assay': assay
         })
         
@@ -438,7 +438,7 @@ def archive_assay(request):
         conn.close()
         
         return JsonResponse({
-            'success': True,
+            'status': 'success',
             'message': f'Assay "{result["assay_name"]}" archived successfully'
         })
         
@@ -492,7 +492,7 @@ def unarchive_assay(request):
         conn.close()
         
         return JsonResponse({
-            'success': True,
+            'status': 'success',
             'message': f'Assay "{result["assay_name"]}" unarchived successfully'
         })
         

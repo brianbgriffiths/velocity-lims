@@ -20,7 +20,17 @@
     
     .assay-list {
         background-color: var(--gray-lightest);
-        border: solid 1px var(--gray-med);
+        border: solid 1p        pylims_post(pyoptions).then(result => {
+            if (result.status === 'success') {
+                pylims_ui.success('Assay unarchived successfully');
+                loadAllAssays(); // Reload all data and refresh current view
+            } else {
+                pylims_ui.error(result.error || 'Failed to unarchive assay');
+            }
+        }).catch(error => {
+            console.error('Error unarchiving assay:', error);
+            pylims_ui.error('Error unarchiving assay');
+        });y-med);
         border-radius: 3px;
         margin-bottom: 20px;
     }
@@ -500,7 +510,7 @@ function loadAllAssays() {
     };
     
     pylims_post(pyoptions).then(result => {
-        if (result.success) {
+        if (result.status === 'success') {
             allAssays = result.assays || [];
             console.log('Loaded assays:', allAssays); // Debug: show what was loaded
             console.log('Archived assays:', allAssays.filter(a => a.archived)); // Debug: show archived ones
@@ -676,7 +686,7 @@ function archiveAssay(assayId, assayName) {
         };
         
         pylims_post(pyoptions).then(result => {
-            if (result.success) {
+            if (result.status === 'success') {
                 pylims_ui.success('Assay archived successfully');
                 loadAllAssays(); // Reload all data and refresh current view
             } else {
@@ -792,7 +802,7 @@ document.getElementById('assayForm').addEventListener('submit', function(e) {
     };
     
     pylims_post(pyoptions).then(result => {
-        if (result.success) {
+        if (result.status === 'success') {
             pylims_ui.success(result.message || successMessage);
             closeAssayModal();
             loadAllAssays(); // Reload all data instead of page refresh
