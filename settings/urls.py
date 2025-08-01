@@ -60,6 +60,9 @@ urlpatterns = [
     path('get_assay_details/', assays.get_assay_details, name="get_assay_details"),
     path('archive_assay/', assays.archive_assay, name="archive_assay"),
     path('unarchive_assay/', assays.unarchive_assay, name="unarchive_assay"),
+    path('create_draft_version/', assays.create_draft_version, name="create_draft_version"),
+    path('settings_assay_view/<int:assay_id>/', assays.settings_assay_view, name="settings_assay_view"),
+    path('settings_assay_configure/<int:assay_id>/', assays.settings_assay_configure, name="settings_assay_configure"),
 
 
     #queues

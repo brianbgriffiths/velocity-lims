@@ -115,6 +115,75 @@
         margin-top: 2px;
     }
     
+    .assay-versions {
+        margin-top: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .version-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        font-size: 13px;
+        border: 1px solid transparent;
+    }
+    
+    .version-item:hover {
+        background-color: var(--accent8);
+    }
+    
+    .active-version {
+        background-color: var(--green-lightest);
+        border-color: var(--green-light);
+        color: var(--green-dark);
+    }
+    
+    .active-version:hover {
+        background-color: var(--green-light);
+    }
+    
+    .draft-version {
+        background-color: var(--blue-lightest);
+        border-color: var(--blue-light);
+        color: var(--blue-dark);
+    }
+    
+    .draft-version:hover {
+        background-color: var(--blue-light);
+    }
+    
+    .no-active {
+        background-color: var(--gray-lightest);
+        border-color: var(--gray-light);
+        color: var(--gray-dark);
+        cursor: default;
+    }
+    
+    .no-draft {
+        background-color: var(--yellow-lightest);
+        border-color: var(--yellow-light);
+        color: var(--yellow-dark);
+    }
+    
+    .no-draft:hover {
+        background-color: var(--yellow-light);
+    }
+    
+    .version-label {
+        font-weight: 600;
+        min-width: 50px;
+    }
+    
+    .version-info {
+        flex: 1;
+    }
+    
     .assay-modified {
         color: var(--gray-med);
         font-size: 12px;
@@ -591,6 +660,16 @@ function createAssayItem(assay) {
         versionText += ')';
     }
     
+    // Build draft version text
+    let draftVersionText = '';
+    if (assay.draft_version_name) {
+        draftVersionText = `${assay.draft_version_name} (v${assay.draft_major}.${assay.draft_minor}`;
+        if (assay.draft_patch) {
+            draftVersionText += `.${assay.draft_patch}`;
+        }
+        draftVersionText += ')';
+    }
+    
     // Format date
     const modifiedDate = new Date(assay.modified).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -609,9 +688,6 @@ function createAssayItem(assay) {
                 <div class="options-menu" id="options-menu-${assay.assayid}">
                     <div class="option-item" onclick="accessAssay(${assay.assayid})">
                         <i class="fas fa-eye option-icon"></i> Access
-                    </div>
-                    <div class="option-item" onclick="viewConfiguration(${assay.assayid})">
-                        <i class="fas fa-list-alt option-icon"></i> View Configuration
                     </div>
                     <div class="option-item" onclick="newVersion(${assay.assayid})">
                         <i class="fas fa-plus-circle option-icon"></i> New Version
@@ -632,8 +708,33 @@ function createAssayItem(assay) {
         </div>
         <div class="assay-info">
             <div class="assay-name">${assay.assay_name}${assay.archived ? ' <span style="color: var(--red-med); font-size: 12px;">(Archived)</span>' : ''}</div>
-            <div class="assay-version">Active Version: ${versionText}</div>
-            <div class="assay-modified">Last modified: ${modifiedDate}</div>
+            <div class="assay-versions">
+                ${assay.version_name ? 
+                    `<div class="version-item active-version" onclick="viewActiveVersion(${assay.assayid})">
+                        <i class="fas fa-play-circle"></i>
+                        <span class="version-label">Active:</span>
+                        <span class="version-info">${versionText}</span>
+                    </div>` : 
+                    `<div class="version-item no-active">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span class="version-label">No active version</span>
+                    </div>`
+                }
+                ${assay.draft_version_name ? 
+                    `<div class="version-item draft-version" onclick="configureDraftVersion(${assay.assayid})">
+                        <i class="fas fa-edit"></i>
+                        <span class="version-label">Draft:</span>
+                        <span class="version-info">${draftVersionText}</span>
+                    </div>` : 
+                    `<div class="version-item no-draft" onclick="createDraftVersion(${assay.assayid})">
+                        <i class="fas fa-plus"></i>
+                        <span class="version-label">Create draft version</span>
+                    </div>`
+                }
+            </div>
+            <div class="assay-modified">
+                Last modified: ${modifiedDate}
+            </div>
         </div>
     `;
     
@@ -700,6 +801,40 @@ function viewConfiguration(assayId) {
     // View the assay configuration details
     console.log('Viewing configuration for assay:', assayId);
     // Implementation: could open modal or navigate to config view
+}
+
+function viewActiveVersion(assayId) {
+    // Navigate to active version view page
+    window.location.href = `/settings_assay_view/${assayId}/`;
+}
+
+function configureDraftVersion(assayId) {
+    // Navigate to draft version configuration page
+    window.location.href = `/settings_assay_configure/${assayId}/`;
+}
+
+function createDraftVersion(assayId) {
+    // Create a new draft version for this assay
+    if (confirm('Create a new draft version for this assay?')) {
+        const pyoptions = {
+            data: { 
+                assay_id: assayId,
+                action: 'create_draft'
+            },
+            csrf: csrf,
+            url: 'create_draft_version',
+            submit_mode: 'silent'
+        };
+        
+        pylims_post(pyoptions).then(result => {
+            if (result.status === 'success') {
+                console.log('Draft version created successfully');
+                loadAllAssays(true); // Reload to show the new draft
+            }
+        }).catch(error => {
+            console.error('Error creating draft version:', error);
+        });
+    }
 }
 
 function newVersion(assayId) {

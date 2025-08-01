@@ -54,9 +54,12 @@ def settings_assays(request):
                 cursor.execute(f"""
                     SELECT a.assayid, a.assay_name, a.modified, a.active_version, a.archived, a.visible,
                            av.version_name, av.version_major, av.version_minor, av.version_patch,
-                           av.status, av.created as version_created
+                           av.status, av.created as version_created,
+                           dv.version_name as draft_version_name, dv.version_major as draft_major, 
+                           dv.version_minor as draft_minor, dv.version_patch as draft_patch
                     FROM velocity.assay a
                     LEFT JOIN velocity.assay_versions av ON a.active_version = av.avid
+                    LEFT JOIN velocity.assay_versions dv ON a.assayid = dv.assay AND dv.status = 0
                     {where_clause}
                     ORDER BY a.assay_name
                 """)
@@ -287,6 +290,137 @@ def create_assay(request):
         import traceback
         traceback.print_exc()
         return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
+
+
+@login_required
+@csrf_exempt
+def create_draft_version(request):
+    """
+    Create a new draft version for an existing assay
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_version')):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        assay_id = data.get('assay_id')
+        
+        if not assay_id:
+            return JsonResponse({'error': 'Assay ID is required'}, status=400)
+        
+        conn = psycopg.connect(
+            dbname=pylims.dbname, 
+            user=pylims.dbuser, 
+            password=pylims.dbpass, 
+            host=pylims.dbhost, 
+            port=pylims.dbport, 
+            row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Check if assay exists
+        cursor.execute("""
+            SELECT assayid, assay_name FROM velocity.assay 
+            WHERE assayid = %s AND visible = true
+        """, (assay_id,))
+        
+        assay = cursor.fetchone()
+        if not assay:
+            return JsonResponse({'error': 'Assay not found'}, status=404)
+        
+        # Check if a draft version already exists
+        cursor.execute("""
+            SELECT avid FROM velocity.assay_versions 
+            WHERE assay = %s AND status = 0
+        """, (assay_id,))
+        
+        if cursor.fetchone():
+            return JsonResponse({'error': 'A draft version already exists for this assay'}, status=400)
+        
+        # Get the latest version number to increment
+        cursor.execute("""
+            SELECT version_major, version_minor, version_patch 
+            FROM velocity.assay_versions 
+            WHERE assay = %s 
+            ORDER BY version_major DESC, version_minor DESC, version_patch DESC 
+            LIMIT 1
+        """, (assay_id,))
+        
+        latest_version = cursor.fetchone()
+        if latest_version:
+            new_major = latest_version['version_major']
+            new_minor = latest_version['version_minor'] + 1
+            new_patch = 0
+        else:
+            new_major = 1
+            new_minor = 0
+            new_patch = 0
+        
+        # Create draft version
+        version_name = f"{assay['assay_name']} v{new_major}.{new_minor} draft"
+        cursor.execute("""
+            INSERT INTO velocity.assay_versions 
+            (assay, version_name, version_major, version_minor, version_patch, status)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING avid, version_name, version_major, version_minor, version_patch
+        """, (assay_id, version_name, new_major, new_minor, new_patch, 0))  # status = 0 (draft)
+        
+        result = cursor.fetchone()
+        conn.commit()
+        conn.close()
+        
+        return JsonResponse({
+            'status': 'success',
+            'draft_version': result,
+            'message': f'Draft version {new_major}.{new_minor} created successfully'
+        })
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
+    except psycopg.Error as e:
+        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
+
+
+@login_required
+def settings_assay_view(request, assay_id):
+    """
+    View page for active assay version
+    """
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_view')):
+        return redirect('home')
+    
+    # TODO: Implement assay view page
+    # For now, just return a placeholder
+    return render(request, 'assay_view_placeholder.html', {
+        'assay_id': assay_id,
+        'page_title': f'Assay View - ID {assay_id}'
+    })
+
+
+@login_required
+def settings_assay_configure(request, assay_id):
+    """
+    Configuration page for draft assay version
+    """
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_edit')):
+        return redirect('home')
+    
+    # TODO: Implement assay configuration page
+    # For now, just return a placeholder
+    return render(request, 'assay_configure_placeholder.html', {
+        'assay_id': assay_id,
+        'page_title': f'Assay Configuration - ID {assay_id}'
+    })
 
 
 @login_required
