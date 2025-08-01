@@ -56,10 +56,10 @@ def settings_assays(request):
                            av.version_name, av.version_major, av.version_minor, av.version_patch,
                            av.status, av.created as version_created,
                            dv.version_name as draft_version_name, dv.version_major as draft_major, 
-                           dv.version_minor as draft_minor, dv.version_patch as draft_patch
+                           dv.version_minor as draft_minor, dv.version_patch as draft_patch, dv.status as draft_status
                     FROM velocity.assay a
                     LEFT JOIN velocity.assay_versions av ON a.active_version = av.avid
-                    LEFT JOIN velocity.assay_versions dv ON a.assayid = dv.assay AND dv.status = 0
+                    LEFT JOIN velocity.assay_versions dv ON a.assayid = dv.assay AND dv.status IN (1, 2, 3)
                     {where_clause}
                     ORDER BY a.assay_name
                 """)
@@ -252,21 +252,13 @@ def create_assay(request):
                 (assay, version_name, version_major, version_minor, version_patch, status)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING avid, version_name, version_major, version_minor, version_patch
-            """, (new_assayid, version_name, 1, 0, 0, 1))  # status = 1 (active)
+            """, (new_assayid, version_name, 1, 0, 0, 1))  # status = 1 (draft)
             
             version_result = cursor.fetchone()
             new_avid = version_result['avid']
             
-            # Update the assay to set this as the active version
-            cursor.execute("""
-                UPDATE velocity.assay 
-                SET active_version = %s, modified = CURRENT_TIMESTAMP
-                WHERE assayid = %s
-                RETURNING assayid, assay_name, modified, active_version
-            """, (new_avid, new_assayid))
-            
-            result = cursor.fetchone()
-            message = f'Assay "{assay_name}" created successfully with initial version 1.0'
+            # Do not automatically set as active version - new versions start as drafts
+            message = f'Assay "{assay_name}" created successfully with initial draft version 1.0'
         else:
             message = f'Assay "{assay_name}" created successfully'
         
@@ -332,14 +324,17 @@ def create_draft_version(request):
         if not assay:
             return JsonResponse({'error': 'Assay not found'}, status=404)
         
-        # Check if a draft version already exists
+        # Check if a draft/testing/locked version already exists (statuses 1, 2, 3)
         cursor.execute("""
-            SELECT avid FROM velocity.assay_versions 
-            WHERE assay = %s AND status = 0
+            SELECT avid, status FROM velocity.assay_versions 
+            WHERE assay = %s AND status IN (1, 2, 3)
         """, (assay_id,))
         
-        if cursor.fetchone():
-            return JsonResponse({'error': 'A draft version already exists for this assay'}, status=400)
+        existing_draft = cursor.fetchone()
+        if existing_draft:
+            status_names = {1: 'draft', 2: 'testing', 3: 'locked'}
+            status_name = status_names.get(existing_draft['status'], 'development')
+            return JsonResponse({'error': f'A {status_name} version already exists for this assay'}, status=400)
         
         # Get the latest version number to increment
         cursor.execute("""
@@ -367,7 +362,7 @@ def create_draft_version(request):
             (assay, version_name, version_major, version_minor, version_patch, status)
             VALUES (%s, %s, %s, %s, %s, %s)
             RETURNING avid, version_name, version_major, version_minor, version_patch
-        """, (assay_id, version_name, new_major, new_minor, new_patch, 0))  # status = 0 (draft)
+        """, (assay_id, version_name, new_major, new_minor, new_patch, 1))  # status = 1 (draft)
         
         result = cursor.fetchone()
         conn.commit()

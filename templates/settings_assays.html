@@ -158,6 +158,46 @@
         background-color: var(--blue-light);
     }
     
+    .testing-version {
+        background-color: var(--yellow-lightest);
+        border-color: var(--yellow-light);
+        color: var(--yellow-dark);
+    }
+    
+    .testing-version:hover {
+        background-color: var(--yellow-light);
+    }
+    
+    .locked-version {
+        background-color: var(--orange-lightest);
+        border-color: var(--orange-light);
+        color: var(--orange-dark);
+    }
+    
+    .locked-version:hover {
+        background-color: var(--orange-light);
+    }
+    
+    .archived-version {
+        background-color: var(--gray-lightest);
+        border-color: var(--gray-light);
+        color: var(--gray-dark);
+    }
+    
+    .archived-version:hover {
+        background-color: var(--gray-light);
+    }
+    
+    .canceled-version {
+        background-color: var(--red-lightest);
+        border-color: var(--red-light);
+        color: var(--red-dark);
+    }
+    
+    .canceled-version:hover {
+        background-color: var(--red-light);
+    }
+    
     .no-active {
         background-color: var(--gray-lightest);
         border-color: var(--gray-light);
@@ -531,7 +571,7 @@
             
             <div id="newAssayInfo" class="form-group">
                 <p style="color: var(--gray-dark); font-size: 14px; margin: 0;">
-                    <i class="fas fa-info-circle"></i> A new assay will be created starting at version 1.0 with the name "<span id="previewAssayName">[Assay Name]</span> init"
+                    <i class="fas fa-info-circle"></i> A new assay will be created starting with a draft version 1.0 named "<span id="previewAssayName">[Assay Name]</span> init"
                 </p>
             </div>
             
@@ -660,14 +700,26 @@ function createAssayItem(assay) {
         versionText += ')';
     }
     
-    // Build draft version text
+    // Build draft version text with status
     let draftVersionText = '';
+    let draftStatusText = '';
     if (assay.draft_version_name) {
         draftVersionText = `${assay.draft_version_name} (v${assay.draft_major}.${assay.draft_minor}`;
         if (assay.draft_patch) {
             draftVersionText += `.${assay.draft_patch}`;
         }
         draftVersionText += ')';
+        
+        // Map status to display text
+        const statusMap = {
+            1: 'draft',
+            2: 'testing', 
+            3: 'locked',
+            4: 'active',
+            5: 'archived',
+            6: 'canceled'
+        };
+        draftStatusText = statusMap[assay.draft_status] || 'unknown';
     }
     
     // Format date
@@ -721,9 +773,9 @@ function createAssayItem(assay) {
                     </div>`
                 }
                 ${assay.draft_version_name ? 
-                    `<div class="version-item draft-version" onclick="configureDraftVersion(${assay.assayid})">
-                        <i class="fas fa-edit"></i>
-                        <span class="version-label">Draft:</span>
+                    `<div class="version-item ${getStatusClass(assay.draft_status)}" onclick="configureDraftVersion(${assay.assayid})">
+                        <i class="fas ${getStatusIcon(assay.draft_status)}"></i>
+                        <span class="version-label">${draftStatusText.charAt(0).toUpperCase() + draftStatusText.slice(1)}:</span>
                         <span class="version-info">${draftVersionText}</span>
                     </div>` : 
                     `<div class="version-item no-draft" onclick="createDraftVersion(${assay.assayid})">
@@ -739,6 +791,32 @@ function createAssayItem(assay) {
     `;
     
     return div;
+}
+
+// Helper function to get CSS class based on status
+function getStatusClass(status) {
+    const statusClasses = {
+        1: 'draft-version',
+        2: 'testing-version', 
+        3: 'locked-version',
+        4: 'active-version',
+        5: 'archived-version',
+        6: 'canceled-version'
+    };
+    return statusClasses[status] || 'draft-version';
+}
+
+// Helper function to get icon based on status
+function getStatusIcon(status) {
+    const statusIcons = {
+        1: 'fa-edit',
+        2: 'fa-flask',
+        3: 'fa-lock',
+        4: 'fa-play-circle',
+        5: 'fa-archive',
+        6: 'fa-times-circle'
+    };
+    return statusIcons[status] || 'fa-edit';
 }
 
 // Modal management
