@@ -462,7 +462,7 @@
             
             <div id="newAssayInfo" class="form-group">
                 <p style="color: var(--gray-dark); font-size: 14px; margin: 0;">
-                    <i class="fas fa-info-circle"></i> A new assay will be created starting at version 1.0 with the name "[Assay Name] init"
+                    <i class="fas fa-info-circle"></i> A new assay will be created starting at version 1.0 with the name "<span id="previewAssayName">[Assay Name]</span> init"
                 </p>
             </div>
             
@@ -645,6 +645,7 @@ function showAddAssayModal() {
     document.getElementById('modalTitle').textContent = 'Add New Assay';
     document.getElementById('assayName').value = '';
     document.getElementById('activeVersion').value = '';
+    document.getElementById('previewAssayName').textContent = '[Assay Name]';
     currentAssayId = null;
     
     // Show new assay info, hide version selection
@@ -653,6 +654,20 @@ function showAddAssayModal() {
     
     document.getElementById('assayModal').style.display = 'block';
 }
+
+// Add input listener to update preview
+document.addEventListener('DOMContentLoaded', function() {
+    const assayNameInput = document.getElementById('assayName');
+    const previewSpan = document.getElementById('previewAssayName');
+    
+    assayNameInput.addEventListener('input', function() {
+        const name = this.value.trim();
+        previewSpan.textContent = name || '[Assay Name]';
+    });
+    
+    // Load all assays data for client-side filtering
+    loadAllAssays();
+});
 
 // Options dropdown menu functionality
 function toggleOptionsMenu(assayId) {
@@ -843,11 +858,5 @@ window.addEventListener('click', function(event) {
 function localerror(msg) {
     pylims_ui.error(msg);
 }
-
-// Initialize the page
-document.addEventListener('DOMContentLoaded', function() {
-    // Load all assays data for client-side filtering
-    loadAllAssays();
-});
 </script>
 {% endblock %}

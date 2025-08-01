@@ -181,21 +181,30 @@ def create_assay(request):
     Create a new assay with initial version
     This function is specifically for creating new assays and can be expanded later
     """
+    print(f"create_assay called with method: {request.method}")
+    
     if request.method != 'POST':
         return JsonResponse({'error': 'POST method required'}, status=405)
     
     # Check permissions
     if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_create')):
+        print("Permission check failed")
         return JsonResponse({'error': 'Insufficient permissions'}, status=403)
     
     try:
+        print(f"Request body: {request.body}")
         data = json.loads(request.body)
+        print(f"Parsed data: {data}")
+        
         assay_name = data.get('assay_name', '').strip()
         create_initial_version = data.get('create_initial_version', True)  # Default to True for new assays
+        
+        print(f"Assay name: '{assay_name}', create_initial_version: {create_initial_version}")
         
         if not assay_name:
             return JsonResponse({'error': 'Assay name is required'}, status=400)
         
+        print("Attempting database connection...")
         conn = psycopg.connect(
             dbname=pylims.dbname, 
             user=pylims.dbuser, 
@@ -204,17 +213,23 @@ def create_assay(request):
             port=pylims.dbport, 
             row_factory=dict_row
         )
+        print("Database connection successful")
         cursor = conn.cursor()
         
+        print("Checking for existing assay...")
         # Check if assay name already exists
         cursor.execute("""
             SELECT assayid FROM velocity.assay 
             WHERE LOWER(assay_name) = LOWER(%s) AND visible = true
         """, (assay_name,))
         
-        if cursor.fetchone():
+        existing = cursor.fetchone()
+        print(f"Existing assay check result: {existing}")
+        
+        if existing:
             return JsonResponse({'error': 'An assay with this name already exists'}, status=400)
         
+        print("Creating new assay...")
         # Create new assay with default values
         cursor.execute("""
             INSERT INTO velocity.assay (assay_name, active_version, archived, visible)
@@ -223,6 +238,7 @@ def create_assay(request):
         """, (assay_name, None, False, True))  # Start with no active version, not archived, visible
         
         result = cursor.fetchone()
+        print(f"New assay created: {result}")
         new_assayid = result['assayid']
         
         # Create initial version if requested
@@ -260,8 +276,17 @@ def create_assay(request):
             'message': message
         })
         
-    except Exception as e:
+    except json.JSONDecodeError as e:
+        print(f"JSON decode error: {e}")
+        return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
+    except psycopg.Error as e:
+        print(f"Database error: {e}")
         return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+    except Exception as e:
+        print(f"General error: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': f'Server error: {str(e)}'}, status=500)
 
 
 @login_required
