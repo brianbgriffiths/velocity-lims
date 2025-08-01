@@ -769,7 +769,7 @@ function createAssayItem(assay) {
                         <span class="version-label">No active version</span>
                     </div>`
                 }
-                ${assay.draft_version_name && assay.draft_version_name !== assay.version_name ? 
+                ${assay.draft_version_name && (assay.draft_version_name !== assay.version_name || !assay.version_name) ? 
                     `<div class="version-item ${getStatusClass(assay.draft_status)}" onclick="configureDraftVersion(${assay.assayid})">
                         <i class="fas ${getStatusIcon(assay.draft_status)}"></i>
                         <span class="version-label">${draftStatusText.charAt(0).toUpperCase() + draftStatusText.slice(1)}:</span>
