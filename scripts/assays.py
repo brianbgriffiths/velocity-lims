@@ -249,7 +249,7 @@ def create_assay(request):
                 (assay, version_name, version_major, version_minor, version_patch, status)
                 VALUES (%s, %s, %s, %s, %s, %s)
                 RETURNING avid, version_name, version_major, version_minor, version_patch
-            """, (new_assayid, version_name, 1, 0, 0, 'active'))
+            """, (new_assayid, version_name, 1, 0, 0, 1))  # status = 1 (active)
             
             version_result = cursor.fetchone()
             new_avid = version_result['avid']
