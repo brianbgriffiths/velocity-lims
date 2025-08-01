@@ -1,0 +1,475 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}Velocity LIMS - Assay Settings{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_common.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<style>
+    body {
+        counter-reset: assay;
+    }
+    
+    breadcrumbs {
+        border: solid 1px #000000;
+        padding: 3px;
+        display: block;
+        margin-bottom: 15px;
+    }
+    
+    .assay-list {
+        background-color: var(--gray-lightest);
+        border: solid 1px var(--gray-med);
+        border-radius: 3px;
+        margin-bottom: 20px;
+    }
+    
+    .assay-header {
+        background-color: var(--accent1);
+        color: white;
+        padding: 10px;
+        font-weight: bold;
+        border-radius: 3px 3px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .assay-item {
+        background-color: var(--gray-lightest);
+        border-bottom: solid 1px var(--gray-med);
+        padding: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+    
+    .assay-item:hover {
+        background-color: var(--accent9);
+    }
+    
+    .assay-item:last-child {
+        border-bottom: none;
+        border-radius: 0 0 3px 3px;
+    }
+    
+    .assay-name {
+        font-weight: bold;
+        font-size: 16px;
+        color: var(--blue-dark);
+    }
+    
+    .assay-version {
+        color: var(--gray-dark);
+        font-size: 14px;
+        margin-top: 2px;
+    }
+    
+    .assay-modified {
+        color: var(--gray-med);
+        font-size: 12px;
+        margin-top: 2px;
+    }
+    
+    .assay-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn-edit {
+        background-color: var(--blue-med);
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .btn-edit:hover {
+        background-color: var(--blue-dark);
+    }
+    
+    .btn-delete {
+        background-color: var(--red-med);
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+    
+    .btn-delete:hover {
+        background-color: var(--red-dark);
+    }
+    
+    .btn-add {
+        background-color: var(--green-med);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+    }
+    
+    .btn-add:hover {
+        background-color: var(--green-dark);
+    }
+    
+    /* Modal styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .modal-content {
+        background-color: var(--background);
+        margin: 10% auto;
+        padding: 20px;
+        border: solid 1px var(--gray-med);
+        border-radius: 5px;
+        width: 500px;
+        max-width: 90%;
+    }
+    
+    .modal-header {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: var(--accent1);
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: var(--text-color);
+    }
+    
+    .form-input {
+        width: 100%;
+        padding: 8px;
+        border: solid 1px var(--gray-med);
+        border-radius: 3px;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+    
+    .form-input:focus {
+        border-color: var(--accent3);
+        outline: none;
+    }
+    
+    .modal-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+    }
+    
+    .btn-primary {
+        background-color: var(--accent1);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .btn-primary:hover {
+        background-color: var(--accent2);
+    }
+    
+    .btn-secondary {
+        background-color: var(--gray-med);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .btn-secondary:hover {
+        background-color: var(--gray-dark);
+    }
+    
+    .no-assays {
+        text-align: center;
+        padding: 40px;
+        color: var(--gray-med);
+        font-style: italic;
+    }
+    
+    .error-message {
+        background-color: var(--red-light);
+        color: var(--red-dark);
+        padding: 10px;
+        border-radius: 3px;
+        margin-bottom: 15px;
+        border: solid 1px var(--red-med);
+    }
+</style>
+{% endblock %}
+
+{% block centercontent %}
+<div id="main" class="center-border">
+    <breadcrumbs>
+        <a href="{% url 'view_settings' %}">Settings</a> > Assays
+    </breadcrumbs>
+    
+    {% if error %}
+        <div class="error-message">{{ error }}</div>
+    {% endif %}
+    
+    <div class="assay-list">
+        <div class="assay-header">
+            <span>Assays Management</span>
+            <button class="btn-add" onclick="showAddAssayModal()">
+                <i class="fas fa-plus"></i> Add New Assay
+            </button>
+        </div>
+        
+        {% if assays %}
+            {% for assay in assays %}
+                <div class="assay-item" data-assayid="{{ assay.assayid }}">
+                    <div class="assay-info">
+                        <div class="assay-name">{{ assay.assay_name }}</div>
+                        <div class="assay-version">
+                            Active Version: {% if assay.version_name %}{{ assay.version_name }} (v{{ assay.version_major }}.{{ assay.version_minor }}{% if assay.version_patch %}.{{ assay.version_patch }}{% endif %}){% else %}No version assigned{% endif %}
+                        </div>
+                        <div class="assay-modified">
+                            Last modified: {{ assay.modified|date:"M d, Y H:i" }}
+                        </div>
+                    </div>
+                    <div class="assay-actions">
+                        <button class="btn-edit" onclick="editAssay({{ assay.assayid }}, '{{ assay.assay_name|escapejs }}', {{ assay.active_version|default:'null' }})">>
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn-delete" onclick="deleteAssay({{ assay.assayid }}, '{{ assay.assay_name|escapejs }}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-assays">
+                No assays have been created yet. Click "Add New Assay" to get started.
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add/Edit Assay Modal -->
+<div id="assayModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header" id="modalTitle">Add New Assay</div>
+        
+        <form id="assayForm">
+            <div class="form-group">
+                <label class="form-label" for="assayName">Assay Name *</label>
+                <input type="text" id="assayName" class="form-input" required placeholder="Enter assay name">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="activeVersion">Active Version</label>
+                <select id="activeVersion" class="form-input">
+                    <option value="">No version assigned</option>
+                    {% for version in assay_versions %}
+                        <option value="{{ version.avid }}" data-assay="{{ version.assay }}">
+                            {{ version.assay_name }} - {{ version.version_name }} (v{{ version.version_major }}.{{ version.version_minor }}{% if version.version_patch %}.{{ version.version_patch }}{% endif %})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="modal-buttons">
+                <button type="button" class="btn-secondary" onclick="closeAssayModal()">Cancel</button>
+                <button type="submit" class="btn-primary">Save Assay</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">Confirm Delete</div>
+        <p id="deleteMessage">Are you sure you want to delete this assay?</p>
+        <div class="modal-buttons">
+            <button type="button" class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+            <button type="button" class="btn-delete" onclick="confirmDelete()">Delete</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+const csrf = '{{ csrf_token }}';
+let currentAssayId = null;
+let deleteAssayId = null;
+
+// Modal management
+function showAddAssayModal() {
+    document.getElementById('modalTitle').textContent = 'Add New Assay';
+    document.getElementById('assayName').value = '';
+    document.getElementById('activeVersion').value = '';
+    currentAssayId = null;
+    document.getElementById('assayModal').style.display = 'block';
+    filterVersionsForAssay(null); // Show all versions when adding new assay
+}
+
+function editAssay(assayId, assayName, activeVersion) {
+    document.getElementById('modalTitle').textContent = 'Edit Assay';
+    document.getElementById('assayName').value = assayName;
+    document.getElementById('activeVersion').value = activeVersion || '';
+    currentAssayId = assayId;
+    document.getElementById('assayModal').style.display = 'block';
+    filterVersionsForAssay(assayId); // Only show versions for this assay
+}
+
+function filterVersionsForAssay(assayId) {
+    const versionSelect = document.getElementById('activeVersion');
+    const options = versionSelect.options;
+    
+    for (let i = 0; i < options.length; i++) {
+        const option = options[i];
+        if (option.value === '') {
+            // Always show "No version assigned" option
+            option.style.display = 'block';
+        } else {
+            const optionAssayId = option.getAttribute('data-assay');
+            if (assayId === null || optionAssayId === assayId.toString()) {
+                option.style.display = 'block';
+            } else {
+                option.style.display = 'none';
+            }
+        }
+    }
+}
+
+function closeAssayModal() {
+    document.getElementById('assayModal').style.display = 'none';
+    currentAssayId = null;
+}
+
+function deleteAssay(assayId, assayName) {
+    deleteAssayId = assayId;
+    document.getElementById('deleteMessage').textContent = 
+        `Are you sure you want to delete the assay "${assayName}"? This action cannot be undone.`;
+    document.getElementById('deleteModal').style.display = 'block';
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+    deleteAssayId = null;
+}
+
+function confirmDelete() {
+    if (!deleteAssayId) return;
+    
+    const data = {
+        assayid: deleteAssayId
+    };
+    
+    const pyoptions = {
+        data: data,
+        csrf: csrf,
+        url: '../delete_assay/',
+        submit_mode: 'silent'
+    };
+    
+    pylims_post(pyoptions).then(result => {
+        if (result.success) {
+            pylims_ui.success(result.message);
+            location.reload(); // Refresh the page to show updated list
+        } else {
+            pylims_ui.error(result.error || 'Failed to delete assay');
+        }
+    }).catch(error => {
+        console.error('Delete error:', error);
+        pylims_ui.error('Failed to delete assay');
+    });
+    
+    closeDeleteModal();
+}
+
+// Form submission
+document.getElementById('assayForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const assayName = document.getElementById('assayName').value.trim();
+    const activeVersion = document.getElementById('activeVersion').value || null;
+    
+    if (!assayName) {
+        pylims_ui.error('Assay name is required');
+        return;
+    }
+    
+    const data = {
+        assay_name: assayName,
+        active_version: activeVersion
+    };
+    
+    if (currentAssayId) {
+        data.assayid = currentAssayId;
+    }
+    
+    const pyoptions = {
+        data: data,
+        csrf: csrf,
+        url: '../save_assay/',
+        submit_mode: 'silent'
+    };
+    
+    pylims_post(pyoptions).then(result => {
+        if (result.success) {
+            pylims_ui.success(result.message);
+            closeAssayModal();
+            location.reload(); // Refresh the page to show updated list
+        } else {
+            pylims_ui.error(result.error || 'Failed to save assay');
+        }
+    }).catch(error => {
+        console.error('Save error:', error);
+        pylims_ui.error('Failed to save assay');
+    });
+});
+
+// Close modals when clicking outside
+window.addEventListener('click', function(event) {
+    const assayModal = document.getElementById('assayModal');
+    const deleteModal = document.getElementById('deleteModal');
+    
+    if (event.target === assayModal) {
+        closeAssayModal();
+    }
+    if (event.target === deleteModal) {
+        closeDeleteModal();
+    }
+});
+
+// Error handling function
+function localerror(msg) {
+    pylims_ui.error(msg);
+}
+</script>
+{% endblock %}

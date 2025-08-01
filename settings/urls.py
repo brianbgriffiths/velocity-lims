@@ -24,7 +24,7 @@ from colorama import Fore, Back, Style, just_fix_windows_console
 just_fix_windows_console()
 import pylims
 from django.views import static
-from scripts import login, queues, steps, samples, specimens, user_scripts, logout, roles
+from scripts import login, queues, steps, samples, specimens, user_scripts, logout, roles, assays
 
 
 print(pylims.term(),"Starting Pylims Server v1.1")
@@ -42,6 +42,7 @@ urlpatterns = [
     path('view_settings/', views.view_settings, name="view_settings"),
     path('settings_operators/', views.settings_operators, name="settings_operators"),
     path('settings_roles/', roles.settings_roles, name="settings_roles"),
+    path('settings_assays/', assays.settings_assays, name="settings_assays"),
     
     #roles
     path('save_role/', roles.save_role, name="save_role"),
@@ -52,6 +53,11 @@ urlpatterns = [
     path('get_all_users/', roles.get_all_users, name="get_all_users"),
     path('get_all_roles/', roles.get_all_roles, name="get_all_roles"),
     path('create_account/', roles.create_account, name="create_account"),
+
+    #assays
+    path('save_assay/', assays.save_assay, name="save_assay"),
+    path('delete_assay/', assays.delete_assay, name="delete_assay"),
+    path('get_assay_details/', assays.get_assay_details, name="get_assay_details"),
 
 
     #queues

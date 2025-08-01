@@ -9,3 +9,4 @@ db_schema_map.json
 check_permissions.py
 memory_cache_helper.py
 setup_assay_permissions.py
+check_assay_relationships.py
