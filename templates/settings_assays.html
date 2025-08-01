@@ -336,6 +336,26 @@
         margin-bottom: 15px;
         border: solid 1px var(--red-med);
     }
+    
+    #pylims_request_error {
+        border: solid 1px var(--red-med);
+        color: var(--red-dark);
+        background-color: var(--red-light);
+        padding: 10px;
+        border-radius: 3px;
+        display: none;
+        margin: 10px 0px;
+    }
+    
+    #pylims_request_success {
+        border: solid 1px var(--green-med);
+        color: var(--green-dark);
+        background-color: var(--green-light);
+        padding: 10px;
+        border-radius: 3px;
+        display: none;
+        margin: 10px 0px;
+    }
 </style>
 {% endblock %}
 
@@ -344,6 +364,9 @@
     <breadcrumbs>
         <a href="{% url 'view_settings' %}">Settings</a> > Assays
     </breadcrumbs>
+    
+    <div id="pylims_request_error"></div>
+    <div id="pylims_request_success"></div>
     
     {% if error %}
         <div class="error-message">{{ error }}</div>
