@@ -14,7 +14,7 @@ import pylims
 
 
 @login_required
-@csrf_exempt
+
 def settings_assays(request):
     """
     Display the assays settings page with list of all assays
@@ -178,7 +178,7 @@ def settings_assays(request):
 
 
 @login_required
-@csrf_exempt
+
 def create_assay(request):
     """
     Create a new assay with initial version
@@ -285,7 +285,7 @@ def create_assay(request):
 
 
 @login_required
-@csrf_exempt
+
 def create_draft_version(request):
     """
     Create a new draft version for an existing assay
@@ -419,7 +419,7 @@ def settings_assay_configure(request, assay_id):
 
 
 @login_required
-@csrf_exempt
+
 def save_assay(request):
     """
     Update an existing assay (editing only, not creation)
@@ -479,7 +479,7 @@ def save_assay(request):
 
 
 @login_required
-@csrf_exempt
+
 def get_assay_details(request):
     """
     Get detailed information about a specific assay
@@ -547,7 +547,6 @@ def get_assay_details(request):
 
 
 @login_required
-@csrf_exempt
 def archive_assay(request):
     """
     Archive an assay by setting archived = true
@@ -601,7 +600,6 @@ def archive_assay(request):
 
 
 @login_required
-@csrf_exempt
 def unarchive_assay(request):
     """
     Unarchive an assay by setting archived = false
@@ -674,7 +672,8 @@ def settings_assay_configure(request, assay_id):
         cursor.execute("""
             SELECT a.assayid, a.assay_name, a.modified, a.archived, a.visible,
                    av.avid, av.version_name, av.version_major, av.version_minor, av.version_patch,
-                   av.status, av.created as version_created, av.modified as version_modified
+                   av.status, av.created as version_created, av.modified as version_modified,
+                   av.assay_steps
             FROM velocity.assay a
             LEFT JOIN velocity.assay_versions av ON a.assayid = av.assay AND av.status IN (1, 2, 3)
             WHERE a.assayid = %s AND a.visible = true
@@ -689,17 +688,23 @@ def settings_assay_configure(request, assay_id):
             })
         
         # Get all steps for this assay version
-        if assay_data['avid']:
-            cursor.execute("""
-                SELECT s.stepid, s.step_name, s.step_description, s.step_order, s.status,
-                       s.created, s.modified
-                FROM velocity.assay_steps astp
-                JOIN velocity.steps s ON astp.step = s.stepid
-                WHERE astp.assay_version = %s
-                ORDER BY s.step_order ASC, s.step_name ASC
-            """, (assay_data['avid'],))
-            
-            steps = cursor.fetchall()
+        if assay_data['avid'] and assay_data.get('assay_steps'):
+            # Extract step IDs from the assay_steps JSON field
+            step_ids = assay_data['assay_steps']
+            if step_ids:
+                # Create placeholders for the IN clause
+                placeholders = ','.join(['%s'] * len(step_ids))
+                cursor.execute(f"""
+                    SELECT stepid, step_name, step_description, step_order, status,
+                           created, modified
+                    FROM velocity.step_config
+                    WHERE stepid IN ({placeholders})
+                    ORDER BY step_order ASC, step_name ASC
+                """, step_ids)
+                
+                steps = cursor.fetchall()
+            else:
+                steps = []
         else:
             steps = []
         
@@ -741,7 +746,8 @@ def settings_assay_view(request, assay_id):
         cursor.execute("""
             SELECT a.assayid, a.assay_name, a.modified, a.archived, a.visible,
                    av.avid, av.version_name, av.version_major, av.version_minor, av.version_patch,
-                   av.status, av.created as version_created, av.modified as version_modified
+                   av.status, av.created as version_created, av.modified as version_modified,
+                   av.assay_steps
             FROM velocity.assay a
             LEFT JOIN velocity.assay_versions av ON a.active_version = av.avid
             WHERE a.assayid = %s AND a.visible = true
@@ -756,17 +762,23 @@ def settings_assay_view(request, assay_id):
             })
         
         # Get all steps for this assay version
-        if assay_data['avid']:
-            cursor.execute("""
-                SELECT s.stepid, s.step_name, s.step_description, s.step_order, s.status,
-                       s.created, s.modified
-                FROM velocity.assay_steps astp
-                JOIN velocity.steps s ON astp.step = s.stepid
-                WHERE astp.assay_version = %s
-                ORDER BY s.step_order ASC, s.step_name ASC
-            """, (assay_data['avid'],))
-            
-            steps = cursor.fetchall()
+        if assay_data['avid'] and assay_data.get('assay_steps'):
+            # Extract step IDs from the assay_steps JSON field
+            step_ids = assay_data['assay_steps']
+            if step_ids:
+                # Create placeholders for the IN clause
+                placeholders = ','.join(['%s'] * len(step_ids))
+                cursor.execute(f"""
+                    SELECT stepid, step_name, step_description, step_order, status,
+                           created, modified
+                    FROM velocity.step_config
+                    WHERE stepid IN ({placeholders})
+                    ORDER BY step_order ASC, step_name ASC
+                """, step_ids)
+                
+                steps = cursor.fetchall()
+            else:
+                steps = []
         else:
             steps = []
         
