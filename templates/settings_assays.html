@@ -502,6 +502,8 @@ function loadAllAssays() {
     pylims_post(pyoptions).then(result => {
         if (result.success) {
             allAssays = result.assays || [];
+            console.log('Loaded assays:', allAssays); // Debug: show what was loaded
+            console.log('Archived assays:', allAssays.filter(a => a.archived)); // Debug: show archived ones
             filterAndDisplayAssays(currentView); // Display filtered view
         } else {
             pylims_ui.error(result.error || 'Failed to load assays');

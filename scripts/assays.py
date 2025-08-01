@@ -45,8 +45,11 @@ def settings_assays(request):
                     where_clause = "WHERE a.visible = true AND a.archived = false"
                 elif view == 'archived':
                     where_clause = "WHERE a.visible = true AND a.archived = true"
-                else:  # 'all'
+                elif view == 'all_data':
+                    # Load everything for client-side filtering (both archived and non-archived, but only visible)
                     where_clause = "WHERE a.visible = true"
+                else:  # 'all' - visible but non-archived only
+                    where_clause = "WHERE a.visible = true AND a.archived = false"
                 
                 cursor.execute(f"""
                     SELECT a.assayid, a.assay_name, a.modified, a.active_version, a.archived, a.visible,
