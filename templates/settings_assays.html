@@ -690,36 +690,44 @@ function createAssayItem(assay) {
     div.className = 'assay-item';
     div.setAttribute('data-assayid', assay.assayid);
     
-    // Build version text
-    let versionText = 'No version assigned';
-    if (assay.version_name) {
-        versionText = `${assay.version_name} (v${assay.version_major}.${assay.version_minor}`;
+    // Determine if there's an active version (status=4) vs development version (status 1,2,3)
+    let activeVersionText = '';
+    let activeStatusText = '';
+    let developmentVersionText = '';
+    let developmentStatusText = '';
+    let hasActiveVersion = false;
+    let hasDevelopmentVersion = false;
+    
+    // Map status to display text
+    const statusMap = {
+        1: 'draft',
+        2: 'testing', 
+        3: 'locked',
+        4: 'active',
+        5: 'archived',
+        6: 'canceled'
+    };
+    
+    // Check if we have an active version (status=4)
+    if (assay.version_name && assay.status === 4) {
+        hasActiveVersion = true;
+        activeVersionText = `${assay.version_name} (v${assay.version_major}.${assay.version_minor}`;
         if (assay.version_patch) {
-            versionText += `.${assay.version_patch}`;
+            activeVersionText += `.${assay.version_patch}`;
         }
-        versionText += ')';
+        activeVersionText += ')';
+        activeStatusText = statusMap[assay.status] || 'unknown';
     }
     
-    // Build draft version text with status
-    let draftVersionText = '';
-    let draftStatusText = '';
-    if (assay.draft_version_name) {
-        draftVersionText = `${assay.draft_version_name} (v${assay.draft_major}.${assay.draft_minor}`;
+    // Check if we have a development version (status 1,2,3)
+    if (assay.draft_version_name && [1, 2, 3].includes(assay.draft_status)) {
+        hasDevelopmentVersion = true;
+        developmentVersionText = `${assay.draft_version_name} (v${assay.draft_major}.${assay.draft_minor}`;
         if (assay.draft_patch) {
-            draftVersionText += `.${assay.draft_patch}`;
+            developmentVersionText += `.${assay.draft_patch}`;
         }
-        draftVersionText += ')';
-        
-        // Map status to display text
-        const statusMap = {
-            1: 'draft',
-            2: 'testing', 
-            3: 'locked',
-            4: 'active',
-            5: 'archived',
-            6: 'canceled'
-        };
-        draftStatusText = statusMap[assay.draft_status] || 'unknown';
+        developmentVersionText += ')';
+        developmentStatusText = statusMap[assay.draft_status] || 'unknown';
     }
     
     // Format date
@@ -758,22 +766,22 @@ function createAssayItem(assay) {
         <div class="assay-info">
             <div class="assay-name">${assay.assay_name}${assay.archived ? ' <span style="color: var(--red-med); font-size: 12px;">(Archived)</span>' : ''}</div>
             <div class="assay-versions">
-                ${assay.version_name ? 
+                ${hasActiveVersion ? 
                     `<div class="version-item active-version" onclick="viewActiveVersion(${assay.assayid})">
                         <i class="fas fa-play-circle"></i>
                         <span class="version-label">Active:</span>
-                        <span class="version-info">${versionText}</span>
+                        <span class="version-info">${activeVersionText}</span>
                     </div>` : 
                     `<div class="version-item no-active">
                         <i class="fas fa-exclamation-circle"></i>
                         <span class="version-label">No active version</span>
                     </div>`
                 }
-                ${assay.draft_version_name && (assay.draft_version_name !== assay.version_name || !assay.version_name) ? 
+                ${hasDevelopmentVersion ? 
                     `<div class="version-item ${getStatusClass(assay.draft_status)}" onclick="configureDraftVersion(${assay.assayid})">
                         <i class="fas ${getStatusIcon(assay.draft_status)}"></i>
-                        <span class="version-label">${draftStatusText.charAt(0).toUpperCase() + draftStatusText.slice(1)}:</span>
-                        <span class="version-info">${draftVersionText}</span>
+                        <span class="version-label">${developmentStatusText.charAt(0).toUpperCase() + developmentStatusText.slice(1)}:</span>
+                        <span class="version-info">${developmentVersionText}</span>
                     </div>` : 
                     `<div class="version-item no-draft" onclick="createNewVersion(${assay.assayid})">
                         <i class="fas fa-plus"></i>
