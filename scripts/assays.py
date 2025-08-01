@@ -168,67 +168,6 @@ def save_assay(request):
 
 @login_required
 @csrf_exempt
-def delete_assay(request):
-    """
-    Delete an assay
-    """
-    if request.method != 'POST':
-        return JsonResponse({'error': 'POST method required'}, status=405)
-    
-    # Check permissions - only allow deletion with edit permission
-    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_edit')):
-        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
-    
-    try:
-        data = json.loads(request.body)
-        assayid = data.get('assayid')
-        
-        if not assayid:
-            return JsonResponse({'error': 'Assay ID is required'}, status=400)
-        
-        conn = psycopg.connect(
-            dbname=pylims.dbname, 
-            user=pylims.dbuser, 
-            password=pylims.dbpass, 
-            host=pylims.dbhost, 
-            port=pylims.dbport, 
-            row_factory=dict_row
-        )
-        cursor = conn.cursor()
-        
-        # Check if assay has any specimens/samples first
-        cursor.execute("""
-            SELECT COUNT(*) as count 
-            FROM velocity.specimens 
-            WHERE assayid = %s
-        """, (assayid,))
-        
-        specimen_count = cursor.fetchone()['count']
-        
-        if specimen_count > 0:
-            return JsonResponse({
-                'error': f'Cannot delete assay. It has {specimen_count} associated specimens.'
-            }, status=400)
-        
-        # Delete the assay
-        cursor.execute("""
-            DELETE FROM velocity.assay WHERE assayid = %s
-        """, (assayid,))
-        
-        conn.commit()
-        conn.close()
-        
-        return JsonResponse({
-            'success': True,
-            'message': 'Assay deleted successfully'
-        })
-        
-    except Exception as e:
-        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
-
-
-@login_required
-@csrf_exempt
 def get_assay_details(request):
     """
     Get detailed information about a specific assay

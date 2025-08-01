@@ -56,7 +56,6 @@ urlpatterns = [
 
     #assays
     path('save_assay/', assays.save_assay, name="save_assay"),
-    path('delete_assay/', assays.delete_assay, name="delete_assay"),
     path('get_assay_details/', assays.get_assay_details, name="get_assay_details"),
 
 
