@@ -91,6 +91,7 @@ def save_assay(request):
         assay_name = data.get('assay_name', '').strip()
         active_version = data.get('active_version')
         assayid = data.get('assayid')
+        create_initial_version = data.get('create_initial_version', False)
         
         if not assay_name:
             return JsonResponse({'error': 'Assay name is required'}, status=400)
@@ -113,22 +114,52 @@ def save_assay(request):
                 WHERE assayid = %s
                 RETURNING assayid, assay_name, modified, active_version
             """, (assay_name, active_version, assayid))
+            result = cursor.fetchone()
+            message = 'Assay updated successfully'
         else:
             # Create new assay
             cursor.execute("""
                 INSERT INTO velocity.assay (assay_name, active_version)
                 VALUES (%s, %s)
                 RETURNING assayid, assay_name, modified, active_version
-            """, (assay_name, active_version))
+            """, (assay_name, None))  # Start with no active version
+            
+            result = cursor.fetchone()
+            new_assayid = result['assayid']
+            
+            # If creating initial version, create version 1.0
+            if create_initial_version:
+                version_name = f"{assay_name} init"
+                cursor.execute("""
+                    INSERT INTO velocity.assay_versions 
+                    (assay, version_name, version_major, version_minor, version_patch, status)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING avid, version_name, version_major, version_minor, version_patch
+                """, (new_assayid, version_name, 1, 0, 0, 'active'))
+                
+                version_result = cursor.fetchone()
+                new_avid = version_result['avid']
+                
+                # Update the assay to set this as the active version
+                cursor.execute("""
+                    UPDATE velocity.assay 
+                    SET active_version = %s, modified = CURRENT_TIMESTAMP
+                    WHERE assayid = %s
+                    RETURNING assayid, assay_name, modified, active_version
+                """, (new_avid, new_assayid))
+                
+                result = cursor.fetchone()
+                message = f'Assay created successfully with initial version 1.0 ("{version_name}")'
+            else:
+                message = 'Assay created successfully'
         
-        result = cursor.fetchone()
         conn.commit()
         conn.close()
         
         return JsonResponse({
             'success': True,
             'assay': result,
-            'message': 'Assay saved successfully'
+            'message': message
         })
         
     except Exception as e:

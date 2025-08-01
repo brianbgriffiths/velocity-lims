@@ -41,10 +41,10 @@
         border-bottom: solid 1px var(--gray-med);
         padding: 10px;
         display: flex;
-        justify-content: space-between;
         align-items: center;
         cursor: pointer;
         transition: background-color 0.2s;
+        gap: 15px;
     }
     
     .assay-item:hover {
@@ -75,8 +75,11 @@
     }
     
     .assay-actions {
-        display: flex;
-        gap: 10px;
+        flex-shrink: 0;
+    }
+    
+    .assay-info {
+        flex: 1;
     }
     
     .assay-options {
@@ -382,7 +385,7 @@
                 <input type="text" id="assayName" class="form-input" required placeholder="Enter assay name">
             </div>
             
-            <div class="form-group">
+            <div id="editVersionGroup" class="form-group" style="display: none;">
                 <label class="form-label" for="activeVersion">Active Version</label>
                 <select id="activeVersion" class="form-input">
                     <option value="">No version assigned</option>
@@ -392,6 +395,12 @@
                         </option>
                     {% endfor %}
                 </select>
+            </div>
+            
+            <div id="newAssayInfo" class="form-group">
+                <p style="color: var(--gray-dark); font-size: 14px; margin: 0;">
+                    <i class="fas fa-info-circle"></i> A new assay will be created starting at version 1.0 with the name "[Assay Name] init"
+                </p>
             </div>
             
             <div class="modal-buttons">
@@ -427,8 +436,12 @@ function showAddAssayModal() {
     document.getElementById('assayName').value = '';
     document.getElementById('activeVersion').value = '';
     currentAssayId = null;
+    
+    // Show new assay info, hide version selection
+    document.getElementById('newAssayInfo').style.display = 'block';
+    document.getElementById('editVersionGroup').style.display = 'none';
+    
     document.getElementById('assayModal').style.display = 'block';
-    filterVersionsForAssay(null); // Show all versions when adding new assay
 }
 
 // Options dropdown menu functionality
@@ -507,6 +520,11 @@ function editAssay(assayId, assayName, activeVersion) {
     document.getElementById('assayName').value = assayName;
     document.getElementById('activeVersion').value = activeVersion || '';
     currentAssayId = assayId;
+    
+    // Hide new assay info, show version selection
+    document.getElementById('newAssayInfo').style.display = 'none';
+    document.getElementById('editVersionGroup').style.display = 'block';
+    
     document.getElementById('assayModal').style.display = 'block';
     filterVersionsForAssay(assayId); // Only show versions for this assay
 }
@@ -582,7 +600,6 @@ document.getElementById('assayForm').addEventListener('submit', function(e) {
     e.preventDefault();
     
     const assayName = document.getElementById('assayName').value.trim();
-    const activeVersion = document.getElementById('activeVersion').value || null;
     
     if (!assayName) {
         pylims_ui.error('Assay name is required');
@@ -590,12 +607,17 @@ document.getElementById('assayForm').addEventListener('submit', function(e) {
     }
     
     const data = {
-        assay_name: assayName,
-        active_version: activeVersion
+        assay_name: assayName
     };
     
     if (currentAssayId) {
+        // Editing existing assay
         data.assayid = currentAssayId;
+        const activeVersion = document.getElementById('activeVersion').value || null;
+        data.active_version = activeVersion;
+    } else {
+        // Creating new assay - will auto-create version 1.0 with "{name} init"
+        data.create_initial_version = true;
     }
     
     const pyoptions = {
