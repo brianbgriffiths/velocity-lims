@@ -741,9 +741,6 @@ function createAssayItem(assay) {
                     <div class="option-item" onclick="accessAssay(${assay.assayid})">
                         <i class="fas fa-eye option-icon"></i> Access
                     </div>
-                    <div class="option-item" onclick="newVersion(${assay.assayid})">
-                        <i class="fas fa-plus-circle option-icon"></i> New Version
-                    </div>
                     <div class="option-item" onclick="allVersions(${assay.assayid})">
                         <i class="fas fa-history option-icon"></i> All Versions
                     </div>
@@ -772,15 +769,15 @@ function createAssayItem(assay) {
                         <span class="version-label">No active version</span>
                     </div>`
                 }
-                ${assay.draft_version_name ? 
+                ${assay.draft_version_name && assay.draft_version_name !== assay.version_name ? 
                     `<div class="version-item ${getStatusClass(assay.draft_status)}" onclick="configureDraftVersion(${assay.assayid})">
                         <i class="fas ${getStatusIcon(assay.draft_status)}"></i>
                         <span class="version-label">${draftStatusText.charAt(0).toUpperCase() + draftStatusText.slice(1)}:</span>
                         <span class="version-info">${draftVersionText}</span>
                     </div>` : 
-                    `<div class="version-item no-draft" onclick="createDraftVersion(${assay.assayid})">
+                    `<div class="version-item no-draft" onclick="createNewVersion(${assay.assayid})">
                         <i class="fas fa-plus"></i>
-                        <span class="version-label">Create draft version</span>
+                        <span class="version-label">Create new version</span>
                     </div>`
                 }
             </div>
@@ -891,9 +888,11 @@ function configureDraftVersion(assayId) {
     window.location.href = `/settings_assay_configure/${assayId}/`;
 }
 
-function createDraftVersion(assayId) {
-    // Create a new draft version for this assay
-    if (confirm('Create a new draft version for this assay?')) {
+function createNewVersion(assayId) {
+    // Create a new version of the assay
+    console.log('Creating new version for assay:', assayId);
+    // Implementation: open version creation modal or call backend to create new draft
+    if (confirm('Create a new version for this assay?')) {
         const pyoptions = {
             data: { 
                 assay_id: assayId,
@@ -906,19 +905,13 @@ function createDraftVersion(assayId) {
         
         pylims_post(pyoptions).then(result => {
             if (result.status === 'success') {
-                console.log('Draft version created successfully');
-                loadAllAssays(true); // Reload to show the new draft
+                console.log('New version created successfully');
+                loadAllAssays(true); // Reload to show the new version
             }
         }).catch(error => {
-            console.error('Error creating draft version:', error);
+            console.error('Error creating new version:', error);
         });
     }
-}
-
-function newVersion(assayId) {
-    // Create a new version of the assay
-    console.log('Creating new version for assay:', assayId);
-    // Implementation: open version creation modal
 }
 
 function allVersions(assayId) {
