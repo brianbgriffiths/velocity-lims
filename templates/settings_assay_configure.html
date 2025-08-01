@@ -272,8 +272,8 @@
     }
     
     .lock-toggle.unlocked {
-        background-color: var(--yellow-light);
-        color: var(--yellow-dark);
+        background-color: var(--pink-light);
+        color: var(--pink-dark);
     }
     
     .drag-handle {
@@ -363,7 +363,6 @@
                 <span>Version:</span>
                 <span class="version-badge {% if assay.status == 1 %}badge-draft{% elif assay.status == 2 %}badge-testing{% elif assay.status == 3 %}badge-locked{% endif %}">
                     v{{ assay.version_major }}.{{ assay.version_minor }}{% if assay.version_patch %}.{{ assay.version_patch }}{% endif %}
-                    - {{ assay.version_name }}
                     ({% if assay.status == 1 %}Draft{% elif assay.status == 2 %}Testing{% elif assay.status == 3 %}Locked{% endif %})
                 </span>
             </div>
@@ -373,11 +372,11 @@
             </div>
             
             <div class="form-group" style="margin-top: 15px;">
-                <label class="form-label" for="assayName">Assay Name</label>
-                <input type="text" id="assayName" class="form-input" value="{{ assay.assay_name }}" placeholder="Enter assay name">
+                <label class="form-label" for="versionName">Version Name</label>
+                <input type="text" id="versionName" class="form-input" value="{{ assay.version_name }}" placeholder="Enter version name">
             </div>
             
-            <button class="btn-save" onclick="saveAssayName()">
+            <button class="btn-save" onclick="saveVersionName()">
                 <i class="fas fa-save"></i> Save Changes
             </button>
         </div>
@@ -457,27 +456,27 @@ let selectedStepId = null;
 let isReorderMode = false;
 let draggedElement = null;
 
-function saveAssayName() {
-    const assayName = document.getElementById('assayName').value.trim();
+function saveVersionName() {
+    const versionName = document.getElementById('versionName').value.trim();
     
-    if (!assayName) {
-        pylims_ui.error('Assay name is required');
+    if (!versionName) {
+        pylims_ui.error('Version name is required');
         return;
     }
     
     const pyoptions = {
         data: {
-            assayid: assayId,
-            assay_name: assayName
+            avid: {{ assay.avid|default:"null" }},
+            version_name: versionName
         },
         csrf: csrf,
-        url: 'save_assay',
+        url: 'save_version_name',
         submit_mode: 'silent'
     };
     
     pylims_post(pyoptions).then(result => {
         if (result.status === 'success') {
-            pylims_ui.success('Assay name updated successfully');
+            pylims_ui.success('Version name updated successfully');
         }
     }).catch(error => {
         console.error('Save error:', error);

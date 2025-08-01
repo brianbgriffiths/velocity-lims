@@ -803,8 +803,6 @@ def save_step_order(request):
         assay_id = data.get('assay_id')
         step_order = data.get('step_order')  # List of step IDs in new order
         
-        print(f"DEBUG: Received assay_id={assay_id}, step_order={step_order}")
-        
         if not assay_id:
             return JsonResponse({'error': 'Assay ID is required'}, status=400)
         
@@ -829,14 +827,12 @@ def save_step_order(request):
         """, (assay_id,))
         
         version_data = cursor.fetchone()
-        print(f"DEBUG: Found version data: {version_data}")
         
         if not version_data:
             return JsonResponse({'error': 'No development version found for this assay'}, status=404)
         
         # Convert step_order to JSON string for storage
         step_order_json = json.dumps(step_order)
-        print(f"DEBUG: Saving step_order_json: {step_order_json}")
         
         # Update the assay_steps JSON field with the new order
         cursor.execute("""
@@ -845,35 +841,75 @@ def save_step_order(request):
             WHERE avid = %s
         """, (step_order_json, version_data['avid']))
         
-        rows_affected = cursor.rowcount
-        print(f"DEBUG: Update affected {rows_affected} rows")
+        conn.commit()
+        conn.close()
         
-        # Verify the update
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Step order updated successfully'
+        })
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+
+
+@login_required
+def save_version_name(request):
+    """
+    Update the version name for an assay version
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_edit')):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        avid = data.get('avid')
+        version_name = data.get('version_name', '').strip()
+        
+        if not avid:
+            return JsonResponse({'error': 'Version ID is required'}, status=400)
+        
+        if not version_name:
+            return JsonResponse({'error': 'Version name is required'}, status=400)
+        
+        conn = psycopg.connect(
+            dbname=pylims.dbname, 
+            user=pylims.dbuser, 
+            password=pylims.dbpass, 
+            host=pylims.dbhost, 
+            port=pylims.dbport, 
+            row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Update the version name
         cursor.execute("""
-            SELECT assay_steps FROM velocity.assay_versions 
+            UPDATE velocity.assay_versions 
+            SET version_name = %s, modified = CURRENT_TIMESTAMP
             WHERE avid = %s
-        """, (version_data['avid'],))
+            RETURNING avid, version_name
+        """, (version_name, avid))
         
-        updated_data = cursor.fetchone()
-        print(f"DEBUG: After update, assay_steps = {updated_data['assay_steps']}")
+        result = cursor.fetchone()
+        if not result:
+            return JsonResponse({'error': 'Version not found'}, status=404)
         
         conn.commit()
         conn.close()
         
         return JsonResponse({
             'status': 'success',
-            'message': 'Step order updated successfully',
-            'debug': {
-                'rows_affected': rows_affected,
-                'saved_order': step_order,
-                'updated_data': updated_data['assay_steps']
-            }
+            'version': result,
+            'message': f'Version name updated to "{version_name}"'
         })
         
     except json.JSONDecodeError as e:
         return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
     except Exception as e:
-        print(f"DEBUG: Exception in save_step_order: {e}")
-        import traceback
-        traceback.print_exc()
         return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)

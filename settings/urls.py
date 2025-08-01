@@ -62,6 +62,7 @@ urlpatterns = [
     path('unarchive_assay/', assays.unarchive_assay, name="unarchive_assay"),
     path('create_draft_version/', assays.create_draft_version, name="create_draft_version"),
     path('save_step_order/', assays.save_step_order, name="save_step_order"),
+    path('save_version_name/', assays.save_version_name, name="save_version_name"),
     path('settings_assay_view/<int:assay_id>/', assays.settings_assay_view, name="settings_assay_view"),
     path('settings_assay_configure/<int:assay_id>/', assays.settings_assay_configure, name="settings_assay_configure"),
 
