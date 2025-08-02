@@ -724,8 +724,10 @@ function updatePreview() {
     const columns = parseInt(document.getElementById('columns').value) || 12;
     const wellType = parseInt(document.getElementById('wellType').value) || 1;
     const borderType = parseInt(document.getElementById('borderType').value) || 1;
-    const marginWidth = parseInt(document.getElementById('marginWidth').value) || 2;
-    const wellPadding = parseInt(document.getElementById('wellPadding').value) || 2;
+    const marginWidthValue = document.getElementById('marginWidth').value;
+    const wellPaddingValue = document.getElementById('wellPadding').value;
+    const marginWidth = marginWidthValue !== '' ? parseInt(marginWidthValue) : 2;
+    const wellPadding = wellPaddingValue !== '' ? parseInt(wellPaddingValue) : 2;
     
     generatePlatePreview(rows, columns, wellType, borderType, selectedColor, cornerTypes, marginWidth, wellPadding);
 }
@@ -904,8 +906,8 @@ function loadContainerTypeDetails(cid) {
             
             // Generate preview for this container type
             const corners = type.corner_types ? JSON.parse(type.corner_types) : [1, 1, 1, 1];
-            const marginWidth = type.margin_width || 2;
-            const wellPadding = type.well_padding || 2;
+            const marginWidth = type.margin_width !== null && type.margin_width !== undefined ? type.margin_width : 2;
+            const wellPadding = type.well_padding !== null && type.well_padding !== undefined ? type.well_padding : 2;
             generatePlatePreview(type.rows, type.columns, type.well_type, type.border_type, type.color, corners, marginWidth, wellPadding);
         }
     }).catch(error => {
