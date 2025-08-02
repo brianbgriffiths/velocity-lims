@@ -200,89 +200,108 @@
     .plate-inner {
         position: relative;
         border-radius: 3px;
-        margin: 2px;
     }
     
-    /* Notch styles for corners - applied to both border and inner */
+    .plate-color {
+        position: relative;
+        border-radius: 2px;
+    }
+    
+    /* Notch styles for corners - applied to all three layers */
     .plate-border.notch-tl,
-    .plate-inner.notch-tl {
+    .plate-inner.notch-tl,
+    .plate-color.notch-tl {
         clip-path: polygon(15px 0, 100% 0, 100% 100%, 0 100%, 0 15px);
         border-top-left-radius: 0;
     }
     
     .plate-border.notch-tr,
-    .plate-inner.notch-tr {
+    .plate-inner.notch-tr,
+    .plate-color.notch-tr {
         clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%);
         border-top-right-radius: 0;
     }
     
     .plate-border.notch-bl,
-    .plate-inner.notch-bl {
+    .plate-inner.notch-bl,
+    .plate-color.notch-bl {
         clip-path: polygon(0 0, 100% 0, 100% 100%, 15px 100%, 0 calc(100% - 15px));
         border-bottom-left-radius: 0;
     }
     
     .plate-border.notch-br,
-    .plate-inner.notch-br {
+    .plate-inner.notch-br,
+    .plate-color.notch-br {
         clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
         border-bottom-right-radius: 0;
     }
     
     /* Multiple notches - combined clip-paths */
     .plate-border.notch-tl.notch-tr,
-    .plate-inner.notch-tl.notch-tr {
+    .plate-inner.notch-tl.notch-tr,
+    .plate-color.notch-tl.notch-tr {
         clip-path: polygon(15px 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%, 0 15px);
     }
     
     .plate-border.notch-tl.notch-bl,
-    .plate-inner.notch-tl.notch-bl {
+    .plate-inner.notch-tl.notch-bl,
+    .plate-color.notch-tl.notch-bl {
         clip-path: polygon(15px 0, 100% 0, 100% 100%, 15px 100%, 0 calc(100% - 15px), 0 15px);
     }
     
     .plate-border.notch-tl.notch-br,
-    .plate-inner.notch-tl.notch-br {
+    .plate-inner.notch-tl.notch-br,
+    .plate-color.notch-tl.notch-br {
         clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
     }
     
     .plate-border.notch-tr.notch-bl,
-    .plate-inner.notch-tr.notch-bl {
+    .plate-inner.notch-tr.notch-bl,
+    .plate-color.notch-tr.notch-bl {
         clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
     }
     
     .plate-border.notch-tr.notch-br,
-    .plate-inner.notch-tr.notch-br {
+    .plate-inner.notch-tr.notch-br,
+    .plate-color.notch-tr.notch-br {
         clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
     }
     
     .plate-border.notch-bl.notch-br,
-    .plate-inner.notch-bl.notch-br {
+    .plate-inner.notch-bl.notch-br,
+    .plate-color.notch-bl.notch-br {
         clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px));
     }
     
     /* Three notches */
     .plate-border.notch-tl.notch-tr.notch-bl,
-    .plate-inner.notch-tl.notch-tr.notch-bl {
+    .plate-inner.notch-tl.notch-tr.notch-bl,
+    .plate-color.notch-tl.notch-tr.notch-bl {
         clip-path: polygon(15px 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px), 0 15px);
     }
     
     .plate-border.notch-tl.notch-tr.notch-br,
-    .plate-inner.notch-tl.notch-tr.notch-br {
+    .plate-inner.notch-tl.notch-tr.notch-br,
+    .plate-color.notch-tl.notch-tr.notch-br {
         clip-path: polygon(15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
     }
     
     .plate-border.notch-tl.notch-bl.notch-br,
-    .plate-inner.notch-tl.notch-bl.notch-br {
+    .plate-inner.notch-tl.notch-bl.notch-br,
+    .plate-color.notch-tl.notch-bl.notch-br {
         clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px), 0 15px);
     }
     
     .plate-border.notch-tr.notch-bl.notch-br,
-    .plate-inner.notch-tr.notch-bl.notch-br {
+    .plate-inner.notch-tr.notch-bl.notch-br,
+    .plate-color.notch-tr.notch-bl.notch-br {
         clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px));
     }
     
     /* All four notches */
     .plate-border.notch-tl.notch-tr.notch-bl.notch-br,
-    .plate-inner.notch-tl.notch-tr.notch-bl.notch-br {
+    .plate-inner.notch-tl.notch-tr.notch-bl.notch-br,
+    .plate-color.notch-tl.notch-tr.notch-bl.notch-br {
         clip-path: polygon(15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px), 0 15px);
     }
     
@@ -647,31 +666,44 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
     const totalWellSpacing = wellPadding;
     const tableWidth = (columns * wellSize) + ((columns - 1) * wellPadding);
     const tableHeight = (rows * wellSize) + ((rows - 1) * wellPadding);
-    const totalWidth = tableWidth + (marginWidth * 2);
-    const totalHeight = tableHeight + (marginWidth * 2);
+    
+    // Border div dimensions (outermost)
+    const borderWidth = tableWidth + (marginWidth * 2) + 8; // Extra 8px for border thickness
+    const borderHeight = tableHeight + (marginWidth * 2) + 8;
+    
+    // Inner plate div dimensions (white background)
+    const innerWidth = tableWidth + (marginWidth * 2);
+    const innerHeight = tableHeight + (marginWidth * 2);
+    
+    // Color div dimensions (colored background for wells)
+    const colorWidth = tableWidth;
+    const colorHeight = tableHeight;
     
     let html = `<div class="plate-grid">`;
     
-    // Outer border div
-    html += `<div class="plate-border ${notchClasses.join(' ')}" style="width: ${totalWidth}px; height: ${totalHeight}px; background-color: var(--gray-dark); border-radius: 5px;">`;
+    // Outer border div (dark gray)
+    html += `<div class="plate-border ${notchClasses.join(' ')}" style="width: ${borderWidth}px; height: ${borderHeight}px; background-color: var(--gray-dark); border-radius: 5px; position: relative;">`;
     
-    // Inner plate div
-    html += `<div class="plate-inner ${notchClasses.join(' ')} ${plateColorClass}" style="width: ${tableWidth + (marginWidth * 2) - 4}px; height: ${tableHeight + (marginWidth * 2) - 4}px; margin: 2px; border-radius: 3px; position: relative; padding: ${marginWidth - 2}px;">`;
+    // Inner plate div (white background with margin)
+    html += `<div class="plate-inner ${notchClasses.join(' ')}" style="width: ${innerWidth}px; height: ${innerHeight}px; background-color: white; border-radius: 3px; position: absolute; top: 4px; left: 4px;">`;
     
-    // Add row labels outside the grid
+    // Color div (selected color background)
+    html += `<div class="plate-color ${notchClasses.join(' ')} ${plateColorClass}" style="width: ${colorWidth}px; height: ${colorHeight}px; border-radius: 2px; position: absolute; top: ${marginWidth}px; left: ${marginWidth}px;">`;
+    
+    // Add row labels outside the border
     for (let row = 0; row < rows; row++) {
         const rowLabel = String.fromCharCode(65 + row); // A, B, C, etc.
-        const topPosition = (row * (wellSize + totalWellSpacing)) + 2;
-        html += `<div class="row-label" style="top: ${topPosition}px; left: ${-30}px;">${rowLabel}</div>`;
+        const topPosition = 4 + marginWidth + (row * (wellSize + totalWellSpacing)) + 2;
+        html += `<div class="row-label" style="position: absolute; top: ${topPosition}px; left: ${-30}px; width: 20px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: var(--gray-dark); z-index: 5;">${rowLabel}</div>`;
     }
     
-    // Add column labels outside the grid
+    // Add column labels outside the border
     for (let col = 1; col <= columns; col++) {
-        const leftPosition = ((col - 1) * (wellSize + totalWellSpacing)) + 2;
-        html += `<div class="col-label" style="left: ${leftPosition}px; top: ${-30}px;">${col}</div>`;
+        const leftPosition = 4 + marginWidth + ((col - 1) * (wellSize + totalWellSpacing)) + 2;
+        html += `<div class="col-label" style="position: absolute; left: ${leftPosition}px; top: ${-30}px; width: 25px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: var(--gray-dark); z-index: 5;">${col}</div>`;
     }
     
-    html += `<table style="border-spacing: ${wellPadding}px;">`;
+    html += `<table style="border-spacing: ${wellPadding}px; width: ${tableWidth}px; height: ${tableHeight}px; position: relative; z-index: 4;">`;
     
     // Data rows (no header row with labels now)
     for (let row = 0; row < rows; row++) {
@@ -688,6 +720,7 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
     }
     
     html += '</table>';
+    html += '</div>'; // Close plate-color
     html += '</div>'; // Close plate-inner
     html += '</div>'; // Close plate-border
     html += '</div>'; // Close plate-grid
