@@ -63,6 +63,8 @@ urlpatterns = [
     path('create_draft_version/', assays.create_draft_version, name="create_draft_version"),
     path('save_step_order/', assays.save_step_order, name="save_step_order"),
     path('save_version_name/', assays.save_version_name, name="save_version_name"),
+    path('get_step_config/', assays.get_step_config, name="get_step_config"),
+    path('save_step_config/', assays.save_step_config, name="save_step_config"),
     path('settings_assay_view/<int:assay_id>/', assays.settings_assay_view, name="settings_assay_view"),
     path('settings_assay_configure/<int:assay_id>/', assays.settings_assay_configure, name="settings_assay_configure"),
 

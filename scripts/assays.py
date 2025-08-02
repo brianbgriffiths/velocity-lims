@@ -967,3 +967,200 @@ def save_version_name(request):
         return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
     except Exception as e:
         return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+
+
+@login_required
+def get_step_config(request):
+    """
+    Get step configuration details for a specific step
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_view')):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        scid = data.get('scid')
+        
+        if not scid:
+            return JsonResponse({'error': 'Step configuration ID (scid) is required'}, status=400)
+        
+        conn = psycopg.connect(
+            dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, 
+            host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Get step configuration details
+        cursor.execute("""
+            SELECT scid, step_name, containers, controls, create_samples, 
+                   pages, sample_data, step_scripts
+            FROM velocity.step_config
+            WHERE scid = %s
+        """, (scid,))
+        
+        step_config = cursor.fetchone()
+        
+        if not step_config:
+            return JsonResponse({'error': 'Step configuration not found'}, status=404)
+        
+        conn.close()
+        
+        return JsonResponse({
+            'status': 'success',
+            'step_config': step_config
+        })
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+
+
+@login_required
+def save_step_config(request):
+    """
+    Save step configuration changes
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_edit')):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        scid = data.get('scid')
+        step_name = data.get('step_name', '').strip()
+        containers = data.get('containers', [])
+        controls = data.get('controls', [])
+        create_samples = data.get('create_samples', 1)
+        pages = data.get('pages', [])
+        sample_data = data.get('sample_data', [])
+        step_scripts = data.get('step_scripts', [])
+        
+        if not scid:
+            return JsonResponse({'error': 'Step configuration ID (scid) is required'}, status=400)
+        
+        if not step_name:
+            return JsonResponse({'error': 'Step name is required'}, status=400)
+        
+        conn = psycopg.connect(
+            dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, 
+            host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # First, get current step configuration to check for changes
+        cursor.execute("""
+            SELECT step_name, containers, controls, create_samples, 
+                   pages, sample_data, step_scripts
+            FROM velocity.step_config
+            WHERE scid = %s
+        """, (scid,))
+        
+        current_config = cursor.fetchone()
+        
+        if not current_config:
+            return JsonResponse({'error': 'Step configuration not found'}, status=404)
+        
+        # Check if any values have actually changed
+        current_containers = current_config.get('containers', []) or []
+        current_controls = current_config.get('controls', []) or []
+        current_pages = current_config.get('pages', []) or []
+        current_sample_data = current_config.get('sample_data', []) or []
+        current_step_scripts = current_config.get('step_scripts', []) or []
+        
+        # Compare all fields for changes
+        config_unchanged = (
+            current_config['step_name'] == step_name and
+            current_config['create_samples'] == create_samples and
+            current_containers == containers and
+            current_controls == controls and
+            current_pages == pages and
+            current_sample_data == sample_data and
+            current_step_scripts == step_scripts
+        )
+        
+        if config_unchanged:
+            conn.close()
+            return JsonResponse({
+                'status': 'success',
+                'config_unchanged': True,
+                'step_config': {
+                    'scid': scid,
+                    'step_name': step_name
+                },
+                'message': 'Step configuration unchanged'
+            })
+        
+        # Update step configuration
+        cursor.execute("""
+            UPDATE velocity.step_config
+            SET step_name = %s,
+                containers = %s,
+                controls = %s,
+                create_samples = %s,
+                pages = %s,
+                sample_data = %s,
+                step_scripts = %s
+            WHERE scid = %s
+            RETURNING scid, step_name
+        """, (step_name, json.dumps(containers), json.dumps(controls), 
+              create_samples, json.dumps(pages), json.dumps(sample_data), 
+              json.dumps(step_scripts), scid))
+        
+        result = cursor.fetchone()
+        
+        if not result:
+            return JsonResponse({'error': 'Step configuration not found'}, status=404)
+        
+        # Find which assay version contains this step and increment its patch version
+        cursor.execute("""
+            SELECT avid, assay_steps, version_major, version_minor, version_patch
+            FROM velocity.assay_versions 
+            WHERE JSON_EXTRACT_PATH_TEXT(assay_steps::text, '0') = %s 
+               OR %s = ANY(SELECT CAST(value AS TEXT) FROM JSON_ARRAY_ELEMENTS_TEXT(assay_steps))
+        """, (str(scid), str(scid)))
+        
+        version_data = cursor.fetchone()
+        
+        if version_data:
+            # Increment patch version
+            new_patch = (version_data['version_patch'] or 0) + 1
+            
+            cursor.execute("""
+                UPDATE velocity.assay_versions 
+                SET version_patch = %s,
+                    modified = CURRENT_TIMESTAMP
+                WHERE avid = %s
+                RETURNING avid, version_major, version_minor, version_patch
+            """, (new_patch, version_data['avid']))
+            
+            updated_version = cursor.fetchone()
+        else:
+            updated_version = None
+        
+        conn.commit()
+        conn.close()
+        
+        response_data = {
+            'status': 'success',
+            'step_config': result,
+            'message': f'Step configuration "{step_name}" updated successfully'
+        }
+        
+        if updated_version:
+            response_data['version'] = updated_version
+            response_data['message'] += f' (v{updated_version["version_major"]}.{updated_version["version_minor"]}.{updated_version["version_patch"]})'
+        
+        return JsonResponse(response_data)
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)

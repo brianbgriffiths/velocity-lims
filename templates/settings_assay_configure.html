@@ -136,6 +136,18 @@
         outline: none;
     }
     
+    .form-input[type="checkbox"] {
+        width: auto;
+        margin-right: 5px;
+    }
+    
+    textarea.form-input {
+        resize: vertical;
+        min-height: 80px;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+    }
+    
     .btn-save {
         background-color: var(--accent1);
         color: white;
@@ -335,7 +347,7 @@
         background-color: var(--green-light);
         padding: 10px;
         border-radius: 3px;
-        display: none;
+        visibility: hidden;
         margin: 10px 0px;
     }
 </style>
@@ -433,10 +445,53 @@
                     <div id="stepConfigPanel" style="display: none;">
                         <div class="step-config-header" id="stepConfigTitle">Step Configuration</div>
                         <div id="stepConfigContent">
-                            <!-- Step configuration content will be loaded here -->
-                            <p>Step configuration interface will be implemented here.</p>
-                            <p>Selected Step ID: <span id="selectedStepId"></span></p>
-                            <p>Selected Step Name: <span id="selectedStepName"></span></p>
+                            <form id="stepConfigForm">
+                                <div class="form-group">
+                                    <label class="form-label" for="stepName">Step Name</label>
+                                    <input type="text" id="stepName" class="form-input" placeholder="Enter step name">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <input type="checkbox" id="createSamples" style="margin-right: 5px;">
+                                        Create Samples
+                                    </label>
+                                    <div style="font-size: 11px; color: var(--gray-dark); margin-top: 2px;">
+                                        Check if this step should create sample derivatives
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="containerConfig">Containers Configuration</label>
+                                    <textarea id="containerConfig" class="form-input" rows="4" placeholder="JSON array of container configurations">[]</textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="controlsConfig">Controls Configuration</label>
+                                    <textarea id="controlsConfig" class="form-input" rows="4" placeholder="JSON array of control configurations">[]</textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="pagesConfig">Pages Configuration</label>
+                                    <textarea id="pagesConfig" class="form-input" rows="4" placeholder="JSON array of page configurations">[]</textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="sampleDataConfig">Sample Data Configuration</label>
+                                    <textarea id="sampleDataConfig" class="form-input" rows="4" placeholder="JSON array of sample data fields">[]</textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="stepScriptsConfig">Step Scripts Configuration</label>
+                                    <textarea id="stepScriptsConfig" class="form-input" rows="4" placeholder="JSON array of script configurations">[]</textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <button type="button" class="btn-save" onclick="saveStepConfiguration()">
+                                        <i class="fas fa-save"></i> Save Step Configuration
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -703,11 +758,119 @@ function selectStep(stepId, stepName) {
     
     // Update config panel content
     document.getElementById('stepConfigTitle').textContent = `Configure: ${stepName}`;
-    document.getElementById('selectedStepId').textContent = stepId;
-    document.getElementById('selectedStepName').textContent = stepName;
     
     console.log('Selected step:', stepId, stepName);
-    // TODO: Load actual step configuration here
+    
+    // Load step configuration
+    loadStepConfiguration(stepId);
+}
+
+function loadStepConfiguration(stepId) {
+    const pyoptions = {
+        data: {
+            scid: stepId
+        },
+        csrf: csrf,
+        url: 'get_step_config',
+        submit_mode: 'silent'
+    };
+    
+    pylims_post(pyoptions).then(result => {
+        if (result.status === 'success') {
+            const config = result.step_config;
+            
+            // Populate form fields
+            document.getElementById('stepName').value = config.step_name || '';
+            document.getElementById('createSamples').checked = config.create_samples === 1;
+            
+            // Populate JSON fields with proper formatting
+            document.getElementById('containerConfig').value = JSON.stringify(config.containers || [], null, 2);
+            document.getElementById('controlsConfig').value = JSON.stringify(config.controls || [], null, 2);
+            document.getElementById('pagesConfig').value = JSON.stringify(config.pages || [], null, 2);
+            document.getElementById('sampleDataConfig').value = JSON.stringify(config.sample_data || [], null, 2);
+            document.getElementById('stepScriptsConfig').value = JSON.stringify(config.step_scripts || [], null, 2);
+            
+            console.log('Step configuration loaded:', config);
+        }
+    }).catch(error => {
+        console.error('Load step config error:', error);
+        pylims_ui.error('Failed to load step configuration');
+    });
+}
+
+function saveStepConfiguration() {
+    if (!selectedStepId) {
+        pylims_ui.error('No step selected');
+        return;
+    }
+    
+    const stepName = document.getElementById('stepName').value.trim();
+    
+    if (!stepName) {
+        pylims_ui.error('Step name is required');
+        return;
+    }
+    
+    try {
+        // Parse JSON fields
+        const containers = JSON.parse(document.getElementById('containerConfig').value || '[]');
+        const controls = JSON.parse(document.getElementById('controlsConfig').value || '[]');
+        const pages = JSON.parse(document.getElementById('pagesConfig').value || '[]');
+        const sampleData = JSON.parse(document.getElementById('sampleDataConfig').value || '[]');
+        const stepScripts = JSON.parse(document.getElementById('stepScriptsConfig').value || '[]');
+        
+        const pyoptions = {
+            data: {
+                scid: selectedStepId,
+                step_name: stepName,
+                containers: containers,
+                controls: controls,
+                create_samples: document.getElementById('createSamples').checked ? 1 : 0,
+                pages: pages,
+                sample_data: sampleData,
+                step_scripts: stepScripts
+            },
+            csrf: csrf,
+            url: 'save_step_config',
+            submit_mode: 'silent'
+        };
+        
+        pylims_post(pyoptions).then(result => {
+            if (result.status === 'success') {
+                if (result.config_unchanged) {
+                    pylims_ui.success('Step configuration unchanged');
+                    console.log('Step configuration unchanged, no version increment');
+                    // Still update display to ensure consistency (in case of display drift)
+                    if (result.version) {
+                        updateVersionDisplay(result.version.version_major, result.version.version_minor, result.version.version_patch);
+                    }
+                } else {
+                    pylims_ui.success(result.message || 'Step configuration saved successfully');
+                    console.log('Step configuration saved successfully, version incremented');
+                    
+                    // Update step name in the left panel if it changed
+                    const stepItem = document.querySelector(`[data-step-id="${selectedStepId}"]`);
+                    if (stepItem) {
+                        const stepNameElement = stepItem.querySelector('.step-name');
+                        if (stepNameElement) {
+                            stepNameElement.textContent = stepName;
+                        }
+                    }
+                    
+                    // Update version display with new patch version if available
+                    if (result.version) {
+                        updateVersionDisplay(result.version.version_major, result.version.version_minor, result.version.version_patch);
+                    }
+                }
+            }
+        }).catch(error => {
+            console.error('Save step config error:', error);
+            pylims_ui.error('Failed to save step configuration');
+        });
+        
+    } catch (e) {
+        pylims_ui.error('Invalid JSON in configuration fields: ' + e.message);
+    }
 }
 
 function addNewStep() {
