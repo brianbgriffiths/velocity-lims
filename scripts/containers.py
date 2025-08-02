@@ -8,8 +8,7 @@ import psycopg
 from psycopg.rows import dict_row
 from django.shortcuts import render
 from django.http import JsonResponse
-from django.contrib.auth.decorators import login_required
-from settings.views import context_init, has_permission
+from settings.views import context_init, has_permission, login_required
 import pylims
 
 
