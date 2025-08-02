@@ -203,8 +203,12 @@
     }
     
     .plate-color {
-        position: relative;
+        position: absolute;
         border-radius: 2px;
+        width: 100%;
+        height: 100%;
+        top: 0px;
+        left: 0px;
     }
     
     /* Notch styles for corners - applied to all three layers */
@@ -685,10 +689,10 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
     html += `<div class="plate-border ${notchClasses.join(' ')}" style="width: ${borderWidth}px; height: ${borderHeight}px; background-color: var(--gray-dark); border-radius: 5px; position: relative;">`;
     
     // Inner plate div (white background with margin)
-    html += `<div class="plate-inner ${notchClasses.join(' ')}" style="width: ${innerWidth}px; height: ${innerHeight}px; background-color: white; border-radius: 3px; position: absolute; top: 4px; left: 4px;">`;
+    html += `<div class="plate-inner ${notchClasses.join(' ')}" style="width: ${innerWidth}px; height: ${innerHeight}px; background-color: white; border-radius: 3px; position: absolute; top: 0px; left: 0px;">`;
     
     // Color div (selected color background)
-    html += `<div class="plate-color ${notchClasses.join(' ')} ${plateColorClass}" style="width: ${colorWidth}px; height: ${colorHeight}px; border-radius: 2px; position: absolute; top: ${marginWidth}px; left: ${marginWidth}px;">`;
+    html += `<div class="plate-color ${notchClasses.join(' ')} ${plateColorClass}" style="margin: ${marginWidth}px;">`;
     
     // Add row labels outside the border
     for (let row = 0; row < rows; row++) {
