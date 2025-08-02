@@ -190,8 +190,6 @@
         display: inline-block;
         border: 2px solid var(--gray-dark);
         border-radius: 5px;
-        padding: 25px;
-        background-color: #f8f9fa;
         margin: 25px auto;
         position: relative;
     }
@@ -259,7 +257,6 @@
     
     .plate-grid .row-label {
         position: absolute;
-        left: -25px;
         width: 20px;
         height: 25px;
         display: flex;
@@ -274,7 +271,6 @@
     
     .plate-grid .col-label {
         position: absolute;
-        top: -25px;
         width: 25px;
         height: 20px;
         display: flex;
@@ -337,16 +333,28 @@
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
     }
     
-    .color-option.color-1 { background-color: #ffffff; }
-    .color-option.color-2 { background-color: #f8f9fa; }
-    .color-option.color-3 { background-color: #e9ecef; }
-    .color-option.color-4 { background-color: #dee2e6; }
-    .color-option.color-5 { background-color: #adb5bd; }
-    .color-option.color-6 { background-color: #6c757d; }
-    .color-option.color-7 { background-color: #495057; }
-    .color-option.color-8 { background-color: #343a40; }
-    .color-option.color-9 { background-color: #212529; }
-    .color-option.color-10 { background-color: #000000; }
+    .color-option.color-1 { background-color: #e3f2fd; border-color: #2196f3; } /* Light Blue */
+    .color-option.color-2 { background-color: #f3e5f5; border-color: #9c27b0; } /* Light Purple */
+    .color-option.color-3 { background-color: #e8f5e8; border-color: #4caf50; } /* Light Green */
+    .color-option.color-4 { background-color: #fff3e0; border-color: #ff9800; } /* Light Orange */
+    .color-option.color-5 { background-color: #ffebee; border-color: #f44336; } /* Light Red */
+    .color-option.color-6 { background-color: #e0f2f1; border-color: #009688; } /* Light Teal */
+    .color-option.color-7 { background-color: #fce4ec; border-color: #e91e63; } /* Light Pink */
+    .color-option.color-8 { background-color: #f1f8e9; border-color: #8bc34a; } /* Light Lime */
+    .color-option.color-9 { background-color: #e8eaf6; border-color: #3f51b5; } /* Light Indigo */
+    .color-option.color-10 { background-color: #fff8e1; border-color: #ffc107; } /* Light Amber */
+    
+    /* Plate background colors with 20% opacity */
+    .plate-color-1 { background-color: rgba(33, 150, 243, 0.2); border-color: #2196f3; }
+    .plate-color-2 { background-color: rgba(156, 39, 176, 0.2); border-color: #9c27b0; }
+    .plate-color-3 { background-color: rgba(76, 175, 80, 0.2); border-color: #4caf50; }
+    .plate-color-4 { background-color: rgba(255, 152, 0, 0.2); border-color: #ff9800; }
+    .plate-color-5 { background-color: rgba(244, 67, 54, 0.2); border-color: #f44336; }
+    .plate-color-6 { background-color: rgba(0, 150, 136, 0.2); border-color: #009688; }
+    .plate-color-7 { background-color: rgba(233, 30, 99, 0.2); border-color: #e91e63; }
+    .plate-color-8 { background-color: rgba(139, 195, 74, 0.2); border-color: #8bc34a; }
+    .plate-color-9 { background-color: rgba(63, 81, 181, 0.2); border-color: #3f51b5; }
+    .plate-color-10 { background-color: rgba(255, 193, 7, 0.2); border-color: #ffc107; }
     
     .well-type-preview {
         display: flex;
@@ -474,6 +482,19 @@
                         
                         <div class="form-row">
                             <div class="form-group">
+                                <label class="form-label" for="marginWidth">Margin Width</label>
+                                <input type="number" id="marginWidth" class="form-input" min="5" max="100" value="25" onchange="updatePreview()">
+                                <small style="color: var(--gray-med); font-size: 11px;">Space between border and wells (5-100px)</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="wellPadding">Well Spacing</label>
+                                <input type="number" id="wellPadding" class="form-input" min="0" max="20" value="2" onchange="updatePreview()">
+                                <small style="color: var(--gray-med); font-size: 11px;">Space between wells (0-20px)</small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
                                 <label class="form-label" for="wellType">Well Type</label>
                                 <select id="wellType" class="form-select" onchange="updatePreview()">
                                     <option value="1">Round wells</option>
@@ -565,11 +586,13 @@ function updatePreview() {
     const columns = parseInt(document.getElementById('columns').value) || 12;
     const wellType = parseInt(document.getElementById('wellType').value) || 1;
     const borderType = parseInt(document.getElementById('borderType').value) || 1;
+    const marginWidth = parseInt(document.getElementById('marginWidth').value) || 25;
+    const wellPadding = parseInt(document.getElementById('wellPadding').value) || 2;
     
-    generatePlatePreview(rows, columns, wellType, borderType, selectedColor, cornerTypes);
+    generatePlatePreview(rows, columns, wellType, borderType, selectedColor, cornerTypes, marginWidth, wellPadding);
 }
 
-function generatePlatePreview(rows, columns, wellType, borderType, color, corners = [1, 1, 1, 1]) {
+function generatePlatePreview(rows, columns, wellType, borderType, color, corners = [1, 1, 1, 1], marginWidth = 25, wellPadding = 2) {
     const preview = document.getElementById('platePreview');
     
     // Create notch classes string based on corner types (2 = notch)
@@ -579,7 +602,10 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
     if (corners[2] === 2) notchClasses.push('notch-bl'); // bottom-left
     if (corners[3] === 2) notchClasses.push('notch-br'); // bottom-right
     
-    let html = `<div class="plate-grid ${notchClasses.join(' ')}" style="position: relative;">`;
+    // Apply color class for plate background
+    const plateColorClass = `plate-color-${color}`;
+    
+    let html = `<div class="plate-grid ${notchClasses.join(' ')} ${plateColorClass}" style="position: relative; padding: ${marginWidth}px;">`;
     
     // Add notch elements for bottom corners (since top corners use pseudo-elements)
     if (corners[2] === 2) {
@@ -589,20 +615,24 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
         html += '<div class="notch-br-element"></div>';
     }
     
+    // Calculate well size based on spacing
+    const wellSize = 25;
+    const totalWellSpacing = wellPadding;
+    
     // Add row labels outside the grid
     for (let row = 0; row < rows; row++) {
         const rowLabel = String.fromCharCode(65 + row); // A, B, C, etc.
-        const topPosition = 25 + (row * 27) + 2; // Adjust for increased padding and spacing
-        html += `<div class="row-label" style="top: ${topPosition}px;">${rowLabel}</div>`;
+        const topPosition = marginWidth + (row * (wellSize + totalWellSpacing)) + 2;
+        html += `<div class="row-label" style="top: ${topPosition}px; left: ${marginWidth - 30}px;">${rowLabel}</div>`;
     }
     
     // Add column labels outside the grid
     for (let col = 1; col <= columns; col++) {
-        const leftPosition = 25 + ((col - 1) * 27) + 2; // Adjust for increased padding and spacing
-        html += `<div class="col-label" style="left: ${leftPosition}px;">${col}</div>`;
+        const leftPosition = marginWidth + ((col - 1) * (wellSize + totalWellSpacing)) + 2;
+        html += `<div class="col-label" style="left: ${leftPosition}px; top: ${marginWidth - 30}px;">${col}</div>`;
     }
     
-    html += '<table>';
+    html += `<table style="border-spacing: ${wellPadding}px;">`;
     
     // Data rows (no header row with labels now)
     for (let row = 0; row < rows; row++) {
@@ -611,7 +641,8 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
         
         for (let col = 1; col <= columns; col++) {
             const wellId = rowLabel + col;
-            html += `<td class="well well-type-${wellType} border-type-${borderType} color-${color}" 
+            html += `<td class="well well-type-${wellType} border-type-${borderType}" 
+                        style="width: ${wellSize}px; height: ${wellSize}px;"
                         data-well="${wellId}" onclick="toggleWell('${wellId}')"></td>`;
         }
         html += '</tr>';
@@ -722,7 +753,9 @@ function loadContainerTypeDetails(cid) {
             
             // Generate preview for this container type
             const corners = type.corner_types ? JSON.parse(type.corner_types) : [1, 1, 1, 1];
-            generatePlatePreview(type.rows, type.columns, type.well_type, type.border_type, type.color, corners);
+            const marginWidth = type.margin_width || 25;
+            const wellPadding = type.well_padding || 2;
+            generatePlatePreview(type.rows, type.columns, type.well_type, type.border_type, type.color, corners, marginWidth, wellPadding);
         }
     }).catch(error => {
         console.error('Error loading container type details:', error);
@@ -779,6 +812,8 @@ function createContainerType(event) {
     const columns = parseInt(document.getElementById('columns').value);
     const wellType = parseInt(document.getElementById('wellType').value);
     const borderType = parseInt(document.getElementById('borderType').value);
+    const marginWidth = parseInt(document.getElementById('marginWidth').value);
+    const wellPadding = parseInt(document.getElementById('wellPadding').value);
     
     if (!typeName) {
         pylims_ui.error('Container type name is required');
@@ -806,6 +841,8 @@ function createContainerType(event) {
             border_type: borderType,
             color: selectedColor,
             corner_types: cornerTypes,
+            margin_width: marginWidth,
+            well_padding: wellPadding,
             restricted_wells: restrictedWells,
             special_wells: specialWells
         },
