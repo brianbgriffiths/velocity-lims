@@ -476,10 +476,20 @@ function saveVersionName() {
     
     pylims_post(pyoptions).then(result => {
         if (result.status === 'success') {
-            pylims_ui.success('Version name updated successfully');
-            // Update version display with new patch version
-            if (result.version) {
-                updateVersionDisplay(result.version.version_major, result.version.version_minor, result.version.version_patch);
+            if (result.version_unchanged) {
+                pylims_ui.success('Version name unchanged');
+                console.log('Version name unchanged, no version increment');
+                // Still update display to ensure consistency (in case of display drift)
+                if (result.version) {
+                    updateVersionDisplay(result.version.version_major, result.version.version_minor, result.version.version_patch);
+                }
+            } else {
+                pylims_ui.success(result.message || 'Version name updated successfully');
+                console.log('Version name saved successfully, version incremented');
+                // Update version display with new patch version
+                if (result.version) {
+                    updateVersionDisplay(result.version.version_major, result.version.version_minor, result.version.version_patch);
+                }
             }
         }
     }).catch(error => {
@@ -490,10 +500,34 @@ function saveVersionName() {
 function updateVersionDisplay(major, minor, patch) {
     const versionBadge = document.querySelector('.version-badge');
     if (versionBadge) {
-        // Update the version number while preserving the status text
-        const statusText = versionBadge.textContent.match(/\((.*)\)$/);
-        const status = statusText ? statusText[1] : 'Draft';
-        versionBadge.childNodes[0].textContent = `v${major}.${minor}.${patch} (${status})`;
+        // Extract the current status from the badge text
+        const currentText = versionBadge.innerHTML;
+        const statusMatch = currentText.match(/\((.*?)\)$/);
+        const status = statusMatch ? statusMatch[1] : 'Draft';
+        
+        // Update the text content while preserving any HTML structure
+        const newVersionText = `v${major}.${minor}.${patch} (${status})`;
+        
+        // If there are child nodes, update the text node
+        if (versionBadge.childNodes.length > 0) {
+            // Find and update the text node
+            for (let i = 0; i < versionBadge.childNodes.length; i++) {
+                if (versionBadge.childNodes[i].nodeType === Node.TEXT_NODE) {
+                    versionBadge.childNodes[i].nodeValue = newVersionText;
+                    break;
+                }
+            }
+            // If no text node found, replace all content
+            if (!Array.from(versionBadge.childNodes).some(node => node.nodeType === Node.TEXT_NODE)) {
+                versionBadge.textContent = newVersionText;
+            }
+        } else {
+            versionBadge.textContent = newVersionText;
+        }
+        
+        console.log(`Version display updated to: ${newVersionText}`);
+    } else {
+        console.warn('Version badge element not found');
     }
 }
 
@@ -631,10 +665,18 @@ function saveStepOrder() {
     
     pylims_post(pyoptions).then(result => {
         if (result.status === 'success') {
-            console.log('Step order saved successfully');
-            // Update version display with new patch version if returned
-            if (result.version) {
-                updateVersionDisplay(result.version.version_major, result.version.version_minor, result.version.version_patch);
+            if (result.version_unchanged) {
+                console.log('Step order unchanged, no version increment');
+                // Still update display to ensure consistency (in case of display drift)
+                if (result.version) {
+                    updateVersionDisplay(result.version.version_major, result.version.version_minor, result.version.version_patch);
+                }
+            } else {
+                console.log('Step order saved successfully, version incremented');
+                // Update version display with new patch version
+                if (result.version) {
+                    updateVersionDisplay(result.version.version_major, result.version.version_minor, result.version.version_patch);
+                }
             }
         }
     }).catch(error => {

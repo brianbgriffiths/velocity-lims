@@ -821,7 +821,8 @@ def save_step_order(request):
         
         # Get the development version for this assay
         cursor.execute("""
-            SELECT avid, assay_steps FROM velocity.assay_versions 
+            SELECT avid, assay_steps, version_major, version_minor, version_patch 
+            FROM velocity.assay_versions 
             WHERE assay = %s AND status IN (1, 2, 3)
             LIMIT 1
         """, (assay_id,))
@@ -831,7 +832,28 @@ def save_step_order(request):
         if not version_data:
             return JsonResponse({'error': 'No development version found for this assay'}, status=404)
         
-        # Convert step_order to JSON string for storage
+        # Get current order and compare with new order
+        current_order = version_data.get('assay_steps', []) or []
+        
+        # Normalize both orders for comparison (ensure they're both lists of integers)
+        current_order_normalized = [int(x) for x in current_order] if current_order else []
+        new_order_normalized = [int(x) for x in step_order]
+        
+        # Check if the order actually changed
+        if current_order_normalized == new_order_normalized:
+            # No change, return current version info without updating
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Step order unchanged',
+                'version_unchanged': True,
+                'version': {
+                    'version_major': version_data['version_major'],
+                    'version_minor': version_data['version_minor'], 
+                    'version_patch': version_data['version_patch'] or 0
+                }
+            })
+        
+        # Order changed, update database and increment patch version
         step_order_json = json.dumps(step_order)
         
         # Update the assay_steps JSON field with the new order and increment patch version
@@ -894,7 +916,33 @@ def save_version_name(request):
         )
         cursor = conn.cursor()
         
-        # Update the version name and increment patch version
+        # Get current version info to check if name actually changed
+        cursor.execute("""
+            SELECT version_name, version_major, version_minor, version_patch
+            FROM velocity.assay_versions 
+            WHERE avid = %s
+        """, (avid,))
+        
+        current_version = cursor.fetchone()
+        if not current_version:
+            return JsonResponse({'error': 'Version not found'}, status=404)
+        
+        # Check if the version name actually changed
+        current_name = current_version.get('version_name', '').strip()
+        if current_name == version_name:
+            # No change, return current version info without updating
+            return JsonResponse({
+                'status': 'success',
+                'message': 'Version name unchanged',
+                'version_unchanged': True,
+                'version': {
+                    'version_major': current_version['version_major'],
+                    'version_minor': current_version['version_minor'],
+                    'version_patch': current_version['version_patch'] or 0
+                }
+            })
+        
+        # Name changed, update database and increment patch version
         cursor.execute("""
             UPDATE velocity.assay_versions 
             SET version_name = %s, 
@@ -905,8 +953,6 @@ def save_version_name(request):
         """, (version_name, avid))
         
         result = cursor.fetchone()
-        if not result:
-            return JsonResponse({'error': 'Version not found'}, status=404)
         
         conn.commit()
         conn.close()
