@@ -212,6 +212,7 @@
         height: 100%;
         top: 0px;
         left: 0px;
+        box-sizing: border-box;
     }
     
     /* Notch styles for corners - applied to all three layers */
@@ -689,7 +690,7 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
     let html = `<div class="plate-grid">`;
     
     // Outer border div (dark gray)
-    html += `<div class="plate-border ${notchClasses.join(' ')}" style="padding: ${borderWidth}px; background-color: var(--gray-dark); border-radius: 5px; position: relative;">`;
+    html += `<div class="plate-border ${notchClasses.join(' ')}" style="padding: 3px; background-color: var(--gray-dark); border-radius: 5px; position: relative;">`;
     
     // Inner plate div (white background with margin)
     html += `<div class="plate-inner ${notchClasses.join(' ')}">`;    
