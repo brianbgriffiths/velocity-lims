@@ -365,7 +365,7 @@
         transition: all 0.2s;
         width: 100%;
         height: 100%;
-        border: inherit;
+        border-color: inherit;
     }
     
     /* Well type shapes - make these more specific and important */
@@ -746,7 +746,6 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
     
     // Calculate dimensions for the plate
     const wellSize = 25;
-    const totalWellSpacing = wellPadding;
     const tableWidth = (columns * wellSize) + ((columns - 1) * wellPadding);
     const tableHeight = (rows * wellSize) + ((rows - 1) * wellPadding);
     
@@ -767,13 +766,13 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
     // Add row labels positioned relative to the outer container (before the border divs)
     for (let row = 0; row < rows; row++) {
         const rowLabel = String.fromCharCode(65 + row); // A, B, C, etc.
-        const topPosition = 40 + 4 + marginWidth + (row * (wellSize + totalWellSpacing)) + 2;
+        const topPosition = 40 + 4 + marginWidth + (row * (wellSize + wellPadding)) + 2;
         html += `<div class="row-label" style="position: absolute; top: ${topPosition}px; left: 5px; width: 20px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: var(--gray-dark); z-index: 10;">${rowLabel}</div>`;
     }
     
     // Add column labels positioned relative to the outer container (before the border divs)
     for (let col = 1; col <= columns; col++) {
-        const leftPosition = 40 + 4 + marginWidth + ((col - 1) * (wellSize + totalWellSpacing)) + 2;
+        const leftPosition = 40 + 4 + marginWidth + ((col - 1) * (wellSize + wellPadding)) + 2;
         html += `<div class="col-label" style="position: absolute; left: ${leftPosition}px; top: 5px; width: 25px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: var(--gray-dark); z-index: 10;">${col}</div>`;
     }
     
