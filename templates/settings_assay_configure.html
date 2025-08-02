@@ -347,8 +347,11 @@
         background-color: var(--green-light);
         padding: 10px;
         border-radius: 3px;
-        visibility: hidden;
+        display: none;
         margin: 10px 0px;
+    }
+    #pylims_requests_messages {
+        height:30px;
     }
 </style>
 {% endblock %}
@@ -360,10 +363,11 @@
         <a href="{% url 'settings_assays' %}">Assays</a> > 
         Configure Version
     </breadcrumbs>
-    
-    <div id="pylims_request_error"></div>
-    <div id="pylims_request_success"></div>
-    
+    <div id="pylims_requests_messages">
+        <div id="pylims_request_error"></div>
+        <div id="pylims_request_success"></div>
+    </div>
+
     {% if error %}
         <div class="error-message">{{ error }}</div>
     {% endif %}
