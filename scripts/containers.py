@@ -83,7 +83,7 @@ def create_container_type(request):
         restricted_wells = data.get('restricted_wells', [])
         special_wells = data.get('special_wells', [])
         corner_types = data.get('corner_types', [1, 1, 1, 1])
-        margin_width = int(data.get('margin_width', 25))
+        margin_width = int(data.get('margin_width', 2))
         well_padding = int(data.get('well_padding', 2))
         
         if not type_name:
@@ -104,8 +104,8 @@ def create_container_type(request):
         if color < 1 or color > 20:
             return JsonResponse({'error': 'Invalid color selection'}, status=400)
         
-        if margin_width < 5 or margin_width > 100:
-            return JsonResponse({'error': 'Margin width must be between 5 and 100'}, status=400)
+        if margin_width < 0 or margin_width > 100:
+            return JsonResponse({'error': 'Margin width must be between 0 and 100'}, status=400)
         
         if well_padding < 0 or well_padding > 20:
             return JsonResponse({'error': 'Well padding must be between 0 and 20'}, status=400)
