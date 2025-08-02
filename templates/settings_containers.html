@@ -624,13 +624,13 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label" for="marginWidth">Margin Width</label>
-                                <input type="number" id="marginWidth" class="form-input" min="0" max="100" value="2" onchange="updatePreview()">
+                                <input type="number" id="marginWidth" class="form-input" min="0" max="100" value="2" step="5" onchange="updatePreview()">
                                 <small style="color: var(--gray-med); font-size: 11px;">Space between border and wells (0-100px)</small>
                             </div>
                             <div class="form-group">
                                 <label class="form-label" for="wellPadding">Well Spacing</label>
-                                <input type="number" id="wellPadding" class="form-input" min="0" max="20" value="2" onchange="updatePreview()">
-                                <small style="color: var(--gray-med); font-size: 11px;">Space between wells (0-20px)</small>
+                                <input type="number" id="wellPadding" class="form-input" min="0" max="100" value="2" step="5" onchange="updatePreview()">
+                                <small style="color: var(--gray-med); font-size: 11px;">Space between wells (0-100px)</small>
                             </div>
                         </div>
                         
@@ -862,16 +862,13 @@ function selectContainerType(cid, typeName) {
     
     // Load container type details
     loadContainerTypeDetails(cid);
-    
-    // Show details section
-    document.getElementById('selectedTypeDetails').style.display = 'block';
 }
 
 function loadContainerTypeDetails(cid) {
     const pyoptions = {
         data: { cid: cid },
         csrf: csrf,
-        url: 'get_container_type_details/',
+        url: '../get_container_type_details/',
         submit_mode: 'silent'
     };
     
@@ -879,13 +876,19 @@ function loadContainerTypeDetails(cid) {
         if (result.status === 'success') {
             const type = result.container_type;
             
-            // Update details display
-            let html = `<p><strong>Name:</strong> ${type.type_name}</p>`;
-            html += `<p><strong>Dimensions:</strong> ${type.rows} × ${type.columns} wells</p>`;
-            html += `<p><strong>Well Type:</strong> ${getWellTypeName(type.well_type)}</p>`;
-            html += `<p><strong>Border:</strong> ${getBorderTypeName(type.border_type)}</p>`;
+            // Populate form fields with the existing container data
+            document.getElementById('typeName').value = type.type_name + ' (Copy)';
+            document.getElementById('rows').value = type.rows;
+            document.getElementById('columns').value = type.columns;
+            document.getElementById('wellType').value = type.well_type;
+            document.getElementById('borderType').value = type.border_type;
+            document.getElementById('marginWidth').value = type.margin_width || 2;
+            document.getElementById('wellPadding').value = type.well_padding || 2;
             
-            document.getElementById('selectedTypeInfo').innerHTML = html;
+            // Update selected color
+            if (type.color) {
+                selectColor(type.color);
+            }
             
             // Update corner types display for existing type
             if (type.corner_types) {
@@ -902,13 +905,22 @@ function loadContainerTypeDetails(cid) {
                         notchElement.classList.remove('active');
                     }
                 });
+            } else {
+                // Reset to all square corners if no corner types
+                cornerTypes = [1, 1, 1, 1];
+                document.querySelectorAll('.notch-corner').forEach(corner => {
+                    corner.classList.remove('active');
+                });
             }
             
-            // Generate preview for this container type
-            const corners = type.corner_types ? JSON.parse(type.corner_types) : [1, 1, 1, 1];
-            const marginWidth = type.margin_width !== null && type.margin_width !== undefined ? type.margin_width : 2;
-            const wellPadding = type.well_padding !== null && type.well_padding !== undefined ? type.well_padding : 2;
-            generatePlatePreview(type.rows, type.columns, type.well_type, type.border_type, type.color, corners, marginWidth, wellPadding);
+            // Change the button to "Create Copy"
+            const submitButton = document.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.innerHTML = '<i class="fas fa-copy"></i> Create Copy';
+            }
+            
+            // Update preview
+            updatePreview();
         }
     }).catch(error => {
         console.error('Error loading container type details:', error);
@@ -943,11 +955,16 @@ function showCreateForm() {
         corner.classList.remove('active');
     });
     
+    // Reset button to "Create Container Type"
+    const submitButton = document.querySelector('button[type="submit"]');
+    if (submitButton) {
+        submitButton.innerHTML = '<i class="fas fa-save"></i> Create Container Type';
+    }
+    
     // Update preview
     updatePreview();
     
-    // Hide details section
-    document.getElementById('selectedTypeDetails').style.display = 'none';
+    // Clear selection
     selectedContainerTypeId = null;
     
     // Remove selected state from list
@@ -999,7 +1016,7 @@ function createContainerType(event) {
             special_wells: specialWells
         },
         csrf: csrf,
-        url: 'create_container_type/',
+        url: '../create_container_type/',
         submit_mode: 'silent'
     };
     
@@ -1046,7 +1063,7 @@ function deleteContainerType() {
     const pyoptions = {
         data: { cid: selectedContainerTypeId },
         csrf: csrf,
-        url: 'delete_container_type/',
+        url: '../delete_container_type/',
         submit_mode: 'silent'
     };
     
@@ -1071,7 +1088,8 @@ function deleteContainerType() {
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
-    updatePreview();
+    // Start with a clean form (no container selected)
+    showCreateForm();
     console.log('Container types page loaded');
 });
 </script>
