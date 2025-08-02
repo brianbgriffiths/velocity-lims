@@ -749,28 +749,28 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
     const colorWidth = tableWidth;
     const colorHeight = tableHeight;
     
-    let html = `<div class="plate-grid">`;
+    let html = `<div class="plate-grid" style="position: relative; padding: 40px;">`;
+    
+    // Add row labels positioned relative to the outer container (before the border divs)
+    for (let row = 0; row < rows; row++) {
+        const rowLabel = String.fromCharCode(65 + row); // A, B, C, etc.
+        const topPosition = 40 + 4 + marginWidth + (row * (wellSize + totalWellSpacing)) + 2;
+        html += `<div class="row-label" style="position: absolute; top: ${topPosition}px; left: 5px; width: 20px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: var(--gray-dark); z-index: 10;">${rowLabel}</div>`;
+    }
+    
+    // Add column labels positioned relative to the outer container (before the border divs)
+    for (let col = 1; col <= columns; col++) {
+        const leftPosition = 40 + 4 + marginWidth + ((col - 1) * (wellSize + totalWellSpacing)) + 2;
+        html += `<div class="col-label" style="position: absolute; left: ${leftPosition}px; top: 5px; width: 25px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: var(--gray-dark); z-index: 10;">${col}</div>`;
+    }
     
     // Outer border div (colored border with reduced padding for cleaner notches)
-    html += `<div class="plate-border ${notchClasses.join(' ')} ${borderColorClass}" style="padding: 2px; border-radius: 5px; position: relative; box-sizing: border-box;">`;
+    html += `<div class="plate-border ${notchClasses.join(' ')} ${borderColorClass}" style="padding: 2px; border-radius: 5px; position: relative; box-sizing: border-box; margin: 0 auto; display: inline-block;">`;
     
     // Inner plate div (white background with margin)
     html += `<div class="plate-inner ${notchClasses.join(' ')}">`;    
     // Color div (selected color background)
     html += `<div class="plate-color ${notchClasses.join(' ')} ${plateColorClass}" style="padding: ${marginWidth}px;">`;
-    
-    // Add row labels outside the border (positioned to avoid notch clipping)
-    for (let row = 0; row < rows; row++) {
-        const rowLabel = String.fromCharCode(65 + row); // A, B, C, etc.
-        const topPosition = 4 + marginWidth + (row * (wellSize + totalWellSpacing)) + 2;
-        html += `<div class="row-label" style="position: absolute; top: ${topPosition}px; left: ${-35}px; width: 20px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: var(--gray-dark); z-index: 10;">${rowLabel}</div>`;
-    }
-    
-    // Add column labels outside the border (positioned to avoid notch clipping)
-    for (let col = 1; col <= columns; col++) {
-        const leftPosition = 4 + marginWidth + ((col - 1) * (wellSize + totalWellSpacing)) + 2;
-        html += `<div class="col-label" style="position: absolute; left: ${leftPosition}px; top: ${-35}px; width: 25px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: var(--gray-dark); z-index: 10;">${col}</div>`;
-    }
     
     html += `<table style="border-spacing: ${wellPadding}px; width: ${tableWidth}px; height: ${tableHeight}px; position: relative; z-index: 4;">`;
     
