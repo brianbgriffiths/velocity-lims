@@ -419,6 +419,18 @@
     .plate-color-8 { background-color: rgba(139, 195, 74, 0.2); border-color: #8bc34a; }
     .plate-color-9 { background-color: rgba(63, 81, 181, 0.2); border-color: #3f51b5; }
     .plate-color-10 { background-color: rgba(255, 193, 7, 0.2); border-color: #ffc107; }
+
+    .border-color-1 { background-color: #2196f3; } /* Blue */
+    .border-color-2 { background-color: #9c27b0; } /* Purple */
+    .border-color-3 { background-color: #4caf50; } /* Green */
+    .border-color-4 { background-color: #ff9800; } /* Orange */
+    .border-color-5 { background-color: #f44336; } /* Red */
+    .border-color-6 { background-color: #009688; } /* Teal */
+    .border-color-7 { background-color: #e91e63; } /* Pink */
+    .border-color-8 { background-color: #8bc34a; } /* Lime */
+    .border-color-9 { background-color: #3f51b5; } /* Indigo */
+    .border-color-10 { background-color: #ffc107; } /* Amber */
+
     
     .well-type-preview {
         display: flex;
@@ -441,13 +453,67 @@
     .border-type-2 { border-width: 2px; }
     .border-type-3 { border-width: 3px; }
     
+    .notch-corner {
+        background-color: white;
+        border: 1px solid var(--gray-light);
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .notch-corner:hover {
+        background-color: var(--accent9) !important;
+    }
+    
     .notch-corner.active {
         background-color: var(--accent8) !important;
         border-color: var(--accent1) !important;
     }
     
-    .notch-corner:hover {
-        background-color: var(--accent9) !important;
+    /* Corner-specific notch triangles that fill from corner to corner */
+    .notch-corner[data-corner="tl"].active::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 0;
+        border-left: 28px solid var(--accent1);
+        border-bottom: 28px solid transparent;
+    }
+    
+    .notch-corner[data-corner="tr"].active::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 0;
+        border-right: 28px solid var(--accent1);
+        border-bottom: 28px solid transparent;
+    }
+    
+    .notch-corner[data-corner="bl"].active::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 0;
+        border-left: 28px solid var(--accent1);
+        border-top: 28px solid transparent;
+    }
+    
+    .notch-corner[data-corner="br"].active::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 0;
+        height: 0;
+        border-right: 28px solid var(--accent1);
+        border-top: 28px solid transparent;
     }
     
     #pylims_request_error {
@@ -580,10 +646,10 @@
                             <label class="form-label">Plate Corner Types</label>
                             <div style="display: flex; align-items: center; gap: 15px;">
                                 <div id="notchGrid" style="display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; width: 60px; height: 60px; border: 2px solid var(--gray-med); background-color: var(--gray-lightest);">
-                                    <div class="notch-corner" data-corner="tl" onclick="toggleNotch('tl')" style="background-color: white; border: 1px solid var(--gray-light); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 8px; transition: all 0.2s;"></div>
-                                    <div class="notch-corner" data-corner="tr" onclick="toggleNotch('tr')" style="background-color: white; border: 1px solid var(--gray-light); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 8px; transition: all 0.2s;"></div>
-                                    <div class="notch-corner" data-corner="bl" onclick="toggleNotch('bl')" style="background-color: white; border: 1px solid var(--gray-light); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 8px; transition: all 0.2s;"></div>
-                                    <div class="notch-corner" data-corner="br" onclick="toggleNotch('br')" style="background-color: white; border: 1px solid var(--gray-light); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 8px; transition: all 0.2s;"></div>
+                                    <div class="notch-corner" data-corner="tl" onclick="toggleNotch('tl')"></div>
+                                    <div class="notch-corner" data-corner="tr" onclick="toggleNotch('tr')"></div>
+                                    <div class="notch-corner" data-corner="bl" onclick="toggleNotch('bl')"></div>
+                                    <div class="notch-corner" data-corner="br" onclick="toggleNotch('br')"></div>
                                 </div>
                                 <div style="font-size: 12px; color: var(--gray-dark);">
                                     Click corners to add 45° notches<br>
@@ -668,6 +734,7 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
     
     // Apply color class for plate background
     const plateColorClass = `plate-color-${color}`;
+    const borderColorClass = `border-color-${color}`;
     
     // Calculate dimensions for the plate
     const wellSize = 25;
@@ -689,8 +756,8 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
     
     let html = `<div class="plate-grid">`;
     
-    // Outer border div (dark gray)
-    html += `<div class="plate-border ${notchClasses.join(' ')}" style="padding: 3px; background-color: var(--gray-dark); border-radius: 5px; position: relative;">`;
+    // Outer border div (colored border)
+    html += `<div class="plate-border ${notchClasses.join(' ')} ${borderColorClass}" style="padding: 3px; border-radius: 5px; position: relative;">`;
     
     // Inner plate div (white background with margin)
     html += `<div class="plate-inner ${notchClasses.join(' ')}">`;    
@@ -755,12 +822,10 @@ function toggleNotch(corner) {
         // Change from notch back to square
         cornerTypes[cornerIndex] = 1;
         notchElement.classList.remove('active');
-        notchElement.innerHTML = '';
     } else {
         // Change from square to notch
         cornerTypes[cornerIndex] = 2;
         notchElement.classList.add('active');
-        notchElement.innerHTML = '◣'; // Small triangle symbol
     }
     
     updatePreview();
@@ -824,10 +889,8 @@ function loadContainerTypeDetails(cid) {
                     const notchElement = document.querySelector(`[data-corner="${corner}"]`);
                     if (corners[index] === 2) {
                         notchElement.classList.add('active');
-                        notchElement.innerHTML = '◣';
                     } else {
                         notchElement.classList.remove('active');
-                        notchElement.innerHTML = '';
                     }
                 });
             }
@@ -869,7 +932,6 @@ function showCreateForm() {
     // Reset notch selection
     document.querySelectorAll('.notch-corner').forEach(corner => {
         corner.classList.remove('active');
-        corner.innerHTML = '';
     });
     
     // Update preview
