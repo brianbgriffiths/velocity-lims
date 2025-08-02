@@ -575,7 +575,21 @@
         justify-content: center;
         font-size: 10px;
         color: var(--gray-dark);
+        position: relative;
+        overflow: hidden;
     }
+    
+    /* Container color styles matching settings_containers */
+    .container-preview.color-1 { background-color: rgba(33, 150, 243, 0.2); border-color: #2196f3; }
+    .container-preview.color-2 { background-color: rgba(156, 39, 176, 0.2); border-color: #9c27b0; }
+    .container-preview.color-3 { background-color: rgba(76, 175, 80, 0.2); border-color: #4caf50; }
+    .container-preview.color-4 { background-color: rgba(255, 152, 0, 0.2); border-color: #ff9800; }
+    .container-preview.color-5 { background-color: rgba(244, 67, 54, 0.2); border-color: #f44336; }
+    .container-preview.color-6 { background-color: rgba(0, 150, 136, 0.2); border-color: #009688; }
+    .container-preview.color-7 { background-color: rgba(233, 30, 99, 0.2); border-color: #e91e63; }
+    .container-preview.color-8 { background-color: rgba(139, 195, 74, 0.2); border-color: #8bc34a; }
+    .container-preview.color-9 { background-color: rgba(63, 81, 181, 0.2); border-color: #3f51b5; }
+    .container-preview.color-10 { background-color: rgba(255, 193, 7, 0.2); border-color: #ffc107; }
 
     #pylims_request_error {
         border: solid 1px var(--red-med);
@@ -1236,16 +1250,28 @@ function loadContainersInterface(containers) {
 }
 
 function createContainerItemHTML(container, index) {
+    // Handle different possible field names from the API
+    const typeName = container.type_name || container.name || container.container_name || 'Unknown Container';
+    const rows = container.rows || container.row_count || 0;
+    const columns = container.columns || container.column_count || container.cols || 0;
+    const cid = container.cid || container.id || container.container_id;
+    const color = container.color || container.plate_color || 1; // Default to color 1 if no color specified
+    
+    console.log('Creating container item:', { container, typeName, rows, columns, cid, color });
+    
     return `
-        <div class="container-item" data-container-id="${container.cid}" draggable="true">
+        <div class="container-item" data-container-id="${cid}" draggable="true">
             <div class="container-drag-handle">
                 <i class="fas fa-grip-vertical"></i>
             </div>
             <div class="container-info">
-                <div class="container-name">${container.type_name || 'Unknown Container'}</div>
-                <div class="container-details">${container.rows || 0}×${container.columns || 0} wells</div>
+                <div class="container-name">${typeName}</div>
+                <div class="container-details">${rows}×${columns} wells</div>
             </div>
-            <button class="container-remove" onclick="removeContainer(${container.cid})" title="Remove container">
+            <div class="container-preview color-${color}" style="width: 30px; height: 20px; margin-left: 10px;">
+                ${rows}×${columns}
+            </div>
+            <button class="container-remove" onclick="removeContainer(${cid})" title="Remove container">
                 <i class="fas fa-times"></i>
             </button>
         </div>
@@ -1320,12 +1346,16 @@ function updateContainersFromDOM() {
     
     containerItems.forEach(item => {
         const containerId = parseInt(item.dataset.containerId);
-        const container = availableContainers.find(c => c.cid === containerId);
+        const container = availableContainers.find(c => {
+            const cid = c.cid || c.id || c.container_id;
+            return cid === containerId;
+        });
         if (container) {
             containers.push(container);
         }
     });
     
+    console.log('Updated containers from DOM:', containers);
     updateContainerConfigTextarea(containers);
 }
 
@@ -1335,12 +1365,16 @@ function getContainersFromInterface() {
     
     containerItems.forEach(item => {
         const containerId = parseInt(item.dataset.containerId);
-        const container = availableContainers.find(c => c.cid === containerId);
+        const container = availableContainers.find(c => {
+            const cid = c.cid || c.id || c.container_id;
+            return cid === containerId;
+        });
         if (container) {
             containers.push(container);
         }
     });
     
+    console.log('Getting containers from interface:', containers);
     return containers;
 }
 
@@ -1374,8 +1408,10 @@ function loadAvailableContainers() {
     };
     
     pylims_post(pyoptions).then(result => {
+        console.log('Available containers response:', result);
         if (result.status === 'success') {
             availableContainers = result.container_types || [];
+            console.log('Loaded available containers:', availableContainers);
             renderAvailableContainers();
         }
     }).catch(error => {
@@ -1395,20 +1431,29 @@ function renderAvailableContainers() {
     
     let html = '';
     availableContainers.forEach(container => {
-        const isEnabled = enabledContainerIds.has(container.cid);
+        // Handle different possible field names from the API
+        const typeName = container.type_name || container.name || container.container_name || 'Unknown Container';
+        const rows = container.rows || container.row_count || 0;
+        const columns = container.columns || container.column_count || container.cols || 0;
+        const cid = container.cid || container.id || container.container_id;
+        const color = container.color || container.plate_color || 1; // Default to color 1 if no color specified
+        
+        const isEnabled = enabledContainerIds.has(cid);
         const disabledClass = isEnabled ? 'disabled' : '';
         const title = isEnabled ? 'Container already added' : 'Click to add this container';
         
+        console.log('Rendering container:', { container, typeName, rows, columns, cid, color, isEnabled });
+        
         html += `
             <div class="available-container ${disabledClass}" 
-                 onclick="${isEnabled ? '' : `addContainer(${container.cid})`}" 
+                 onclick="${isEnabled ? '' : `addContainer(${cid})`}" 
                  title="${title}">
-                <div class="container-preview">
-                    ${container.rows}×${container.columns}
+                <div class="container-preview color-${color}">
+                    ${rows}×${columns}
                 </div>
                 <div class="container-info">
-                    <div class="container-name">${container.type_name}</div>
-                    <div class="container-details">${container.rows}×${container.columns} wells</div>
+                    <div class="container-name">${typeName}</div>
+                    <div class="container-details">${rows}×${columns} wells</div>
                 </div>
                 ${isEnabled ? '<div style="margin-left: auto; color: var(--green-med);"><i class="fas fa-check"></i></div>' : ''}
             </div>
@@ -1419,11 +1464,16 @@ function renderAvailableContainers() {
 }
 
 function addContainer(containerId) {
-    const container = availableContainers.find(c => c.cid === containerId);
+    const container = availableContainers.find(c => {
+        const cid = c.cid || c.id || c.container_id;
+        return cid === containerId;
+    });
     if (!container || enabledContainerIds.has(containerId)) {
+        console.log('Container not found or already enabled:', containerId, container);
         return;
     }
     
+    console.log('Adding container:', container);
     enabledContainerIds.add(containerId);
     
     // Add to the enabled containers display
