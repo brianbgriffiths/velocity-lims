@@ -215,102 +215,102 @@
         box-sizing: border-box;
     }
     
-    /* Notch styles for corners - applied to all three layers */
+    /* Notch styles for corners - applied to all three layers (30% bigger notches) */
     .plate-border.notch-tl,
     .plate-inner.notch-tl,
     .plate-color.notch-tl {
-        clip-path: polygon(15px 0, 100% 0, 100% 100%, 0 100%, 0 15px);
+        clip-path: polygon(20px 0, 100% 0, 100% 100%, 0 100%, 0 20px);
         border-top-left-radius: 0;
     }
     
     .plate-border.notch-tr,
     .plate-inner.notch-tr,
     .plate-color.notch-tr {
-        clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%);
+        clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%);
         border-top-right-radius: 0;
     }
     
     .plate-border.notch-bl,
     .plate-inner.notch-bl,
     .plate-color.notch-bl {
-        clip-path: polygon(0 0, 100% 0, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+        clip-path: polygon(0 0, 100% 0, 100% 100%, 20px 100%, 0 calc(100% - 20px));
         border-bottom-left-radius: 0;
     }
     
     .plate-border.notch-br,
     .plate-inner.notch-br,
     .plate-color.notch-br {
-        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
         border-bottom-right-radius: 0;
     }
     
-    /* Multiple notches - combined clip-paths */
+    /* Multiple notches - combined clip-paths (30% bigger notches) */
     .plate-border.notch-tl.notch-tr,
     .plate-inner.notch-tl.notch-tr,
     .plate-color.notch-tl.notch-tr {
-        clip-path: polygon(15px 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%, 0 15px);
+        clip-path: polygon(20px 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%, 0 20px);
     }
     
     .plate-border.notch-tl.notch-bl,
     .plate-inner.notch-tl.notch-bl,
     .plate-color.notch-tl.notch-bl {
-        clip-path: polygon(15px 0, 100% 0, 100% 100%, 15px 100%, 0 calc(100% - 15px), 0 15px);
+        clip-path: polygon(20px 0, 100% 0, 100% 100%, 20px 100%, 0 calc(100% - 20px), 0 20px);
     }
     
     .plate-border.notch-tl.notch-br,
     .plate-inner.notch-tl.notch-br,
     .plate-color.notch-tl.notch-br {
-        clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+        clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
     }
     
     .plate-border.notch-tr.notch-bl,
     .plate-inner.notch-tr.notch-bl,
     .plate-color.notch-tr.notch-bl {
-        clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+        clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
     }
     
     .plate-border.notch-tr.notch-br,
     .plate-inner.notch-tr.notch-br,
     .plate-color.notch-tr.notch-br {
-        clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%);
+        clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%);
     }
     
     .plate-border.notch-bl.notch-br,
     .plate-inner.notch-bl.notch-br,
     .plate-color.notch-bl.notch-br {
-        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px));
+        clip-path: polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px));
     }
     
-    /* Three notches */
+    /* Three notches (30% bigger) */
     .plate-border.notch-tl.notch-tr.notch-bl,
     .plate-inner.notch-tl.notch-tr.notch-bl,
     .plate-color.notch-tl.notch-tr.notch-bl {
-        clip-path: polygon(15px 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px), 0 15px);
+        clip-path: polygon(20px 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px), 0 20px);
     }
     
     .plate-border.notch-tl.notch-tr.notch-br,
     .plate-inner.notch-tl.notch-tr.notch-br,
     .plate-color.notch-tl.notch-tr.notch-br {
-        clip-path: polygon(15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+        clip-path: polygon(20px 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
     }
     
     .plate-border.notch-tl.notch-bl.notch-br,
     .plate-inner.notch-tl.notch-bl.notch-br,
     .plate-color.notch-tl.notch-bl.notch-br {
-        clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px), 0 15px);
+        clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px), 0 20px);
     }
     
     .plate-border.notch-tr.notch-bl.notch-br,
     .plate-inner.notch-tr.notch-bl.notch-br,
     .plate-color.notch-tr.notch-bl.notch-br {
-        clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px));
+        clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px), calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px));
     }
     
-    /* All four notches */
+    /* All four notches (30% bigger) */
     .plate-border.notch-tl.notch-tr.notch-bl.notch-br,
     .plate-inner.notch-tl.notch-tr.notch-bl.notch-br,
     .plate-color.notch-tl.notch-tr.notch-bl.notch-br {
-        clip-path: polygon(15px 0, calc(100% - 15px) 0, 100% 15px, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px), 0 15px);
+        clip-path: polygon(20px 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px), calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px), 0 20px);
     }
     
     .plate-grid table {
@@ -588,9 +588,7 @@
         </div>
         
         <div class="right-panel">
-            <div class="panel-header">
-                <i class="fas fa-plus"></i> Create Container Type
-            </div>
+            
             <div class="panel-content">
                 <div class="create-form">
                     <form id="createContainerForm" onsubmit="createContainerType(event)">
@@ -688,13 +686,12 @@
                         <!-- Preview will be generated here -->
                     </div>
                 </div>
-                
-                <div id="selectedTypeDetails" style="display: none;">
-                    <h4>Selected Container Type</h4>
-                    <div id="selectedTypeInfo"></div>
+
+                <div class="panel-header">
+                    <i class="fas fa-plus"></i> Create Container Type
                     {% if can_archive %}
                         <button class="btn-delete" onclick="deleteContainerType()">
-                            <i class="fas fa-trash"></i> Delete Container Type
+                            <i class="fas fa-trash"></i> Archive Container Type
                         </button>
                     {% endif %}
                 </div>
@@ -756,8 +753,8 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
     
     let html = `<div class="plate-grid">`;
     
-    // Outer border div (colored border)
-    html += `<div class="plate-border ${notchClasses.join(' ')} ${borderColorClass}" style="padding: 3px; border-radius: 5px; position: relative;">`;
+    // Outer border div (colored border with reduced padding for cleaner notches)
+    html += `<div class="plate-border ${notchClasses.join(' ')} ${borderColorClass}" style="padding: 2px; border-radius: 5px; position: relative; box-sizing: border-box;">`;
     
     // Inner plate div (white background with margin)
     html += `<div class="plate-inner ${notchClasses.join(' ')}">`;    
