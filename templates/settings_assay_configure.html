@@ -362,7 +362,7 @@
             <div class="version-info">
                 <span>Version:</span>
                 <span class="version-badge {% if assay.status == 1 %}badge-draft{% elif assay.status == 2 %}badge-testing{% elif assay.status == 3 %}badge-locked{% endif %}">
-                    v{{ assay.version_major }}.{{ assay.version_minor }}{% if assay.version_patch %}.{{ assay.version_patch }}{% endif %}
+                    v{{ assay.version_major }}.{{ assay.version_minor }}.{{ assay.version_patch|default:"0" }}
                     ({% if assay.status == 1 %}Draft{% elif assay.status == 2 %}Testing{% elif assay.status == 3 %}Locked{% endif %})
                 </span>
             </div>
@@ -477,10 +477,24 @@ function saveVersionName() {
     pylims_post(pyoptions).then(result => {
         if (result.status === 'success') {
             pylims_ui.success('Version name updated successfully');
+            // Update version display with new patch version
+            if (result.version) {
+                updateVersionDisplay(result.version.version_major, result.version.version_minor, result.version.version_patch);
+            }
         }
     }).catch(error => {
         console.error('Save error:', error);
     });
+}
+
+function updateVersionDisplay(major, minor, patch) {
+    const versionBadge = document.querySelector('.version-badge');
+    if (versionBadge) {
+        // Update the version number while preserving the status text
+        const statusText = versionBadge.textContent.match(/\((.*)\)$/);
+        const status = statusText ? statusText[1] : 'Draft';
+        versionBadge.childNodes[0].textContent = `v${major}.${minor}.${patch} (${status})`;
+    }
 }
 
 function toggleStepOrder() {
@@ -618,7 +632,10 @@ function saveStepOrder() {
     pylims_post(pyoptions).then(result => {
         if (result.status === 'success') {
             console.log('Step order saved successfully');
-            // Optionally show a brief success message
+            // Update version display with new patch version if returned
+            if (result.version) {
+                updateVersionDisplay(result.version.version_major, result.version.version_minor, result.version.version_patch);
+            }
         }
     }).catch(error => {
         console.error('Save step order error:', error);

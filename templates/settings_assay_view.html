@@ -218,7 +218,7 @@
             <div class="version-info">
                 <span>Active Version:</span>
                 <span class="version-badge">
-                    v{{ assay.version_major }}.{{ assay.version_minor }}{% if assay.version_patch %}.{{ assay.version_patch }}{% endif %}
+                    v{{ assay.version_major }}.{{ assay.version_minor }}.{{ assay.version_patch|default:"0" }}
                 </span>
             </div>
             <div class="assay-meta">

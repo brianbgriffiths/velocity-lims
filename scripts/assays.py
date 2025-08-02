@@ -834,19 +834,25 @@ def save_step_order(request):
         # Convert step_order to JSON string for storage
         step_order_json = json.dumps(step_order)
         
-        # Update the assay_steps JSON field with the new order
+        # Update the assay_steps JSON field with the new order and increment patch version
         cursor.execute("""
             UPDATE velocity.assay_versions 
-            SET assay_steps = %s, modified = CURRENT_TIMESTAMP
+            SET assay_steps = %s, 
+                version_patch = COALESCE(version_patch, 0) + 1,
+                modified = CURRENT_TIMESTAMP
             WHERE avid = %s
+            RETURNING version_major, version_minor, version_patch
         """, (step_order_json, version_data['avid']))
+        
+        updated_version = cursor.fetchone()
         
         conn.commit()
         conn.close()
         
         return JsonResponse({
             'status': 'success',
-            'message': 'Step order updated successfully'
+            'message': f'Step order updated successfully (v{updated_version["version_major"]}.{updated_version["version_minor"]}.{updated_version["version_patch"]})',
+            'version': updated_version
         })
         
     except json.JSONDecodeError as e:
@@ -888,12 +894,14 @@ def save_version_name(request):
         )
         cursor = conn.cursor()
         
-        # Update the version name
+        # Update the version name and increment patch version
         cursor.execute("""
             UPDATE velocity.assay_versions 
-            SET version_name = %s, modified = CURRENT_TIMESTAMP
+            SET version_name = %s, 
+                version_patch = COALESCE(version_patch, 0) + 1,
+                modified = CURRENT_TIMESTAMP
             WHERE avid = %s
-            RETURNING avid, version_name
+            RETURNING avid, version_name, version_major, version_minor, version_patch
         """, (version_name, avid))
         
         result = cursor.fetchone()
@@ -906,7 +914,7 @@ def save_version_name(request):
         return JsonResponse({
             'status': 'success',
             'version': result,
-            'message': f'Version name updated to "{version_name}"'
+            'message': f'Version name updated to "{version_name}" (v{result["version_major"]}.{result["version_minor"]}.{result["version_patch"]})'
         })
         
     except json.JSONDecodeError as e:
