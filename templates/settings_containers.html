@@ -868,7 +868,7 @@ function loadContainerTypeDetails(cid) {
     const pyoptions = {
         data: { cid: cid },
         csrf: csrf,
-        url: 'get_container_type_details/',
+        url: 'get_container_type_details',
         submit_mode: 'silent'
     };
     
@@ -1016,7 +1016,7 @@ function createContainerType(event) {
             special_wells: specialWells
         },
         csrf: csrf,
-        url: 'create_container_type/',
+        url: 'create_container_type',
         submit_mode: 'silent'
     };
     
@@ -1063,7 +1063,7 @@ function deleteContainerType() {
     const pyoptions = {
         data: { cid: selectedContainerTypeId },
         csrf: csrf,
-        url: 'delete_container_type/',
+        url: 'delete_container_type',
         submit_mode: 'silent'
     };
     
