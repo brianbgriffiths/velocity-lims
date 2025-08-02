@@ -355,7 +355,6 @@
         font-size: 10px;
         font-weight: bold;
         border: 1px solid var(--gray-med);
-        border-radius: 2px;
         padding: 0;
         position: relative;
     }
@@ -364,6 +363,20 @@
         background-color: white;
         cursor: pointer;
         transition: all 0.2s;
+        width: 100%;
+        height: 100%;
+        border: inherit;
+    }
+    
+    /* Well type shapes - make these more specific and important */
+    .plate-grid .well.well-type-1 { 
+        border-radius: 50% !important;  /* Round wells - circular */
+    }
+    .plate-grid .well.well-type-2 { 
+        border-radius: 0 !important;    /* Square wells - no radius */
+    }
+    .plate-grid .well.well-type-3 { 
+        border-radius: 5px !important;  /* Rounded square wells - small radius */
     }
     
     .plate-grid .well:hover {
@@ -445,9 +458,9 @@
         border: 2px solid var(--gray-med);
     }
     
-    .well-type-1 { border-radius: 50%; }  /* Round wells - circular */
-    .well-type-2 { border-radius: 0; }    /* Square wells - no radius */
-    .well-type-3 { border-radius: 5px; }  /* Rounded square wells - small radius */
+    .well-type-1 { border-radius: 50% !important; }  /* Round wells - circular */
+    .well-type-2 { border-radius: 0 !important; }    /* Square wells - no radius */
+    .well-type-3 { border-radius: 5px !important; }  /* Rounded square wells - small radius */
     
     .border-type-1 { border-width: 1px; }
     .border-type-2 { border-width: 2px; }
