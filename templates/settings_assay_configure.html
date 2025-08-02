@@ -25,6 +25,31 @@
         min-height: 600px;
     }
     
+    .top-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .save-all-btn {
+        background-color: var(--accent1);
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .save-all-btn:hover {
+        background-color: var(--accent2);
+    }
+    
     .left-panel {
         flex: 0 0 300px;
         background-color: var(--gray-lightest);
@@ -391,9 +416,12 @@
                 <label class="form-label" for="versionName">Version Name</label>
                 <input type="text" id="versionName" class="form-input" value="{{ assay.version_name }}" placeholder="Enter version name">
             </div>
-            
-            <button class="btn-save" onclick="saveVersionName()">
-                <i class="fas fa-save"></i> Save Changes
+        </div>
+        
+        <div class="top-controls">
+            <div></div>
+            <button class="save-all-btn" onclick="saveAll()">
+                <i class="fas fa-save"></i> Save All Changes
             </button>
         </div>
         
@@ -489,12 +517,6 @@
                                     <label class="form-label" for="stepScriptsConfig">Step Scripts Configuration</label>
                                     <textarea id="stepScriptsConfig" class="form-input" rows="4" placeholder="JSON array of script configurations">[]</textarea>
                                 </div>
-                                
-                                <div class="form-group">
-                                    <button type="button" class="btn-save" onclick="saveStepConfiguration()">
-                                        <i class="fas fa-save"></i> Save Step Configuration
-                                    </button>
-                                </div>
                             </form>
                         </div>
                     </div>
@@ -515,13 +537,51 @@ let selectedStepId = null;
 let isReorderMode = false;
 let draggedElement = null;
 
-function saveVersionName() {
+function saveAll() {
     const versionName = document.getElementById('versionName').value.trim();
     
     if (!versionName) {
         pylims_ui.error('Version name is required');
         return;
     }
+    
+    let versionChanged = false;
+    let stepChanged = false;
+    
+    // First, save version name if it has changed
+    saveVersionName().then((versionResult) => {
+        versionChanged = versionResult && versionResult.status === 'success' && !versionResult.version_unchanged;
+        
+        // Then save step configuration if a step is selected
+        if (selectedStepId) {
+            return saveStepConfiguration(true); // Pass true to indicate this is part of unified save
+        }
+        return Promise.resolve({ status: 'success', config_unchanged: true });
+    }).then((stepResult) => {
+        stepChanged = stepResult && stepResult.status === 'success' && !stepResult.config_unchanged;
+        
+        // Show appropriate success message
+        if (versionChanged || stepChanged) {
+            if (versionChanged && stepChanged) {
+                pylims_ui.success('Version name and step configuration saved successfully');
+            } else if (versionChanged) {
+                pylims_ui.success('Version name saved successfully');
+            } else if (stepChanged) {
+                pylims_ui.success('Step configuration saved successfully');
+            }
+        } else {
+            pylims_ui.success('No changes detected');
+        }
+        
+        console.log('All changes saved successfully');
+    }).catch(error => {
+        console.error('Error saving changes:', error);
+        pylims_ui.error('Failed to save changes');
+    });
+}
+
+function saveVersionName() {
+    const versionName = document.getElementById('versionName').value.trim();
     
     const pyoptions = {
         data: {
@@ -533,17 +593,15 @@ function saveVersionName() {
         submit_mode: 'silent'
     };
     
-    pylims_post(pyoptions).then(result => {
+    return pylims_post(pyoptions).then(result => {
         if (result.status === 'success') {
             if (result.version_unchanged) {
-                pylims_ui.success('Version name unchanged');
                 console.log('Version name unchanged, no version increment');
                 // Still update display to ensure consistency (in case of display drift)
                 if (result.version) {
                     updateVersionDisplay(result.version.version_major, result.version.version_minor, result.version.version_patch);
                 }
             } else {
-                pylims_ui.success(result.message || 'Version name updated successfully');
                 console.log('Version name saved successfully, version incremented');
                 // Update version display with new patch version
                 if (result.version) {
@@ -551,8 +609,7 @@ function saveVersionName() {
                 }
             }
         }
-    }).catch(error => {
-        console.error('Save error:', error);
+        return result;
     });
 }
 
@@ -802,17 +859,20 @@ function loadStepConfiguration(stepId) {
     });
 }
 
-function saveStepConfiguration() {
+function saveStepConfiguration(isUnifiedSave = false) {
     if (!selectedStepId) {
-        pylims_ui.error('No step selected');
-        return;
+        console.log('No step selected, skipping step configuration save');
+        return Promise.resolve({ status: 'success', config_unchanged: true });
     }
     
     const stepName = document.getElementById('stepName').value.trim();
     
     if (!stepName) {
-        pylims_ui.error('Step name is required');
-        return;
+        const errorMsg = 'Step name is required';
+        if (!isUnifiedSave) {
+            pylims_ui.error(errorMsg);
+        }
+        return Promise.reject(new Error(errorMsg));
     }
     
     try {
@@ -839,17 +899,15 @@ function saveStepConfiguration() {
             submit_mode: 'silent'
         };
         
-        pylims_post(pyoptions).then(result => {
+        return pylims_post(pyoptions).then(result => {
             if (result.status === 'success') {
                 if (result.config_unchanged) {
-                    pylims_ui.success('Step configuration unchanged');
                     console.log('Step configuration unchanged, no version increment');
                     // Still update display to ensure consistency (in case of display drift)
                     if (result.version) {
                         updateVersionDisplay(result.version.version_major, result.version.version_minor, result.version.version_patch);
                     }
                 } else {
-                    pylims_ui.success(result.message || 'Step configuration saved successfully');
                     console.log('Step configuration saved successfully, version incremented');
                     
                     // Update step name in the left panel if it changed
@@ -866,14 +924,25 @@ function saveStepConfiguration() {
                         updateVersionDisplay(result.version.version_major, result.version.version_minor, result.version.version_patch);
                     }
                 }
+                
+                // Only show success message if this is not part of unified save
+                if (!isUnifiedSave) {
+                    if (result.config_unchanged) {
+                        pylims_ui.success('Step configuration unchanged');
+                    } else {
+                        pylims_ui.success(result.message || 'Step configuration saved successfully');
+                    }
+                }
             }
-        }).catch(error => {
-            console.error('Save step config error:', error);
-            pylims_ui.error('Failed to save step configuration');
+            return result;
         });
         
     } catch (e) {
-        pylims_ui.error('Invalid JSON in configuration fields: ' + e.message);
+        const errorMsg = 'Invalid JSON in configuration fields: ' + e.message;
+        if (!isUnifiedSave) {
+            pylims_ui.error(errorMsg);
+        }
+        return Promise.reject(e);
     }
 }
 

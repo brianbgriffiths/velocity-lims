@@ -366,6 +366,9 @@
     {% if permissions.super_user or permissions.any_assayconfig %}
         <div class="role"><a href="{% url 'settings_assays' %}">Assays</a></div>
     {% endif %}
+    {% if permissions.super_user or permissions.container_any %}
+        <div class="role"><a href="{% url 'settings_containers' %}">Containers</a></div>
+    {% endif %}
 </div>
 
 {% endblock %}
