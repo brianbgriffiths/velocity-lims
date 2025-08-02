@@ -71,6 +71,7 @@ urlpatterns = [
     #containers
     path('settings_containers/', containers.settings_containers, name="settings_containers"),
     path('create_container_type/', containers.create_container_type, name="create_container_type"),
+    path('get_container_types/', containers.get_container_types, name="get_container_types"),
     path('get_container_type_details/', containers.get_container_type_details, name="get_container_type_details"),
     path('delete_container_type/', containers.delete_container_type, name="delete_container_type"),
 

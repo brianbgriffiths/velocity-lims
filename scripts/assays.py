@@ -1007,6 +1007,38 @@ def get_step_config(request):
         if not step_config:
             return JsonResponse({'error': 'Step configuration not found'}, status=404)
         
+        # If there are containers configured, fetch their full details
+        containers_with_details = []
+        if step_config['containers']:
+            try:
+                container_ids = [c.get('cid') for c in step_config['containers'] if c.get('cid')]
+                if container_ids:
+                    # Create placeholders for the IN clause
+                    placeholders = ','.join(['%s'] * len(container_ids))
+                    cursor.execute(f"""
+                        SELECT cid, type_name, rows, columns, well_type, border_type, color,
+                               restricted_well_map, special_well_map, corner_types,
+                               margin_width, well_padding
+                        FROM velocity.container_config 
+                        WHERE cid IN ({placeholders})
+                        ORDER BY type_name
+                    """, container_ids)
+                    
+                    available_containers = {c['cid']: c for c in cursor.fetchall()}
+                    
+                    # Maintain the order from the original containers list
+                    for container_ref in step_config['containers']:
+                        cid = container_ref.get('cid')
+                        if cid and cid in available_containers:
+                            containers_with_details.append(available_containers[cid])
+            except Exception as e:
+                print(f"Error fetching container details: {e}")
+                # Fall back to original containers data if there's an error
+                containers_with_details = step_config['containers']
+        
+        # Update step_config with detailed container information
+        step_config['containers'] = containers_with_details
+        
         conn.close()
         
         return JsonResponse({
@@ -1042,6 +1074,12 @@ def save_step_config(request):
         pages = data.get('pages', [])
         sample_data = data.get('sample_data', [])
         step_scripts = data.get('step_scripts', [])
+        
+        # Extract just the container IDs for storage (containers may contain full details)
+        container_refs = []
+        for container in containers:
+            if isinstance(container, dict) and container.get('cid'):
+                container_refs.append({'cid': container['cid']})
         
         if not scid:
             return JsonResponse({'error': 'Step configuration ID (scid) is required'}, status=400)
@@ -1079,7 +1117,7 @@ def save_step_config(request):
         config_unchanged = (
             current_config['step_name'] == step_name and
             current_config['create_samples'] == create_samples and
-            current_containers == containers and
+            current_containers == container_refs and
             current_controls == controls and
             current_pages == pages and
             current_sample_data == sample_data and
@@ -1110,7 +1148,7 @@ def save_step_config(request):
                 step_scripts = %s
             WHERE scid = %s
             RETURNING scid, step_name
-        """, (step_name, json.dumps(containers), json.dumps(controls), 
+        """, (step_name, json.dumps(container_refs), json.dumps(controls), 
               create_samples, json.dumps(pages), json.dumps(sample_data), 
               json.dumps(step_scripts), scid))
         

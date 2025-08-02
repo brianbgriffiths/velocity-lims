@@ -280,3 +280,44 @@ def delete_container_type(request):
         return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
 
 
+@login_required
+def get_container_types(request):
+    """
+    Get all container types for selection in assay configuration
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'container_any')):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+    
+    try:
+        conn = psycopg.connect(
+            dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, 
+            host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Get all container types from container_config
+        cursor.execute("""
+            SELECT cid, type_name, rows, columns, well_type, border_type, color,
+                   restricted_well_map, special_well_map, corner_types,
+                   margin_width, well_padding
+            FROM velocity.container_config 
+            ORDER BY type_name
+        """)
+        
+        container_types = cursor.fetchall()
+        
+        conn.close()
+        
+        return JsonResponse({
+            'status': 'success',
+            'container_types': container_types
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+
+
