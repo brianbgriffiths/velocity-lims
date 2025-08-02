@@ -33,7 +33,7 @@ def settings_containers(request):
         # Get all container types from container_config
         cursor.execute("""
             SELECT cid, type_name, rows, columns, well_type, border_type, color,
-                   restricted_well_map, special_well_map
+                   restricted_well_map, special_well_map, corner_types
             FROM velocity.container_config 
             ORDER BY type_name
         """)
@@ -81,6 +81,7 @@ def create_container_type(request):
         color = int(data.get('color', 1))
         restricted_wells = data.get('restricted_wells', [])
         special_wells = data.get('special_wells', [])
+        corner_types = data.get('corner_types', [1, 1, 1, 1])
         
         if not type_name:
             return JsonResponse({'error': 'Container type name is required'}, status=400)
@@ -98,6 +99,15 @@ def create_container_type(request):
             return JsonResponse({'error': 'Invalid border type'}, status=400)
         
         if color < 1 or color > 20:
+            return JsonResponse({'error': 'Invalid color selection'}, status=400)
+        
+        # Validate corner_types array
+        if not isinstance(corner_types, list) or len(corner_types) != 4:
+            return JsonResponse({'error': 'Corner types must be an array of 4 values'}, status=400)
+        
+        for corner_type in corner_types:
+            if not isinstance(corner_type, int) or corner_type < 1 or corner_type > 10:
+                return JsonResponse({'error': 'Invalid corner type value'}, status=400)
             return JsonResponse({'error': 'Invalid color selection'}, status=400)
         
         conn = psycopg.connect(
@@ -119,11 +129,11 @@ def create_container_type(request):
         cursor.execute("""
             INSERT INTO velocity.container_config 
             (type_name, rows, columns, well_type, border_type, color, 
-             restricted_well_map, special_well_map)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+             restricted_well_map, special_well_map, corner_types)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING cid, type_name, rows, columns, well_type, border_type, color
         """, (type_name, rows, columns, well_type, border_type, color, 
-              json.dumps(restricted_wells), json.dumps(special_wells)))
+              json.dumps(restricted_wells), json.dumps(special_wells), json.dumps(corner_types)))
         
         result = cursor.fetchone()
         
@@ -171,7 +181,7 @@ def get_container_type_details(request):
         
         cursor.execute("""
             SELECT cid, type_name, rows, columns, well_type, border_type, color,
-                   restricted_well_map, special_well_map
+                   restricted_well_map, special_well_map, corner_types
             FROM velocity.container_config 
             WHERE cid = %s
         """, (cid,))
