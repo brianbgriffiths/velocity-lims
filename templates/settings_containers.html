@@ -445,9 +445,9 @@
         border: 2px solid var(--gray-med);
     }
     
-    .well-type-1 { border-radius: 50%; }  /* Round */
-    .well-type-2 { border-radius: 0; }    /* Square */
-    .well-type-3 { border-radius: 15%; }  /* Rounded square */
+    .well-type-1 { border-radius: 50%; }  /* Round wells - circular */
+    .well-type-2 { border-radius: 0; }    /* Square wells - no radius */
+    .well-type-3 { border-radius: 5px; }  /* Rounded square wells - small radius */
     
     .border-type-1 { border-width: 1px; }
     .border-type-2 { border-width: 2px; }
@@ -672,11 +672,7 @@
                             </div>
                         </div>
                         
-                        <div class="form-group">
-                            <button type="submit" class="btn-create">
-                                <i class="fas fa-save"></i> Create Container Type
-                            </button>
-                        </div>
+                        
                     </form>
                 </div>
                 
@@ -687,8 +683,10 @@
                     </div>
                 </div>
 
-                <div class="panel-header">
-                    <i class="fas fa-plus"></i> Create Container Type
+                <div class="form-group">
+                    <button type="submit" class="btn-create">
+                        <i class="fas fa-save"></i> Create Container Type
+                    </button>
                     {% if can_archive %}
                         <button class="btn-delete" onclick="deleteContainerType()">
                             <i class="fas fa-trash"></i> Archive Container Type
@@ -761,17 +759,17 @@ function generatePlatePreview(rows, columns, wellType, borderType, color, corner
     // Color div (selected color background)
     html += `<div class="plate-color ${notchClasses.join(' ')} ${plateColorClass}" style="padding: ${marginWidth}px;">`;
     
-    // Add row labels outside the border
+    // Add row labels outside the border (positioned to avoid notch clipping)
     for (let row = 0; row < rows; row++) {
         const rowLabel = String.fromCharCode(65 + row); // A, B, C, etc.
         const topPosition = 4 + marginWidth + (row * (wellSize + totalWellSpacing)) + 2;
-        html += `<div class="row-label" style="position: absolute; top: ${topPosition}px; left: ${-30}px; width: 20px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: var(--gray-dark); z-index: 5;">${rowLabel}</div>`;
+        html += `<div class="row-label" style="position: absolute; top: ${topPosition}px; left: ${-35}px; width: 20px; height: 25px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: var(--gray-dark); z-index: 10;">${rowLabel}</div>`;
     }
     
-    // Add column labels outside the border
+    // Add column labels outside the border (positioned to avoid notch clipping)
     for (let col = 1; col <= columns; col++) {
         const leftPosition = 4 + marginWidth + ((col - 1) * (wellSize + totalWellSpacing)) + 2;
-        html += `<div class="col-label" style="position: absolute; left: ${leftPosition}px; top: ${-30}px; width: 25px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: var(--gray-dark); z-index: 5;">${col}</div>`;
+        html += `<div class="col-label" style="position: absolute; left: ${leftPosition}px; top: ${-35}px; width: 25px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: var(--gray-dark); z-index: 10;">${col}</div>`;
     }
     
     html += `<table style="border-spacing: ${wellPadding}px; width: ${tableWidth}px; height: ${tableHeight}px; position: relative; z-index: 4;">`;
