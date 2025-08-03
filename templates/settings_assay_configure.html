@@ -1118,6 +1118,9 @@ function loadStepConfiguration(stepId) {
         if (result.status === 'success') {
             const config = result.step_config;
             
+            console.log('Raw step configuration from API:', config);
+            console.log('Containers in step config:', config.containers);
+            
             // Populate form fields
             document.getElementById('stepName').value = config.step_name || '';
             document.getElementById('createSamples').checked = config.create_samples === 1;
@@ -1241,6 +1244,9 @@ let enabledContainerIds = new Set();
 function loadContainersInterface(containers) {
     const enabledContainersDiv = document.getElementById('enabledContainers');
     
+    console.log('loadContainersInterface called with:', containers);
+    console.log('Container count:', containers ? containers.length : 0);
+    
     if (!containers || containers.length === 0) {
         enabledContainersDiv.innerHTML = '<div class="no-containers">No containers configured for this step</div>';
         enabledContainerIds.clear();
@@ -1252,6 +1258,8 @@ function loadContainersInterface(containers) {
     let html = '';
     
     containers.forEach((container, index) => {
+        console.log(`Container ${index}:`, container);
+        console.log(`Container ${index} keys:`, Object.keys(container));
         enabledContainerIds.add(container.cid);
         html += createContainerItemHTML(container, index);
     });
