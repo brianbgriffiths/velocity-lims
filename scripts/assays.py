@@ -1019,7 +1019,14 @@ def get_step_config(request):
                 print(f"Containers data type: {type(containers_data)}")
                 print(f"Containers data: {containers_data}")
                 
-                container_ids = [c.get('cid') for c in containers_data if c.get('cid')]
+                # Extract container IDs - handle both formats: [6, 7] or [{'cid': 6}, {'cid': 7}]
+                container_ids = []
+                for c in containers_data:
+                    if isinstance(c, dict) and c.get('cid'):
+                        container_ids.append(c['cid'])
+                    elif isinstance(c, (int, str)) and str(c).isdigit():
+                        container_ids.append(int(c))
+                
                 print(f"Container IDs to fetch: {container_ids}")
                 
                 if container_ids:
@@ -1037,10 +1044,17 @@ def get_step_config(request):
                     available_containers = {c['cid']: c for c in cursor.fetchall()}
                     print(f"Available containers from DB: {available_containers}")
                     
-                    # Maintain the order from the original containers list
-                    for container_ref in containers_data:
-                        cid = container_ref.get('cid')
-                        if cid and cid in available_containers:
+                    # Maintain the order from the original containers list and add full details
+                    for i, c in enumerate(containers_data):
+                        # Get the container ID from either format
+                        if isinstance(c, dict) and c.get('cid'):
+                            cid = c['cid']
+                        elif isinstance(c, (int, str)) and str(c).isdigit():
+                            cid = int(c)
+                        else:
+                            continue
+                            
+                        if cid in available_containers:
                             containers_with_details.append(available_containers[cid])
                             
                     print(f"Final containers with details: {containers_with_details}")
