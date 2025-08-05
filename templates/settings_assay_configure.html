@@ -545,11 +545,25 @@
         background-color: var(--red-dark);
     }
     
-    /* Special sample type colors */
-    .special-sample-item.type-1 { border-left: 4px solid var(--orange-med); }
-    .special-sample-item.type-2 { border-left: 4px solid var(--blue-med); }
-    .special-sample-item.type-3 { border-left: 4px solid var(--purple-med); }
-    .special-sample-item.type-4 { border-left: 4px solid var(--gray-med); }
+    /* Special sample type colors - using CSS custom properties for dynamic types */
+    .special-sample-item[data-sample-type="1"] { border-left: 4px solid var(--orange-med); }
+    .special-sample-item[data-sample-type="2"] { border-left: 4px solid var(--blue-med); }
+    .special-sample-item[data-sample-type="3"] { border-left: 4px solid var(--purple-med); }
+    .special-sample-item[data-sample-type="4"] { border-left: 4px solid var(--gray-med); }
+    .special-sample-item[data-sample-type="5"] { border-left: 4px solid var(--green-med); }
+    .special-sample-item[data-sample-type="6"] { border-left: 4px solid var(--red-med); }
+    .special-sample-item[data-sample-type="7"] { border-left: 4px solid var(--yellow-med); }
+    .special-sample-item[data-sample-type="8"] { border-left: 4px solid var(--teal-med); }
+    
+    /* Container preview colors for special sample types in modal */
+    .container-preview[data-type="1"] { background-color: rgba(255, 152, 0, 0.2); border-color: #ff9800; }
+    .container-preview[data-type="2"] { background-color: rgba(33, 150, 243, 0.2); border-color: #2196f3; }
+    .container-preview[data-type="3"] { background-color: rgba(156, 39, 176, 0.2); border-color: #9c27b0; }
+    .container-preview[data-type="4"] { background-color: rgba(96, 125, 139, 0.2); border-color: #607d8b; }
+    .container-preview[data-type="5"] { background-color: rgba(76, 175, 80, 0.2); border-color: #4caf50; }
+    .container-preview[data-type="6"] { background-color: rgba(244, 67, 54, 0.2); border-color: #f44336; }
+    .container-preview[data-type="7"] { background-color: rgba(255, 193, 7, 0.2); border-color: #ffc107; }
+    .container-preview[data-type="8"] { background-color: rgba(0, 150, 136, 0.2); border-color: #009688; }
     
     .container-item {
         background-color: var(--gray-lightest);
@@ -911,68 +925,9 @@
                                         <textarea id="containerConfig" style="display: none;">[]</textarea>
                                     </div>
                                     
-                                    <!-- Controls Configuration -->
-                                    <div class="config-card">
-                                        <label class="form-label">Controls Configuration</label>
-                                        <div class="special-samples-config-panel">
-                                            <div class="special-samples-config-header">
-                                                <span>Control Samples</span>
-                                                <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector(1)">
-                                                    <i class="fas fa-plus"></i> Add
-                                                </button>
-                                            </div>
-                                            <div class="enabled-special-samples" id="enabledControls">
-                                                <div class="no-special-samples">No controls configured</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- QC Samples Configuration -->
-                                    <div class="config-card">
-                                        <label class="form-label">QC Samples Configuration</label>
-                                        <div class="special-samples-config-panel">
-                                            <div class="special-samples-config-header">
-                                                <span>QC Samples</span>
-                                                <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector(2)">
-                                                    <i class="fas fa-plus"></i> Add
-                                                </button>
-                                            </div>
-                                            <div class="enabled-special-samples" id="enabledQC">
-                                                <div class="no-special-samples">No QC samples configured</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Validation Samples Configuration -->
-                                    <div class="config-card">
-                                        <label class="form-label">Validation Samples Configuration</label>
-                                        <div class="special-samples-config-panel">
-                                            <div class="special-samples-config-header">
-                                                <span>Validation Samples</span>
-                                                <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector(3)">
-                                                    <i class="fas fa-plus"></i> Add
-                                                </button>
-                                            </div>
-                                            <div class="enabled-special-samples" id="enabledValidation">
-                                                <div class="no-special-samples">No validation samples configured</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Placeholder Samples Configuration -->
-                                    <div class="config-card">
-                                        <label class="form-label">Placeholder Samples Configuration</label>
-                                        <div class="special-samples-config-panel">
-                                            <div class="special-samples-config-header">
-                                                <span>Placeholder Samples</span>
-                                                <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector(4)">
-                                                    <i class="fas fa-plus"></i> Add
-                                                </button>
-                                            </div>
-                                            <div class="enabled-special-samples" id="enabledPlaceholder">
-                                                <div class="no-special-samples">No placeholder samples configured</div>
-                                            </div>
-                                        </div>
+                                    <!-- Special Samples Configuration Cards (dynamically generated) -->
+                                    <div id="specialSampleCards">
+                                        <!-- Special sample cards will be loaded here dynamically -->
                                     </div>
                                 </div>
                                 
@@ -1338,6 +1293,17 @@ function selectStep(stepId, stepName) {
 }
 
 function loadStepConfiguration(stepId) {
+    // Ensure special sample types are loaded first
+    if (specialSampleTypes.length === 0) {
+        loadSpecialSampleTypes().then(() => {
+            loadStepConfigurationData(stepId);
+        });
+    } else {
+        loadStepConfigurationData(stepId);
+    }
+}
+
+function loadStepConfigurationData(stepId) {
     const pyoptions = {
         data: {
             scid: stepId
@@ -1481,35 +1447,93 @@ let enabledContainerIds = new Set();
 
 // Special Samples Management Functions
 let availableSpecialSamples = [];
-let enabledSpecialSampleIds = {
-    1: new Set(), // Controls
-    2: new Set(), // QC Samples
-    3: new Set(), // Validation Samples
-    4: new Set()  // Placeholder Samples
-};
-let currentSpecialSampleType = 1;
+let enabledSpecialSampleIds = {}; // Will be populated dynamically based on loaded types
+let currentSpecialSampleType = null;
+let specialSampleTypes = []; // Will be loaded from database
+let specialSampleTypeNames = {}; // Will be populated from database
 
-const specialSampleTypeNames = {
-    1: 'Control',
-    2: 'QC Sample',
-    3: 'Validation Sample',
-    4: 'Placeholder Sample'
-};
+function loadSpecialSampleTypes() {
+    const pyoptions = {
+        data: {},
+        csrf: csrf,
+        url: 'get_special_sample_types/',
+        submit_mode: 'silent'
+    };
+    
+    return pylims_post(pyoptions).then(result => {
+        console.log('Special sample types response:', result);
+        if (result.status === 'success') {
+            specialSampleTypes = result.special_sample_types || [];
+            
+            // Populate type names and initialize enabled IDs tracking
+            specialSampleTypes.forEach(type => {
+                specialSampleTypeNames[type.sstid] = type.special_type_name;
+                enabledSpecialSampleIds[type.sstid] = new Set();
+            });
+            
+            console.log('Loaded special sample types:', specialSampleTypes);
+            console.log('Special sample type names:', specialSampleTypeNames);
+            
+            // Generate the special sample cards
+            generateSpecialSampleCards();
+            
+            return specialSampleTypes;
+        }
+        return [];
+    }).catch(error => {
+        console.error('Error loading special sample types:', error);
+        return [];
+    });
+}
+
+function generateSpecialSampleCards() {
+    const container = document.getElementById('specialSampleCards');
+    if (!container) return;
+    
+    let html = '';
+    
+    specialSampleTypes.forEach(type => {
+        const typeName = type.special_type_name;
+        const typeId = type.sstid;
+        const containerId = `enabled_${typeId}`;
+        
+        html += `
+            <div class="config-card">
+                <label class="form-label">${typeName} Configuration</label>
+                <div class="special-samples-config-panel">
+                    <div class="special-samples-config-header">
+                        <span>${typeName}</span>
+                        <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector(${typeId})">
+                            <i class="fas fa-plus"></i> Add
+                        </button>
+                    </div>
+                    <div class="enabled-special-samples" id="${containerId}">
+                        <div class="no-special-samples">No ${typeName.toLowerCase()} configured</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    console.log('Generated special sample cards for types:', specialSampleTypes);
+}
 
 function loadSpecialSamplesInterface(specialSamples) {
     console.log('loadSpecialSamplesInterface called with:', specialSamples);
     
     // Clear all special sample containers
-    ['enabledControls', 'enabledQC', 'enabledValidation', 'enabledPlaceholder'].forEach(containerId => {
+    specialSampleTypes.forEach(type => {
+        const containerId = `enabled_${type.sstid}`;
         const container = document.getElementById(containerId);
         if (container) {
-            container.innerHTML = '<div class="no-special-samples">No ' + containerId.replace('enabled', '').toLowerCase() + ' configured</div>';
+            container.innerHTML = `<div class="no-special-samples">No ${type.special_type_name.toLowerCase()} configured</div>`;
         }
     });
     
     // Clear tracking sets
-    Object.keys(enabledSpecialSampleIds).forEach(type => {
-        enabledSpecialSampleIds[type].clear();
+    Object.keys(enabledSpecialSampleIds).forEach(typeId => {
+        enabledSpecialSampleIds[typeId].clear();
     });
     
     if (!specialSamples || specialSamples.length === 0) {
@@ -1517,15 +1541,13 @@ function loadSpecialSamplesInterface(specialSamples) {
     }
     
     // Group special samples by type
-    const samplesByType = {
-        1: [],
-        2: [],
-        3: [],
-        4: []
-    };
+    const samplesByType = {};
+    specialSampleTypes.forEach(type => {
+        samplesByType[type.sstid] = [];
+    });
     
     specialSamples.forEach(sample => {
-        const type = sample.special_type || 1;
+        const type = sample.special_type;
         if (samplesByType[type]) {
             samplesByType[type].push(sample);
             enabledSpecialSampleIds[type].add(sample.ssid);
@@ -1533,10 +1555,10 @@ function loadSpecialSamplesInterface(specialSamples) {
     });
     
     // Load each type into its respective container
-    loadSpecialSamplesForType(1, samplesByType[1], 'enabledControls');
-    loadSpecialSamplesForType(2, samplesByType[2], 'enabledQC');
-    loadSpecialSamplesForType(3, samplesByType[3], 'enabledValidation');
-    loadSpecialSamplesForType(4, samplesByType[4], 'enabledPlaceholder');
+    specialSampleTypes.forEach(type => {
+        const containerId = `enabled_${type.sstid}`;
+        loadSpecialSamplesForType(type.sstid, samplesByType[type.sstid], containerId);
+    });
     
     // Ensure these samples are in our availableSpecialSamples list
     specialSamples.forEach(sample => {
@@ -1569,7 +1591,7 @@ function createSpecialSampleItemHTML(sample, type, index) {
     console.log('Creating special sample item:', { sample, sampleName, partNumber, ssid, type });
     
     return `
-        <div class="special-sample-item type-${type}" data-sample-id="${ssid}" data-sample-type="${type}" draggable="true">
+        <div class="special-sample-item" data-sample-id="${ssid}" data-sample-type="${type}" draggable="true">
             <div class="special-sample-drag-handle">
                 <i class="fas fa-grip-vertical"></i>
             </div>
@@ -1653,7 +1675,8 @@ function getSpecialSamplesFromInterface() {
     const allSpecialSamples = [];
     
     // Get samples from each type container
-    ['enabledControls', 'enabledQC', 'enabledValidation', 'enabledPlaceholder'].forEach(containerId => {
+    specialSampleTypes.forEach(type => {
+        const containerId = `enabled_${type.sstid}`;
         const container = document.getElementById(containerId);
         if (!container) return;
         
@@ -1703,7 +1726,7 @@ function hideSpecialSampleSelector() {
 function loadAvailableSpecialSamples() {
     const pyoptions = {
         data: {
-            special_type: currentSpecialSampleType
+            special_type_id: currentSpecialSampleType  // Changed from special_type to special_type_id
         },
         csrf: csrf,
         url: 'get_special_samples/',
@@ -1737,7 +1760,8 @@ function renderAvailableSpecialSamples() {
     );
     
     if (samplesForType.length === 0) {
-        listDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--gray-med);">No ' + specialSampleTypeNames[currentSpecialSampleType].toLowerCase() + 's available</div>';
+        const typeName = specialSampleTypeNames[currentSpecialSampleType]?.toLowerCase() || 'samples';
+        listDiv.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--gray-med);">No ${typeName} available</div>`;
         return;
     }
     
@@ -1757,7 +1781,7 @@ function renderAvailableSpecialSamples() {
             <div class="available-container ${disabledClass}" 
                  onclick="${isEnabled ? '' : `addSpecialSample(${ssid})`}" 
                  title="${title}">
-                <div class="container-preview type-${currentSpecialSampleType}">
+                <div class="container-preview" data-type="${currentSpecialSampleType}">
                     <i class="fas fa-vial"></i>
                 </div>
                 <div class="container-info">
@@ -1782,15 +1806,8 @@ function addSpecialSample(sampleId) {
     console.log('Adding special sample:', sample);
     enabledSpecialSampleIds[currentSpecialSampleType].add(sampleId);
     
-    // Determine which container to add to
-    const containerMap = {
-        1: 'enabledControls',
-        2: 'enabledQC', 
-        3: 'enabledValidation',
-        4: 'enabledPlaceholder'
-    };
-    
-    const containerId = containerMap[currentSpecialSampleType];
+    // Find the container ID for this type
+    const containerId = `enabled_${currentSpecialSampleType}`;
     const container = document.getElementById(containerId);
     
     if (!container) return;
@@ -1828,17 +1845,10 @@ function removeSpecialSample(sampleId, type) {
     }
     
     // Check if no samples remain for this type
-    const containerMap = {
-        1: 'enabledControls',
-        2: 'enabledQC',
-        3: 'enabledValidation', 
-        4: 'enabledPlaceholder'
-    };
-    
-    const containerId = containerMap[type];
+    const containerId = `enabled_${type}`;
     const container = document.getElementById(containerId);
     if (container && enabledSpecialSampleIds[type].size === 0) {
-        const typeName = specialSampleTypeNames[type].toLowerCase() + 's';
+        const typeName = specialSampleTypeNames[type]?.toLowerCase() || 'samples';
         container.innerHTML = `<div class="no-special-samples">No ${typeName} configured</div>`;
     }
 }
@@ -2157,6 +2167,11 @@ document.addEventListener('click', function(e) {
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Assay configure page loaded for assay ID:', assayId);
+    
+    // Load special sample types first
+    loadSpecialSampleTypes().then(() => {
+        console.log('Special sample types loaded, page ready');
+    });
 });
 </script>
 {% endblock %}
