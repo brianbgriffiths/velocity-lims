@@ -1092,9 +1092,7 @@ def get_step_config(request):
                     placeholders = ','.join(['%s'] * len(special_samples_ids))
                     # statuses: 1 = pending, 2= active, 3=archived
                     cursor.execute(f"""
-                        SELECT ss.ssid, ss.special_name, ss.special_type, ss.part_number, ss.color, 
-                               ss.custom_color, ss.custom_icon, ss.default_well, ss.default_index,
-                               ss.special_status, sst.sstid as type_id, sst.special_type_name
+                        SELECT ss.*, sst.sstid as type_id, sst.special_type_name
                         FROM velocity.special_samples ss
                         JOIN velocity.special_sample_types sst ON ss.special_type = sst.sstid
                         WHERE ss.ssid IN ({placeholders}) AND ss.special_status = 2
