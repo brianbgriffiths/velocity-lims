@@ -692,6 +692,15 @@ def settings_assay_configure(request, assay_id):
         else:
             steps = []
         
+        # Get special sample types for the step configuration
+        cursor.execute("""
+            SELECT sstid, special_type_name, show_in_config
+            FROM velocity.special_sample_types
+            WHERE show_in_config = true
+            ORDER BY special_type_name
+        """)
+        special_sample_types = cursor.fetchall()
+        
         conn.close()
         
         # Initialize context
@@ -699,7 +708,8 @@ def settings_assay_configure(request, assay_id):
         context.update({
             'assay': assay_data,
             'steps': steps,
-            'has_steps': len(steps) > 0
+            'has_steps': len(steps) > 0,
+            'special_sample_types_json': json.dumps(special_sample_types)
         })
         
         return render(request, 'settings_assay_configure.html', context)
@@ -1287,40 +1297,3 @@ def get_special_samples(request):
 
 
 @login_required
-def get_special_sample_types(request):
-    """
-    Get special sample types that should be shown in step configuration
-    """
-    if request.method != 'POST':
-        return JsonResponse({'error': 'POST method required'}, status=405)
-    
-    # Check permissions
-    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_view')):
-        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
-    
-    try:
-        conn = psycopg.connect(
-            dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, 
-            host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row
-        )
-        cursor = conn.cursor()
-        
-        # Get special sample types that should be shown in configuration
-        cursor.execute("""
-            SELECT sstid, special_type_name, show_in_config
-            FROM velocity.special_sample_types
-            WHERE show_in_config = true
-            ORDER BY sstid
-        """)
-        
-        special_sample_types = cursor.fetchall()
-        
-        conn.close()
-        
-        return JsonResponse({
-            'status': 'success',
-            'special_sample_types': special_sample_types
-        })
-        
-    except Exception as e:
-        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)

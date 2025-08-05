@@ -999,6 +999,7 @@
 <script>
 const csrf = '{{ csrf_token }}';
 const assayId = {{ assay.assayid|default:"null" }};
+const specialSampleTypesData = {{ special_sample_types_json|safe }};
 let selectedStepId = null;
 let isReorderMode = false;
 let draggedElement = null;
@@ -1293,14 +1294,11 @@ function selectStep(stepId, stepName) {
 }
 
 function loadStepConfiguration(stepId) {
-    // Ensure special sample types are loaded first
+    // Ensure special sample types are initialized first
     if (specialSampleTypes.length === 0) {
-        loadSpecialSampleTypes().then(() => {
-            loadStepConfigurationData(stepId);
-        });
-    } else {
-        loadStepConfigurationData(stepId);
+        initializeSpecialSampleTypes();
     }
+    loadStepConfigurationData(stepId);
 }
 
 function loadStepConfigurationData(stepId) {
@@ -1449,41 +1447,22 @@ let enabledContainerIds = new Set();
 let availableSpecialSamples = [];
 let enabledSpecialSampleIds = {}; // Will be populated dynamically based on loaded types
 let currentSpecialSampleType = null;
-let specialSampleTypes = []; // Will be loaded from database
-let specialSampleTypeNames = {}; // Will be populated from database
+let specialSampleTypes = specialSampleTypesData || []; // Use data from server
+let specialSampleTypeNames = {}; // Will be populated from server data
 
-function loadSpecialSampleTypes() {
-    const pyoptions = {
-        data: {},
-        csrf: csrf,
-        url: 'get_special_sample_types/',
-        submit_mode: 'silent'
-    };
-    
-    return pylims_post(pyoptions).then(result => {
-        console.log('Special sample types response:', result);
-        if (result.status === 'success') {
-            specialSampleTypes = result.special_sample_types || [];
-            
-            // Populate type names and initialize enabled IDs tracking
-            specialSampleTypes.forEach(type => {
-                specialSampleTypeNames[type.sstid] = type.special_type_name;
-                enabledSpecialSampleIds[type.sstid] = new Set();
-            });
-            
-            console.log('Loaded special sample types:', specialSampleTypes);
-            console.log('Special sample type names:', specialSampleTypeNames);
-            
-            // Generate the special sample cards
-            generateSpecialSampleCards();
-            
-            return specialSampleTypes;
-        }
-        return [];
-    }).catch(error => {
-        console.error('Error loading special sample types:', error);
-        return [];
+// Initialize special sample types data on page load
+function initializeSpecialSampleTypes() {
+    // Populate type names and initialize enabled IDs tracking
+    specialSampleTypes.forEach(type => {
+        specialSampleTypeNames[type.sstid] = type.special_type_name;
+        enabledSpecialSampleIds[type.sstid] = new Set();
     });
+    
+    console.log('Initialized special sample types:', specialSampleTypes);
+    console.log('Special sample type names:', specialSampleTypeNames);
+    
+    // Generate the special sample cards
+    generateSpecialSampleCards();
 }
 
 function generateSpecialSampleCards() {
@@ -2168,10 +2147,9 @@ document.addEventListener('click', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Assay configure page loaded for assay ID:', assayId);
     
-    // Load special sample types first
-    loadSpecialSampleTypes().then(() => {
-        console.log('Special sample types loaded, page ready');
-    });
+    // Initialize special sample types from server data
+    initializeSpecialSampleTypes();
+    console.log('Special sample types initialized, page ready');
 });
 </script>
 {% endblock %}
