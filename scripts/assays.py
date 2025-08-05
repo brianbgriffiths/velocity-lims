@@ -1066,6 +1066,10 @@ def get_step_config(request):
         # Update step_config with detailed container information
         step_config['containers'] = containers_with_details
         
+        # Rename controls to special_samples for frontend compatibility
+        if 'controls' in step_config:
+            step_config['special_samples'] = step_config.pop('controls')
+        
         conn.close()
         
         return JsonResponse({
@@ -1096,7 +1100,7 @@ def save_step_config(request):
         scid = data.get('scid')
         step_name = data.get('step_name', '').strip()
         containers = data.get('containers', [])
-        controls = data.get('controls', [])
+        special_samples = data.get('special_samples', {})  # Changed from controls to special_samples
         create_samples = data.get('create_samples', 1)
         pages = data.get('pages', [])
         sample_data = data.get('sample_data', [])
@@ -1135,17 +1139,17 @@ def save_step_config(request):
         
         # Check if any values have actually changed
         current_containers = current_config.get('containers', []) or []
-        current_controls = current_config.get('controls', []) or []
+        current_controls = current_config.get('controls', {}) or {}   # This is the DB controls column
         current_pages = current_config.get('pages', []) or []
         current_sample_data = current_config.get('sample_data', []) or []
         current_step_scripts = current_config.get('step_scripts', []) or []
         
-        # Compare all fields for changes
+        # Compare all fields for changes (comparing special_samples to stored controls)
         config_unchanged = (
             current_config['step_name'] == step_name and
             current_config['create_samples'] == create_samples and
             current_containers == container_refs and
-            current_controls == controls and
+            current_controls == special_samples and  # Compare special_samples data to controls column
             current_pages == pages and
             current_sample_data == sample_data and
             current_step_scripts == step_scripts
@@ -1175,7 +1179,7 @@ def save_step_config(request):
                 step_scripts = %s
             WHERE scid = %s
             RETURNING scid, step_name
-        """, (step_name, json.dumps(container_refs), json.dumps(controls), 
+        """, (step_name, json.dumps(container_refs), json.dumps(special_samples), 
               create_samples, json.dumps(pages), json.dumps(sample_data), 
               json.dumps(step_scripts), scid))
         
@@ -1224,6 +1228,56 @@ def save_step_config(request):
             response_data['message'] += f' (v{updated_version["version_major"]}.{updated_version["version_minor"]}.{updated_version["version_patch"]})'
         
         return JsonResponse(response_data)
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+
+
+@login_required
+def get_special_samples(request):
+    """
+    Get special samples by type (1=Controls, 2=QC, 3=Validation, 4=Placeholder)
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_view')):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        special_type = data.get('special_type')
+        
+        if not special_type:
+            return JsonResponse({'error': 'special_type is required'}, status=400)
+        
+        conn = psycopg.connect(
+            dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, 
+            host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Get special samples by type
+        cursor.execute("""
+            SELECT ssid, special_name, special_type, part_number, color, 
+                   dilution, volume, concentration, notes, active, 
+                   created, modified
+            FROM velocity.special_samples
+            WHERE special_type = %s AND active = true
+            ORDER BY special_name
+        """, (special_type,))
+        
+        special_samples = cursor.fetchall()
+        
+        conn.close()
+        
+        return JsonResponse({
+            'status': 'success',
+            'special_samples': special_samples
+        })
         
     except json.JSONDecodeError as e:
         return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)

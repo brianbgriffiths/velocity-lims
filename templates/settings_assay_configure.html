@@ -356,6 +356,20 @@
         opacity: 1;
     }
     
+    /* Configuration Cards Layout */
+    .config-cards-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .config-card {
+        flex: 1;
+        min-width: 280px;
+        max-width: 350px;
+    }
+    
     /* Container Configuration Styles */
     .container-config-panel {
         border: 1px solid var(--gray-med);
@@ -365,12 +379,12 @@
     
     .container-config-header {
         background-color: var(--gray-lightest);
-        padding: 10px 12px;
+        padding: 8px 10px;
         border-bottom: 1px solid var(--gray-med);
         display: flex;
         justify-content: space-between;
         align-items: center;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: bold;
         color: var(--gray-dark);
     }
@@ -379,14 +393,14 @@
         background-color: var(--green-med);
         color: white;
         border: none;
-        padding: 5px 10px;
+        padding: 4px 8px;
         border-radius: 3px;
         cursor: pointer;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: bold;
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 4px;
     }
     
     .btn-add-container:hover {
@@ -394,27 +408,158 @@
     }
     
     .enabled-containers {
-        min-height: 100px;
-        padding: 10px;
+        padding: 8px;
+        max-height: 200px;
+        overflow-y: auto;
     }
     
     .no-containers {
         text-align: center;
         color: var(--gray-med);
         font-style: italic;
-        padding: 20px;
-        font-size: 12px;
+        padding: 15px;
+        font-size: 11px;
     }
+    
+    /* Special Samples Configuration Styles */
+    .special-samples-config-panel {
+        border: 1px solid var(--gray-med);
+        border-radius: 3px;
+        background-color: white;
+    }
+    
+    .special-samples-config-header {
+        background-color: var(--gray-lightest);
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--gray-med);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        font-weight: bold;
+        color: var(--gray-dark);
+    }
+    
+    .btn-add-special-sample {
+        background-color: var(--blue-med);
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 10px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .btn-add-special-sample:hover {
+        background-color: var(--blue-dark);
+    }
+    
+    .enabled-special-samples {
+        padding: 8px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .no-special-samples {
+        text-align: center;
+        color: var(--gray-med);
+        font-style: italic;
+        padding: 15px;
+        font-size: 11px;
+    }
+    
+    .special-sample-item {
+        background-color: var(--gray-lightest);
+        border: 1px solid var(--gray-med);
+        border-radius: 3px;
+        padding: 8px;
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: grab;
+        transition: all 0.2s;
+    }
+    
+    .special-sample-item:hover {
+        background-color: var(--accent9);
+        border-color: var(--accent3);
+    }
+    
+    .special-sample-item.dragging {
+        opacity: 0.5;
+        transform: rotate(2deg);
+    }
+    
+    .special-sample-item:active {
+        cursor: grabbing;
+    }
+    
+    .special-sample-drag-handle {
+        color: var(--gray-med);
+        cursor: grab;
+        font-size: 10px;
+    }
+    
+    .special-sample-drag-handle:active {
+        cursor: grabbing;
+    }
+    
+    .special-sample-info {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .special-sample-name {
+        font-weight: bold;
+        font-size: 12px;
+        color: var(--text-color);
+        margin-bottom: 1px;
+    }
+    
+    .special-sample-details {
+        font-size: 10px;
+        color: var(--gray-dark);
+    }
+    
+    .special-sample-remove {
+        background-color: var(--red-med);
+        color: white;
+        border: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 9px;
+        transition: background-color 0.2s;
+    }
+    
+    .special-sample-remove:hover {
+        background-color: var(--red-dark);
+    }
+    
+    /* Special sample type colors */
+    .special-sample-item.type-1 { border-left: 4px solid var(--orange-med); }
+    .special-sample-item.type-2 { border-left: 4px solid var(--blue-med); }
+    .special-sample-item.type-3 { border-left: 4px solid var(--purple-med); }
+    .special-sample-item.type-4 { border-left: 4px solid var(--gray-med); }
     
     .container-item {
         background-color: var(--gray-lightest);
         border: 1px solid var(--gray-med);
         border-radius: 3px;
-        padding: 10px;
-        margin-bottom: 8px;
+        padding: 8px;
+        margin-bottom: 6px;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
         cursor: grab;
         transition: all 0.2s;
     }
@@ -461,13 +606,13 @@
     
     .container-name {
         font-weight: bold;
-        font-size: 13px;
+        font-size: 12px;
         color: var(--text-color);
-        margin-bottom: 2px;
+        margin-bottom: 1px;
     }
     
     .container-details {
-        font-size: 11px;
+        font-size: 10px;
         color: var(--gray-dark);
     }
     
@@ -475,14 +620,14 @@
         background-color: var(--red-med);
         color: white;
         border: none;
-        width: 20px;
-        height: 20px;
+        width: 18px;
+        height: 18px;
         border-radius: 50%;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 10px;
+        font-size: 9px;
         transition: background-color 0.2s;
     }
     
@@ -602,6 +747,12 @@
     .container-preview.color-8 { background-color: rgba(139, 195, 74, 0.2); border-color: #8bc34a; }
     .container-preview.color-9 { background-color: rgba(63, 81, 181, 0.2); border-color: #3f51b5; }
     .container-preview.color-10 { background-color: rgba(255, 193, 7, 0.2); border-color: #ffc107; }
+    
+    /* Special sample type colors for modal previews */
+    .container-preview.type-1 { background-color: rgba(255, 152, 0, 0.2); border-color: #ff9800; }
+    .container-preview.type-2 { background-color: rgba(33, 150, 243, 0.2); border-color: #2196f3; }
+    .container-preview.type-3 { background-color: rgba(156, 39, 176, 0.2); border-color: #9c27b0; }
+    .container-preview.type-4 { background-color: rgba(96, 125, 139, 0.2); border-color: #607d8b; }
 
     #pylims_request_error {
         border: solid 1px var(--red-med);
@@ -740,26 +891,89 @@
                                     </div>
                                 </div>
                                 
-                                <div class="form-group">
-                                    <label class="form-label">Containers Configuration</label>
-                                    <div class="container-config-panel">
-                                        <div class="container-config-header">
-                                            <span>Enabled Containers (drag to reorder)</span>
-                                            <button type="button" class="btn-add-container" onclick="showContainerSelector()">
-                                                <i class="fas fa-plus"></i> Add Container
-                                            </button>
+                                <!-- Configuration Cards Container -->
+                                <div class="config-cards-container">
+                                    <!-- Containers Configuration -->
+                                    <div class="config-card">
+                                        <label class="form-label">Containers Configuration</label>
+                                        <div class="container-config-panel">
+                                            <div class="container-config-header">
+                                                <span>Enabled Containers</span>
+                                                <button type="button" class="btn-add-container" onclick="showContainerSelector()">
+                                                    <i class="fas fa-plus"></i> Add
+                                                </button>
+                                            </div>
+                                            <div class="enabled-containers" id="enabledContainers">
+                                                <div class="no-containers">No containers configured</div>
+                                            </div>
                                         </div>
-                                        <div class="enabled-containers" id="enabledContainers">
-                                            <div class="no-containers">No containers configured for this step</div>
+                                        <!-- Hidden textarea for data storage -->
+                                        <textarea id="containerConfig" style="display: none;">[]</textarea>
+                                    </div>
+                                    
+                                    <!-- Controls Configuration -->
+                                    <div class="config-card">
+                                        <label class="form-label">Controls Configuration</label>
+                                        <div class="special-samples-config-panel">
+                                            <div class="special-samples-config-header">
+                                                <span>Control Samples</span>
+                                                <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector(1)">
+                                                    <i class="fas fa-plus"></i> Add
+                                                </button>
+                                            </div>
+                                            <div class="enabled-special-samples" id="enabledControls">
+                                                <div class="no-special-samples">No controls configured</div>
+                                            </div>
                                         </div>
                                     </div>
-                                    <!-- Hidden textarea for data storage -->
-                                    <textarea id="containerConfig" style="display: none;">[]</textarea>
-                                </div>
-                                
-                                <div class="form-group">
-                                    <label class="form-label" for="controlsConfig">Controls Configuration</label>
-                                    <textarea id="controlsConfig" class="form-input" rows="4" placeholder="JSON array of control configurations">[]</textarea>
+                                    
+                                    <!-- QC Samples Configuration -->
+                                    <div class="config-card">
+                                        <label class="form-label">QC Samples Configuration</label>
+                                        <div class="special-samples-config-panel">
+                                            <div class="special-samples-config-header">
+                                                <span>QC Samples</span>
+                                                <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector(2)">
+                                                    <i class="fas fa-plus"></i> Add
+                                                </button>
+                                            </div>
+                                            <div class="enabled-special-samples" id="enabledQC">
+                                                <div class="no-special-samples">No QC samples configured</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Validation Samples Configuration -->
+                                    <div class="config-card">
+                                        <label class="form-label">Validation Samples Configuration</label>
+                                        <div class="special-samples-config-panel">
+                                            <div class="special-samples-config-header">
+                                                <span>Validation Samples</span>
+                                                <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector(3)">
+                                                    <i class="fas fa-plus"></i> Add
+                                                </button>
+                                            </div>
+                                            <div class="enabled-special-samples" id="enabledValidation">
+                                                <div class="no-special-samples">No validation samples configured</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Placeholder Samples Configuration -->
+                                    <div class="config-card">
+                                        <label class="form-label">Placeholder Samples Configuration</label>
+                                        <div class="special-samples-config-panel">
+                                            <div class="special-samples-config-header">
+                                                <span>Placeholder Samples</span>
+                                                <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector(4)">
+                                                    <i class="fas fa-plus"></i> Add
+                                                </button>
+                                            </div>
+                                            <div class="enabled-special-samples" id="enabledPlaceholder">
+                                                <div class="no-special-samples">No placeholder samples configured</div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 
                                 <div class="form-group">
@@ -799,6 +1013,25 @@
                 <div id="availableContainersList">
                     <div style="text-align: center; padding: 20px; color: var(--gray-med);">
                         Loading available containers...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Special Samples Selector Modal -->
+    <div class="container-selector-modal" id="specialSampleSelectorModal">
+        <div class="container-selector-dialog">
+            <div class="container-selector-header">
+                <span><i class="fas fa-vial"></i> Add <span id="specialSampleTypeLabel">Special Sample</span></span>
+                <button class="container-selector-close" onclick="hideSpecialSampleSelector()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="container-selector-content">
+                <div id="availableSpecialSamplesList">
+                    <div style="text-align: center; padding: 20px; color: var(--gray-med);">
+                        Loading available samples...
                     </div>
                 </div>
             </div>
@@ -1120,19 +1353,22 @@ function loadStepConfiguration(stepId) {
             
             console.log('Raw step configuration from API:', config);
             console.log('Containers in step config:', config.containers);
+            console.log('Special samples in step config:', config.special_samples);
             
             // Populate form fields
             document.getElementById('stepName').value = config.step_name || '';
             document.getElementById('createSamples').checked = config.create_samples === 1;
             
             // Populate JSON fields with proper formatting
-            document.getElementById('controlsConfig').value = JSON.stringify(config.controls || [], null, 2);
             document.getElementById('pagesConfig').value = JSON.stringify(config.pages || [], null, 2);
             document.getElementById('sampleDataConfig').value = JSON.stringify(config.sample_data || [], null, 2);
             document.getElementById('stepScriptsConfig').value = JSON.stringify(config.step_scripts || [], null, 2);
             
             // Load containers into visual interface
             loadContainersInterface(config.containers || []);
+            
+            // Load special samples into visual interfaces
+            loadSpecialSamplesInterface(config.special_samples || []);
             
             console.log('Step configuration loaded:', config);
         }
@@ -1162,8 +1398,10 @@ function saveStepConfiguration(isUnifiedSave = false) {
         // Get containers from visual interface
         const containers = getContainersFromInterface();
         
+        // Get special samples from visual interfaces
+        const specialSamples = getSpecialSamplesFromInterface();
+        
         // Parse other JSON fields
-        const controls = JSON.parse(document.getElementById('controlsConfig').value || '[]');
         const pages = JSON.parse(document.getElementById('pagesConfig').value || '[]');
         const sampleData = JSON.parse(document.getElementById('sampleDataConfig').value || '[]');
         const stepScripts = JSON.parse(document.getElementById('stepScriptsConfig').value || '[]');
@@ -1173,7 +1411,7 @@ function saveStepConfiguration(isUnifiedSave = false) {
                 scid: selectedStepId,
                 step_name: stepName,
                 containers: containers,
-                controls: controls,
+                special_samples: specialSamples,
                 create_samples: document.getElementById('createSamples').checked ? 1 : 0,
                 pages: pages,
                 sample_data: sampleData,
@@ -1240,6 +1478,370 @@ function addNewStep() {
 // Container Management Functions
 let availableContainers = [];
 let enabledContainerIds = new Set();
+
+// Special Samples Management Functions
+let availableSpecialSamples = [];
+let enabledSpecialSampleIds = {
+    1: new Set(), // Controls
+    2: new Set(), // QC Samples
+    3: new Set(), // Validation Samples
+    4: new Set()  // Placeholder Samples
+};
+let currentSpecialSampleType = 1;
+
+const specialSampleTypeNames = {
+    1: 'Control',
+    2: 'QC Sample',
+    3: 'Validation Sample',
+    4: 'Placeholder Sample'
+};
+
+function loadSpecialSamplesInterface(specialSamples) {
+    console.log('loadSpecialSamplesInterface called with:', specialSamples);
+    
+    // Clear all special sample containers
+    ['enabledControls', 'enabledQC', 'enabledValidation', 'enabledPlaceholder'].forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = '<div class="no-special-samples">No ' + containerId.replace('enabled', '').toLowerCase() + ' configured</div>';
+        }
+    });
+    
+    // Clear tracking sets
+    Object.keys(enabledSpecialSampleIds).forEach(type => {
+        enabledSpecialSampleIds[type].clear();
+    });
+    
+    if (!specialSamples || specialSamples.length === 0) {
+        return;
+    }
+    
+    // Group special samples by type
+    const samplesByType = {
+        1: [],
+        2: [],
+        3: [],
+        4: []
+    };
+    
+    specialSamples.forEach(sample => {
+        const type = sample.special_type || 1;
+        if (samplesByType[type]) {
+            samplesByType[type].push(sample);
+            enabledSpecialSampleIds[type].add(sample.ssid);
+        }
+    });
+    
+    // Load each type into its respective container
+    loadSpecialSamplesForType(1, samplesByType[1], 'enabledControls');
+    loadSpecialSamplesForType(2, samplesByType[2], 'enabledQC');
+    loadSpecialSamplesForType(3, samplesByType[3], 'enabledValidation');
+    loadSpecialSamplesForType(4, samplesByType[4], 'enabledPlaceholder');
+    
+    // Ensure these samples are in our availableSpecialSamples list
+    specialSamples.forEach(sample => {
+        if (!availableSpecialSamples.find(s => s.ssid === sample.ssid)) {
+            availableSpecialSamples.push(sample);
+        }
+    });
+}
+
+function loadSpecialSamplesForType(type, samples, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container || !samples || samples.length === 0) {
+        return;
+    }
+    
+    let html = '';
+    samples.forEach((sample, index) => {
+        html += createSpecialSampleItemHTML(sample, type, index);
+    });
+    
+    container.innerHTML = html;
+    enableSpecialSampleDragAndDrop(containerId);
+}
+
+function createSpecialSampleItemHTML(sample, type, index) {
+    const sampleName = sample.special_name || 'Unknown Sample';
+    const partNumber = sample.part_number || '';
+    const ssid = sample.ssid;
+    
+    console.log('Creating special sample item:', { sample, sampleName, partNumber, ssid, type });
+    
+    return `
+        <div class="special-sample-item type-${type}" data-sample-id="${ssid}" data-sample-type="${type}" draggable="true">
+            <div class="special-sample-drag-handle">
+                <i class="fas fa-grip-vertical"></i>
+            </div>
+            <div class="special-sample-info">
+                <div class="special-sample-name">${sampleName}</div>
+                <div class="special-sample-details">${partNumber ? 'Part: ' + partNumber : 'No part number'}</div>
+            </div>
+            <button class="special-sample-remove" onclick="removeSpecialSample(${ssid}, ${type})" title="Remove sample">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+}
+
+function enableSpecialSampleDragAndDrop(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    const sampleItems = container.querySelectorAll('.special-sample-item');
+    
+    sampleItems.forEach(item => {
+        item.addEventListener('dragstart', handleSpecialSampleDragStart);
+        item.addEventListener('dragover', handleSpecialSampleDragOver);
+        item.addEventListener('drop', handleSpecialSampleDrop);
+        item.addEventListener('dragend', handleSpecialSampleDragEnd);
+    });
+}
+
+function handleSpecialSampleDragStart(e) {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', e.target.outerHTML);
+    e.target.classList.add('dragging');
+    draggedElement = e.target;
+}
+
+function handleSpecialSampleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    const afterElement = getSpecialSampleDragAfterElement(e.currentTarget.parentNode, e.clientY);
+    const container = e.currentTarget.parentNode;
+    
+    if (afterElement == null) {
+        container.appendChild(draggedElement);
+    } else {
+        container.insertBefore(draggedElement, afterElement);
+    }
+}
+
+function handleSpecialSampleDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Update the special samples array based on new order
+    updateSpecialSamplesFromDOM();
+    
+    return false;
+}
+
+function handleSpecialSampleDragEnd(e) {
+    e.target.classList.remove('dragging');
+    draggedElement = null;
+}
+
+function getSpecialSampleDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.special-sample-item:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function getSpecialSamplesFromInterface() {
+    const allSpecialSamples = [];
+    
+    // Get samples from each type container
+    ['enabledControls', 'enabledQC', 'enabledValidation', 'enabledPlaceholder'].forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        const sampleItems = container.querySelectorAll('.special-sample-item');
+        sampleItems.forEach(item => {
+            const sampleId = parseInt(item.dataset.sampleId);
+            const sampleType = parseInt(item.dataset.sampleType);
+            const sample = availableSpecialSamples.find(s => s.ssid === sampleId);
+            if (sample) {
+                // Ensure the sample has the correct type
+                const sampleCopy = { ...sample, special_type: sampleType };
+                allSpecialSamples.push(sampleCopy);
+            }
+        });
+    });
+    
+    console.log('Getting special samples from interface:', allSpecialSamples);
+    return allSpecialSamples;
+}
+
+function updateSpecialSamplesFromDOM() {
+    // This function could be used to maintain order if needed
+    console.log('Special samples order updated');
+}
+
+function showSpecialSampleSelector(type) {
+    currentSpecialSampleType = type;
+    const modal = document.getElementById('specialSampleSelectorModal');
+    const typeLabel = document.getElementById('specialSampleTypeLabel');
+    
+    typeLabel.textContent = specialSampleTypeNames[type];
+    modal.style.display = 'flex';
+    
+    // Load available special samples if not already loaded
+    if (availableSpecialSamples.length === 0) {
+        loadAvailableSpecialSamples();
+    } else {
+        renderAvailableSpecialSamples();
+    }
+}
+
+function hideSpecialSampleSelector() {
+    const modal = document.getElementById('specialSampleSelectorModal');
+    modal.style.display = 'none';
+}
+
+function loadAvailableSpecialSamples() {
+    const pyoptions = {
+        data: {
+            special_type: currentSpecialSampleType
+        },
+        csrf: csrf,
+        url: 'get_special_samples/',
+        submit_mode: 'silent'
+    };
+    
+    pylims_post(pyoptions).then(result => {
+        console.log('Available special samples response:', result);
+        if (result.status === 'success') {
+            availableSpecialSamples = [...availableSpecialSamples, ...(result.special_samples || [])];
+            // Remove duplicates
+            availableSpecialSamples = availableSpecialSamples.filter((sample, index, self) => 
+                index === self.findIndex(s => s.ssid === sample.ssid)
+            );
+            console.log('Loaded available special samples:', availableSpecialSamples);
+            renderAvailableSpecialSamples();
+        }
+    }).catch(error => {
+        console.error('Error loading special samples:', error);
+        document.getElementById('availableSpecialSamplesList').innerHTML = 
+            '<div style="text-align: center; padding: 20px; color: var(--red-med);">Failed to load special samples</div>';
+    });
+}
+
+function renderAvailableSpecialSamples() {
+    const listDiv = document.getElementById('availableSpecialSamplesList');
+    
+    // Filter samples by current type
+    const samplesForType = availableSpecialSamples.filter(sample => 
+        sample.special_type === currentSpecialSampleType
+    );
+    
+    if (samplesForType.length === 0) {
+        listDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--gray-med);">No ' + specialSampleTypeNames[currentSpecialSampleType].toLowerCase() + 's available</div>';
+        return;
+    }
+    
+    let html = '';
+    samplesForType.forEach(sample => {
+        const sampleName = sample.special_name || 'Unknown Sample';
+        const partNumber = sample.part_number || '';
+        const ssid = sample.ssid;
+        
+        const isEnabled = enabledSpecialSampleIds[currentSpecialSampleType].has(ssid);
+        const disabledClass = isEnabled ? 'disabled' : '';
+        const title = isEnabled ? 'Sample already added' : 'Click to add this sample';
+        
+        console.log('Rendering special sample:', { sample, sampleName, partNumber, ssid, isEnabled });
+        
+        html += `
+            <div class="available-container ${disabledClass}" 
+                 onclick="${isEnabled ? '' : `addSpecialSample(${ssid})`}" 
+                 title="${title}">
+                <div class="container-preview type-${currentSpecialSampleType}">
+                    <i class="fas fa-vial"></i>
+                </div>
+                <div class="container-info">
+                    <div class="container-name">${sampleName}</div>
+                    <div class="container-details">${partNumber ? 'Part: ' + partNumber : 'No part number'}</div>
+                </div>
+                ${isEnabled ? '<div style="margin-left: auto; color: var(--green-med);"><i class="fas fa-check"></i></div>' : ''}
+            </div>
+        `;
+    });
+    
+    listDiv.innerHTML = html;
+}
+
+function addSpecialSample(sampleId) {
+    const sample = availableSpecialSamples.find(s => s.ssid === sampleId);
+    if (!sample || enabledSpecialSampleIds[currentSpecialSampleType].has(sampleId)) {
+        console.log('Sample not found or already enabled:', sampleId, sample);
+        return;
+    }
+    
+    console.log('Adding special sample:', sample);
+    enabledSpecialSampleIds[currentSpecialSampleType].add(sampleId);
+    
+    // Determine which container to add to
+    const containerMap = {
+        1: 'enabledControls',
+        2: 'enabledQC', 
+        3: 'enabledValidation',
+        4: 'enabledPlaceholder'
+    };
+    
+    const containerId = containerMap[currentSpecialSampleType];
+    const container = document.getElementById(containerId);
+    
+    if (!container) return;
+    
+    // Remove "no samples" message if present
+    const noSamplesDiv = container.querySelector('.no-special-samples');
+    if (noSamplesDiv) {
+        container.innerHTML = '';
+    }
+    
+    const sampleHTML = createSpecialSampleItemHTML(sample, currentSpecialSampleType, enabledSpecialSampleIds[currentSpecialSampleType].size - 1);
+    container.insertAdjacentHTML('beforeend', sampleHTML);
+    
+    // Re-enable drag and drop
+    enableSpecialSampleDragAndDrop(containerId);
+    
+    // Update the available samples display
+    renderAvailableSpecialSamples();
+    
+    // Hide modal
+    hideSpecialSampleSelector();
+}
+
+function removeSpecialSample(sampleId, type) {
+    if (!enabledSpecialSampleIds[type].has(sampleId)) {
+        return;
+    }
+    
+    enabledSpecialSampleIds[type].delete(sampleId);
+    
+    // Remove from DOM
+    const sampleItem = document.querySelector(`[data-sample-id="${sampleId}"][data-sample-type="${type}"]`);
+    if (sampleItem) {
+        sampleItem.remove();
+    }
+    
+    // Check if no samples remain for this type
+    const containerMap = {
+        1: 'enabledControls',
+        2: 'enabledQC',
+        3: 'enabledValidation', 
+        4: 'enabledPlaceholder'
+    };
+    
+    const containerId = containerMap[type];
+    const container = document.getElementById(containerId);
+    if (container && enabledSpecialSampleIds[type].size === 0) {
+        const typeName = specialSampleTypeNames[type].toLowerCase() + 's';
+        container.innerHTML = `<div class="no-special-samples">No ${typeName} configured</div>`;
+    }
+}
 
 function loadContainersInterface(containers) {
     const enabledContainersDiv = document.getElementById('enabledContainers');
@@ -1540,9 +2142,15 @@ function removeContainer(containerId) {
 
 // Close modal when clicking outside
 document.addEventListener('click', function(e) {
-    const modal = document.getElementById('containerSelectorModal');
-    if (e.target === modal) {
+    const containerModal = document.getElementById('containerSelectorModal');
+    const specialSampleModal = document.getElementById('specialSampleSelectorModal');
+    
+    if (e.target === containerModal) {
         hideContainerSelector();
+    }
+    
+    if (e.target === specialSampleModal) {
+        hideSpecialSampleSelector();
     }
 });
 
