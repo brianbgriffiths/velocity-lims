@@ -1090,13 +1090,14 @@ def get_step_config(request):
                 if special_samples_ids and len(special_samples_ids) > 0:
                     # Get the actual special samples data with their types
                     placeholders = ','.join(['%s'] * len(special_samples_ids))
+                    # statuses: 1 = pending, 2= active, 3=archived
                     cursor.execute(f"""
                         SELECT ss.ssid, ss.special_name, ss.special_type, ss.part_number, ss.color, 
-                               ss.dilution, ss.volume, ss.concentration, ss.notes, ss.active, 
-                               ss.created, ss.modified, sst.sstid as type_id, sst.special_type_name
+                               ss.custom_color, ss.custom_icon, ss.default_well, ss.default_index,
+                               ss.special_status, sst.sstid as type_id, sst.special_type_name
                         FROM velocity.special_samples ss
                         JOIN velocity.special_sample_types sst ON ss.special_type = sst.sstid
-                        WHERE ss.ssid IN ({placeholders}) AND ss.active = true
+                        WHERE ss.ssid IN ({placeholders}) AND ss.special_status = 2
                         ORDER BY sst.special_type_name, ss.special_name
                     """, special_samples_ids)
                     
@@ -1324,11 +1325,11 @@ def get_special_samples(request):
         # Get special samples by type ID, joining with special_sample_types
         cursor.execute("""
             SELECT ss.ssid, ss.special_name, ss.special_type, ss.part_number, ss.color, 
-                   ss.dilution, ss.volume, ss.concentration, ss.notes, ss.active, 
-                   ss.created, ss.modified, sst.special_type_name
+                   ss.custom_color, ss.custom_icon, ss.default_well, ss.default_index,
+                   ss.special_status, sst.special_type_name
             FROM velocity.special_samples ss
             JOIN velocity.special_sample_types sst ON ss.special_type = sst.sstid
-            WHERE ss.special_type = %s AND ss.active = true
+            WHERE ss.special_type = %s AND ss.special_status = 1
             ORDER BY ss.special_name
         """, (special_type_id,))
         
