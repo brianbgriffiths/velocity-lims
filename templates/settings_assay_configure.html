@@ -1516,36 +1516,66 @@ function loadSpecialSamplesInterface(specialSamples) {
         enabledSpecialSampleIds[typeId].clear();
     });
     
-    if (!specialSamples || specialSamples.length === 0) {
+    // Check if specialSamples is null, undefined, or empty object
+    if (!specialSamples || (typeof specialSamples === 'object' && Object.keys(specialSamples).length === 0)) {
         return;
     }
     
-    // Group special samples by type
-    const samplesByType = {};
-    specialSampleTypes.forEach(type => {
-        samplesByType[type.sstid] = [];
-    });
+    // Handle the new organized structure where specialSamples is an object organized by type ID
+    // e.g., {1: [samples...], 2: [samples...]}
+    if (typeof specialSamples === 'object' && !Array.isArray(specialSamples)) {
+        // Process each type in the organized structure
+        Object.keys(specialSamples).forEach(typeId => {
+            const typeIdInt = parseInt(typeId);
+            const samplesForType = specialSamples[typeId];
+            
+            if (Array.isArray(samplesForType) && samplesForType.length > 0) {
+                const containerId = `enabled_${typeId}`;
+                loadSpecialSamplesForType(typeIdInt, samplesForType, containerId);
+                
+                // Update tracking sets
+                samplesForType.forEach(sample => {
+                    enabledSpecialSampleIds[typeIdInt].add(sample.ssid);
+                    
+                    // Ensure these samples are in our availableSpecialSamples list
+                    if (!availableSpecialSamples.find(s => s.ssid === sample.ssid)) {
+                        availableSpecialSamples.push(sample);
+                    }
+                });
+            }
+        });
+        return;
+    }
     
-    specialSamples.forEach(sample => {
-        const type = sample.special_type;
-        if (samplesByType[type]) {
-            samplesByType[type].push(sample);
-            enabledSpecialSampleIds[type].add(sample.ssid);
-        }
-    });
-    
-    // Load each type into its respective container
-    specialSampleTypes.forEach(type => {
-        const containerId = `enabled_${type.sstid}`;
-        loadSpecialSamplesForType(type.sstid, samplesByType[type.sstid], containerId);
-    });
-    
-    // Ensure these samples are in our availableSpecialSamples list
-    specialSamples.forEach(sample => {
-        if (!availableSpecialSamples.find(s => s.ssid === sample.ssid)) {
-            availableSpecialSamples.push(sample);
-        }
-    });
+    // Legacy handling: if specialSamples is still an array (fallback)
+    if (Array.isArray(specialSamples)) {
+        // Group special samples by type
+        const samplesByType = {};
+        specialSampleTypes.forEach(type => {
+            samplesByType[type.sstid] = [];
+        });
+        
+        specialSamples.forEach(sample => {
+            const type = sample.special_type || sample.type_id;
+            if (samplesByType[type]) {
+                samplesByType[type].push(sample);
+                enabledSpecialSampleIds[type].add(sample.ssid);
+            }
+        });
+        
+        // Load each type into its respective container
+        specialSampleTypes.forEach(type => {
+            const containerId = `enabled_${type.sstid}`;
+            loadSpecialSamplesForType(type.sstid, samplesByType[type.sstid], containerId);
+        });
+        
+        // Ensure these samples are in our availableSpecialSamples list
+        specialSamples.forEach(sample => {
+            if (!availableSpecialSamples.find(s => s.ssid === sample.ssid)) {
+                availableSpecialSamples.push(sample);
+            }
+        });
+    }
 }
 
 function loadSpecialSamplesForType(type, samples, containerId) {
