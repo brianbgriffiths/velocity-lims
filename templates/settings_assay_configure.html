@@ -823,28 +823,6 @@
         padding: 15px;
         font-weight: bold;
         border-radius: 5px 5px 0 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .special-sample-config-close {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 20px;
-        cursor: pointer;
-        padding: 0;
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 3px;
-    }
-    
-    .special-sample-config-close:hover {
-        background-color: rgba(255, 255, 255, 0.2);
     }
     
     .special-sample-config-content {
@@ -980,6 +958,21 @@
     
     .btn-config-cancel:hover {
         background-color: var(--gray-dark);
+    }
+    
+    .btn-remove-sample {
+        background-color: var(--red-med);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .btn-remove-sample:hover {
+        background-color: var(--red-dark);
     }
     
     .special-sample-config-button {
@@ -1206,9 +1199,6 @@
         <div class="special-sample-config-dialog">
             <div class="special-sample-config-header">
                 <span><i class="fas fa-cog"></i> Configure <span id="configSampleName">Special Sample</span></span>
-                <button class="special-sample-config-close" onclick="hideSpecialSampleConfigModal()">
-                    <i class="fas fa-times"></i>
-                </button>
             </div>
             <div class="special-sample-config-content">
                 <div class="config-section">
@@ -1264,8 +1254,9 @@
                 </div>
                 
                 <div class="config-buttons">
-                    <button class="btn-config-cancel" onclick="hideSpecialSampleConfigModal()">Cancel</button>
-                    <button class="btn-config-save" onclick="saveSpecialSampleConfig()">Save Configuration</button>
+                    <button type="button" class="btn-config-cancel" onclick="hideSpecialSampleConfigModal()">Cancel</button>
+                    <button type="button" class="btn-remove-sample" onclick="removeCurrentSpecialSample()">Remove Control</button>
+                    <button type="button" class="btn-config-save" onclick="saveSpecialSampleConfig()">Save Configuration</button>
                 </div>
             </div>
         </div>
@@ -1907,7 +1898,7 @@ function createSpecialSampleItemHTML(sample, type, index) {
                 <div class="special-sample-name">${sampleName}</div>
                 <div class="special-sample-details">${partNumber ? 'Part: ' + partNumber : 'No part number'}</div>
             </div>
-            <button class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${ssid}, '${sampleName}', ${type})" title="Configure sample">
+            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${ssid}, '${sampleName}', ${type})" title="Configure sample">
                 <i class="fas fa-cog"></i>
             </button>
             <button class="special-sample-remove" onclick="removeSpecialSample(${ssid}, ${type})" title="Remove sample">
@@ -2564,6 +2555,16 @@ function saveSpecialSampleConfig() {
     
     hideSpecialSampleConfigModal();
     pylims_ui.success('Special sample configuration saved');
+}
+
+function removeCurrentSpecialSample() {
+    if (!currentConfigSampleId || !currentConfigSampleType) return;
+    
+    // Remove the special sample
+    removeSpecialSample(currentConfigSampleId, currentConfigSampleType);
+    
+    // Hide the modal
+    hideSpecialSampleConfigModal();
 }
 
 function updatePlacementDetails(placement) {
