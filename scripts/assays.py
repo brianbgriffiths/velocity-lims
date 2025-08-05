@@ -1007,7 +1007,7 @@ def get_step_config(request):
         # Get step configuration details
         cursor.execute("""
             SELECT scid, step_name, containers, special_samples, create_samples, 
-                   pages, sample_data, step_scripts
+                   pages, sample_data, step_scripts, special_sample_config
             FROM velocity.step_config
             WHERE scid = %s
         """, (scid,))
@@ -1149,6 +1149,7 @@ def save_step_config(request):
         step_name = data.get('step_name', '').strip()
         containers = data.get('containers', [])
         special_samples = data.get('special_samples', {})  # Changed from controls to special_samples
+        special_sample_config = data.get('special_sample_config', {})  # New configuration field
         create_samples = data.get('create_samples', 1)
         pages = data.get('pages', [])
         sample_data = data.get('sample_data', [])
@@ -1187,7 +1188,7 @@ def save_step_config(request):
         # First, get current step configuration to check for changes
         cursor.execute("""
             SELECT step_name, containers, special_samples, create_samples, 
-                   pages, sample_data, step_scripts
+                   pages, sample_data, step_scripts, special_sample_config
             FROM velocity.step_config
             WHERE scid = %s
         """, (scid,))
@@ -1200,6 +1201,7 @@ def save_step_config(request):
         # Check if any values have actually changed
         current_containers = current_config.get('containers', []) or []
         current_special_sample_ids = current_config.get('special_samples', []) or []   # This is the raw ID list from DB
+        current_special_sample_config = current_config.get('special_sample_config', {}) or {}
         current_pages = current_config.get('pages', []) or []
         current_sample_data = current_config.get('sample_data', []) or []
         current_step_scripts = current_config.get('step_scripts', []) or []
@@ -1210,6 +1212,7 @@ def save_step_config(request):
             current_config['create_samples'] == create_samples and
             current_containers == container_refs and
             current_special_sample_ids == special_sample_ids and  # Compare extracted IDs to stored IDs
+            current_special_sample_config == special_sample_config and
             current_pages == pages and
             current_sample_data == sample_data and
             current_step_scripts == step_scripts
@@ -1236,12 +1239,13 @@ def save_step_config(request):
                 create_samples = %s,
                 pages = %s,
                 sample_data = %s,
-                step_scripts = %s
+                step_scripts = %s,
+                special_sample_config = %s
             WHERE scid = %s
             RETURNING scid, step_name
         """, (step_name, json.dumps(container_refs), json.dumps(special_sample_ids), 
               create_samples, json.dumps(pages), json.dumps(sample_data), 
-              json.dumps(step_scripts), scid))
+              json.dumps(step_scripts), json.dumps(special_sample_config), scid))
         
         result = cursor.fetchone()
         

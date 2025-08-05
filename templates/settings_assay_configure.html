@@ -792,6 +792,215 @@
     #pylims_requests_messages {
         height: 50px;
     }
+    
+    /* Special Sample Configuration Modal */
+    .special-sample-config-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none;
+        z-index: 1001;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .special-sample-config-dialog {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        width: 90%;
+        max-width: 600px;
+        max-height: 80%;
+        overflow-y: auto;
+    }
+    
+    .special-sample-config-header {
+        background-color: var(--accent1);
+        color: white;
+        padding: 15px;
+        font-weight: bold;
+        border-radius: 5px 5px 0 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .special-sample-config-close {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 0;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 3px;
+    }
+    
+    .special-sample-config-close:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .special-sample-config-content {
+        padding: 20px;
+    }
+    
+    .config-section {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid var(--gray-light);
+        border-radius: 3px;
+        background-color: var(--gray-lightest);
+    }
+    
+    .config-section-title {
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: var(--accent1);
+        font-size: 14px;
+    }
+    
+    .config-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .config-row:last-child {
+        margin-bottom: 0;
+    }
+    
+    .config-row label {
+        min-width: 60px;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .config-row input[type="number"] {
+        width: 80px;
+        padding: 5px;
+        border: 1px solid var(--gray-med);
+        border-radius: 3px;
+        font-size: 12px;
+    }
+    
+    .config-row input[type="checkbox"] {
+        width: auto;
+        margin: 0;
+    }
+    
+    .config-row select {
+        padding: 5px;
+        border: 1px solid var(--gray-med);
+        border-radius: 3px;
+        font-size: 12px;
+        min-width: 120px;
+        background-color: white;
+    }
+    
+    .placement-options {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    
+    .placement-option {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .placement-option input[type="radio"] {
+        margin: 0;
+    }
+    
+    .placement-option label {
+        min-width: auto;
+        font-weight: normal;
+        font-size: 11px;
+    }
+    
+    .placement-detail {
+        display: none;
+        margin-left: 20px;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .placement-detail input {
+        width: 60px;
+        padding: 3px;
+        border: 1px solid var(--gray-med);
+        border-radius: 3px;
+        font-size: 11px;
+    }
+    
+    .config-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid var(--gray-light);
+    }
+    
+    .btn-config-save {
+        background-color: var(--accent1);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .btn-config-save:hover {
+        background-color: var(--accent2);
+    }
+    
+    .btn-config-cancel {
+        background-color: var(--gray-med);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .btn-config-cancel:hover {
+        background-color: var(--gray-dark);
+    }
+    
+    .special-sample-config-button {
+        background-color: var(--blue-med);
+        color: white;
+        border: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10px;
+        transition: background-color 0.2s;
+        margin-left: auto;
+    }
+    
+    .special-sample-config-button:hover {
+        background-color: var(--blue-dark);
+    }
 </style>
 {% endblock %}
 
@@ -987,6 +1196,76 @@
                     <div style="text-align: center; padding: 20px; color: var(--gray-med);">
                         Loading available samples...
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Special Sample Configuration Modal -->
+    <div class="special-sample-config-modal" id="specialSampleConfigModal">
+        <div class="special-sample-config-dialog">
+            <div class="special-sample-config-header">
+                <span><i class="fas fa-cog"></i> Configure <span id="configSampleName">Special Sample</span></span>
+                <button class="special-sample-config-close" onclick="hideSpecialSampleConfigModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="special-sample-config-content">
+                <div class="config-section">
+                    <div class="config-section-title">Sample Creation</div>
+                    <div class="config-row">
+                        <label>Create:</label>
+                        <input type="number" id="sampleCount" min="0" max="999" value="1">
+                        <span>for each</span>
+                        <select id="createForEach">
+                            <option value="step">Step</option>
+                            <option value="input_plate">Input Plate</option>
+                            <option value="output_plate">Output Plate</option>
+                            <option value="sample">Sample</option>
+                        </select>
+                    </div>
+                    <div class="config-row">
+                        <label>
+                            <input type="checkbox" id="autoAdd" style="margin-right: 5px;">
+                            Auto-add
+                        </label>
+                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
+                            Automatically add samples without user intervention
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="config-section-title">Sample Placement</div>
+                    <div class="placement-options">
+                        <div class="placement-option">
+                            <input type="radio" id="placementUserPlaced" name="placement" value="user_placed" checked>
+                            <label for="placementUserPlaced">User-placed</label>
+                        </div>
+                        <div class="placement-option">
+                            <input type="radio" id="placementSpecificWell" name="placement" value="specific_well">
+                            <label for="placementSpecificWell">Specific well:</label>
+                            <div class="placement-detail" id="specificWellDetail">
+                                <input type="text" id="specificWell" placeholder="A1" maxlength="3">
+                            </div>
+                        </div>
+                        <div class="placement-option">
+                            <input type="radio" id="placementAfterSamples" name="placement" value="after_samples">
+                            <label for="placementAfterSamples">N after last sample:</label>
+                            <div class="placement-detail" id="afterSamplesDetail">
+                                <input type="number" id="afterSamplesCount" min="0" max="99" value="1">
+                            </div>
+                        </div>
+                        <div class="placement-option">
+                            <input type="radio" id="placementScriptPlaced" name="placement" value="script_placed">
+                            <label for="placementScriptPlaced">Script placed</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="config-buttons">
+                    <button class="btn-config-cancel" onclick="hideSpecialSampleConfigModal()">Cancel</button>
+                    <button class="btn-config-save" onclick="saveSpecialSampleConfig()">Save Configuration</button>
                 </div>
             </div>
         </div>
@@ -1333,6 +1612,22 @@ function loadStepConfigurationData(stepId) {
             // Load special samples into visual interfaces
             loadSpecialSamplesInterface(config.special_samples || []);
             
+            // Load special sample configurations
+            if (config.special_sample_config) {
+                specialSampleConfigs = config.special_sample_config;
+                // Update visual indicators for configured samples
+                Object.keys(specialSampleConfigs).forEach(sampleId => {
+                    const sampleItem = document.querySelector(`[data-sample-id="${sampleId}"]`);
+                    if (sampleItem) {
+                        const configButton = sampleItem.querySelector('.special-sample-config-button');
+                        if (configButton) {
+                            configButton.style.backgroundColor = 'var(--green-med)';
+                            configButton.title = 'Sample configured - click to edit';
+                        }
+                    }
+                });
+            }
+            
             console.log('Step configuration loaded:', config);
         }
     }).catch(error => {
@@ -1375,6 +1670,7 @@ function saveStepConfiguration(isUnifiedSave = false) {
                 step_name: stepName,
                 containers: containers,
                 special_samples: specialSamples,
+                special_sample_config: specialSampleConfigs,
                 create_samples: document.getElementById('createSamples').checked ? 1 : 0,
                 pages: pages,
                 sample_data: sampleData,
@@ -1611,6 +1907,9 @@ function createSpecialSampleItemHTML(sample, type, index) {
                 <div class="special-sample-name">${sampleName}</div>
                 <div class="special-sample-details">${partNumber ? 'Part: ' + partNumber : 'No part number'}</div>
             </div>
+            <button class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${ssid}, '${sampleName}', ${type})" title="Configure sample">
+                <i class="fas fa-cog"></i>
+            </button>
             <button class="special-sample-remove" onclick="removeSpecialSample(${ssid}, ${type})" title="Remove sample">
                 <i class="fas fa-times"></i>
             </button>
@@ -1849,6 +2148,12 @@ function removeSpecialSample(sampleId, type) {
     }
     
     enabledSpecialSampleIds[type].delete(sampleId);
+    
+    // Remove configuration for this sample
+    if (specialSampleConfigs[sampleId]) {
+        delete specialSampleConfigs[sampleId];
+        console.log(`Removed configuration for sample ID ${sampleId}`);
+    }
     
     // Remove from DOM
     const sampleItem = document.querySelector(`[data-sample-id="${sampleId}"][data-sample-type="${type}"]`);
@@ -2166,6 +2471,7 @@ function removeContainer(containerId) {
 document.addEventListener('click', function(e) {
     const containerModal = document.getElementById('containerSelectorModal');
     const specialSampleModal = document.getElementById('specialSampleSelectorModal');
+    const configModal = document.getElementById('specialSampleConfigModal');
     
     if (e.target === containerModal) {
         hideContainerSelector();
@@ -2174,6 +2480,112 @@ document.addEventListener('click', function(e) {
     if (e.target === specialSampleModal) {
         hideSpecialSampleSelector();
     }
+    
+    if (e.target === configModal) {
+        hideSpecialSampleConfigModal();
+    }
+});
+
+// Special Sample Configuration Modal Functions
+let currentConfigSampleId = null;
+let currentConfigSampleType = null;
+let specialSampleConfigs = {}; // Store configurations by sample ID
+
+function showSpecialSampleConfigModal(sampleId, sampleName, sampleType) {
+    currentConfigSampleId = sampleId;
+    currentConfigSampleType = sampleType;
+    
+    // Update modal title
+    document.getElementById('configSampleName').textContent = sampleName;
+    
+    // Load existing configuration if available
+    const existingConfig = specialSampleConfigs[sampleId] || {
+        count: 1,
+        createForEach: 'step',
+        autoAdd: false,
+        placement: 'user_placed',
+        specificWell: 'A1',
+        afterSamplesCount: 1
+    };
+    
+    // Populate form fields
+    document.getElementById('sampleCount').value = existingConfig.count;
+    document.getElementById('createForEach').value = existingConfig.createForEach;
+    document.getElementById('autoAdd').checked = existingConfig.autoAdd;
+    
+    // Handle placement radio buttons
+    document.querySelector(`input[name="placement"][value="${existingConfig.placement}"]`).checked = true;
+    updatePlacementDetails(existingConfig.placement);
+    
+    document.getElementById('specificWell').value = existingConfig.specificWell;
+    document.getElementById('afterSamplesCount').value = existingConfig.afterSamplesCount;
+    
+    // Show modal
+    document.getElementById('specialSampleConfigModal').style.display = 'flex';
+}
+
+function hideSpecialSampleConfigModal() {
+    document.getElementById('specialSampleConfigModal').style.display = 'none';
+    currentConfigSampleId = null;
+    currentConfigSampleType = null;
+}
+
+function saveSpecialSampleConfig() {
+    if (!currentConfigSampleId) return;
+    
+    const count = parseInt(document.getElementById('sampleCount').value) || 1;
+    const createForEach = document.getElementById('createForEach').value;
+    const autoAdd = document.getElementById('autoAdd').checked;
+    const placement = document.querySelector('input[name="placement"]:checked').value;
+    const specificWell = document.getElementById('specificWell').value.trim() || 'A1';
+    const afterSamplesCount = parseInt(document.getElementById('afterSamplesCount').value) || 1;
+    
+    // Save configuration
+    specialSampleConfigs[currentConfigSampleId] = {
+        count: count,
+        createForEach: createForEach,
+        autoAdd: autoAdd,
+        placement: placement,
+        specificWell: specificWell,
+        afterSamplesCount: afterSamplesCount
+    };
+    
+    console.log(`Saved configuration for sample ID ${currentConfigSampleId}:`, specialSampleConfigs[currentConfigSampleId]);
+    
+    // Update visual indicator (add a small dot or change styling to show it's configured)
+    const sampleItem = document.querySelector(`[data-sample-id="${currentConfigSampleId}"]`);
+    if (sampleItem) {
+        const configButton = sampleItem.querySelector('.special-sample-config-button');
+        if (configButton) {
+            configButton.style.backgroundColor = 'var(--green-med)';
+            configButton.title = 'Sample configured - click to edit';
+        }
+    }
+    
+    hideSpecialSampleConfigModal();
+    pylims_ui.success('Special sample configuration saved');
+}
+
+function updatePlacementDetails(placement) {
+    // Hide all detail sections first
+    document.getElementById('specificWellDetail').style.display = 'none';
+    document.getElementById('afterSamplesDetail').style.display = 'none';
+    
+    // Show relevant detail section
+    if (placement === 'specific_well') {
+        document.getElementById('specificWellDetail').style.display = 'flex';
+    } else if (placement === 'after_samples') {
+        document.getElementById('afterSamplesDetail').style.display = 'flex';
+    }
+}
+
+// Add event listeners for placement radio buttons
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('input[name="placement"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            updatePlacementDetails(this.value);
+        });
+    });
 });
 
 // Initialize page
