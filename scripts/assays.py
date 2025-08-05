@@ -678,7 +678,7 @@ def settings_assay_configure(request, assay_id):
                 # Create placeholders for the IN clause
                 placeholders = ','.join(['%s'] * len(step_ids))
                 cursor.execute(f"""
-                    SELECT scid, step_name, containers, controls, create_samples, 
+                    SELECT scid, step_name, containers, special_samples, create_samples, 
                            pages, sample_data, step_scripts
                     FROM velocity.step_config
                     WHERE scid IN ({placeholders})
@@ -763,7 +763,7 @@ def settings_assay_view(request, assay_id):
                 # Create placeholders for the IN clause
                 placeholders = ','.join(['%s'] * len(step_ids))
                 cursor.execute(f"""
-                    SELECT scid, step_name, containers, controls, create_samples, 
+                    SELECT scid, step_name, containers, special_samples, create_samples, 
                            pages, sample_data, step_scripts
                     FROM velocity.step_config
                     WHERE scid IN ({placeholders})
@@ -1006,7 +1006,7 @@ def get_step_config(request):
         
         # Get step configuration details
         cursor.execute("""
-            SELECT scid, step_name, containers, controls, create_samples, 
+            SELECT scid, step_name, containers, special_samples, create_samples, 
                    pages, sample_data, step_scripts
             FROM velocity.step_config
             WHERE scid = %s
@@ -1076,10 +1076,6 @@ def get_step_config(request):
         # Update step_config with detailed container information
         step_config['containers'] = containers_with_details
         
-        # Rename controls to special_samples for frontend compatibility
-        if 'controls' in step_config:
-            step_config['special_samples'] = step_config.pop('controls')
-        
         conn.close()
         
         return JsonResponse({
@@ -1136,7 +1132,7 @@ def save_step_config(request):
         
         # First, get current step configuration to check for changes
         cursor.execute("""
-            SELECT step_name, containers, controls, create_samples, 
+            SELECT step_name, containers, special_samples, create_samples, 
                    pages, sample_data, step_scripts
             FROM velocity.step_config
             WHERE scid = %s
@@ -1149,17 +1145,17 @@ def save_step_config(request):
         
         # Check if any values have actually changed
         current_containers = current_config.get('containers', []) or []
-        current_controls = current_config.get('controls', {}) or {}   # This is the DB controls column
+        current_special_samples = current_config.get('special_samples', {}) or {}   # Now using special_samples column
         current_pages = current_config.get('pages', []) or []
         current_sample_data = current_config.get('sample_data', []) or []
         current_step_scripts = current_config.get('step_scripts', []) or []
         
-        # Compare all fields for changes (comparing special_samples to stored controls)
+        # Compare all fields for changes
         config_unchanged = (
             current_config['step_name'] == step_name and
             current_config['create_samples'] == create_samples and
             current_containers == container_refs and
-            current_controls == special_samples and  # Compare special_samples data to controls column
+            current_special_samples == special_samples and  # Compare special_samples data to special_samples column
             current_pages == pages and
             current_sample_data == sample_data and
             current_step_scripts == step_scripts
@@ -1182,7 +1178,7 @@ def save_step_config(request):
             UPDATE velocity.step_config
             SET step_name = %s,
                 containers = %s,
-                controls = %s,
+                special_samples = %s,
                 create_samples = %s,
                 pages = %s,
                 sample_data = %s,

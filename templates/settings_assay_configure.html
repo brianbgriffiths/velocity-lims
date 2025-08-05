@@ -906,7 +906,7 @@
                                 </div>
                                 
                                 <!-- Configuration Cards Container -->
-                                <div class="config-cards-container">
+                                <div class="config-cards-container" id="configCardsContainer">
                                     <!-- Containers Configuration -->
                                     <div class="config-card">
                                         <label class="form-label">Containers Configuration</label>
@@ -925,10 +925,7 @@
                                         <textarea id="containerConfig" style="display: none;">[]</textarea>
                                     </div>
                                     
-                                    <!-- Special Samples Configuration Cards (dynamically generated) -->
-                                    <div id="specialSampleCards">
-                                        <!-- Special sample cards will be loaded here dynamically -->
-                                    </div>
+                                    <!-- Special Samples Configuration Cards will be generated here dynamically -->
                                 </div>
                                 
                                 <div class="form-group">
@@ -1466,35 +1463,39 @@ function initializeSpecialSampleTypes() {
 }
 
 function generateSpecialSampleCards() {
-    const container = document.getElementById('specialSampleCards');
+    const container = document.getElementById('configCardsContainer');
     if (!container) return;
     
-    let html = '';
+    // Remove any existing special sample cards (but keep the containers card)
+    const existingSpecialCards = container.querySelectorAll('.config-card:not(.config-card:first-child)');
+    existingSpecialCards.forEach(card => card.remove());
     
+    // Generate and append new special sample cards
     specialSampleTypes.forEach(type => {
         const typeName = type.special_type_name;
         const typeId = type.sstid;
         const containerId = `enabled_${typeId}`;
         
-        html += `
-            <div class="config-card">
-                <label class="form-label">${typeName} Configuration</label>
-                <div class="special-samples-config-panel">
-                    <div class="special-samples-config-header">
-                        <span>${typeName}</span>
-                        <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector(${typeId})">
-                            <i class="fas fa-plus"></i> Add
-                        </button>
-                    </div>
-                    <div class="enabled-special-samples" id="${containerId}">
-                        <div class="no-special-samples">No ${typeName.toLowerCase()} configured</div>
-                    </div>
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'config-card';
+        cardDiv.innerHTML = `
+            <label class="form-label">${typeName} Configuration</label>
+            <div class="special-samples-config-panel">
+                <div class="special-samples-config-header">
+                    <span>${typeName}</span>
+                    <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector(${typeId})">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+                <div class="enabled-special-samples" id="${containerId}">
+                    <div class="no-special-samples">No ${typeName.toLowerCase()} configured</div>
                 </div>
             </div>
         `;
+        
+        container.appendChild(cardDiv);
     });
     
-    container.innerHTML = html;
     console.log('Generated special sample cards for types:', specialSampleTypes);
 }
 
