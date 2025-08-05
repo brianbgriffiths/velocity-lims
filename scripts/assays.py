@@ -1294,6 +1294,3 @@ def get_special_samples(request):
         return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
     except Exception as e:
         return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
-
-
-@login_required
