@@ -1076,6 +1076,49 @@ def get_step_config(request):
         # Update step_config with detailed container information
         step_config['containers'] = containers_with_details
         
+        # Load actual special samples data and organize by type
+        special_samples_organized = {}
+        if step_config['special_samples']:
+            try:
+                # Parse special_samples JSON if it's a string
+                special_samples_ids = step_config['special_samples']
+                if isinstance(special_samples_ids, str):
+                    special_samples_ids = json.loads(special_samples_ids)
+                
+                print(f"Special samples IDs from step config: {special_samples_ids}")
+                
+                if special_samples_ids and len(special_samples_ids) > 0:
+                    # Get the actual special samples data with their types
+                    placeholders = ','.join(['%s'] * len(special_samples_ids))
+                    cursor.execute(f"""
+                        SELECT ss.ssid, ss.special_name, ss.special_type, ss.part_number, ss.color, 
+                               ss.dilution, ss.volume, ss.concentration, ss.notes, ss.active, 
+                               ss.created, ss.modified, sst.sstid as type_id, sst.special_type_name
+                        FROM velocity.special_samples ss
+                        JOIN velocity.special_sample_types sst ON ss.special_type = sst.sstid
+                        WHERE ss.ssid IN ({placeholders}) AND ss.active = true
+                        ORDER BY sst.special_type_name, ss.special_name
+                    """, special_samples_ids)
+                    
+                    special_samples_data = cursor.fetchall()
+                    print(f"Loaded special samples data: {special_samples_data}")
+                    
+                    # Organize by type ID (sstid)
+                    for sample in special_samples_data:
+                        type_id = sample['type_id']
+                        if type_id not in special_samples_organized:
+                            special_samples_organized[type_id] = []
+                        special_samples_organized[type_id].append(sample)
+                    
+                    print(f"Organized special samples: {special_samples_organized}")
+                        
+            except Exception as e:
+                print(f"Error loading special samples: {e}")
+                special_samples_organized = {}
+        
+        # Replace the raw IDs with organized special samples data
+        step_config['special_samples'] = special_samples_organized
+        
         conn.close()
         
         return JsonResponse({
@@ -1118,6 +1161,18 @@ def save_step_config(request):
             if isinstance(container, dict) and container.get('cid'):
                 container_refs.append({'cid': container['cid']})
         
+        # Extract special sample IDs from the organized data structure
+        special_sample_ids = []
+        if isinstance(special_samples, dict):
+            # special_samples is organized by type: {type_id: [samples...]}
+            for type_id, samples in special_samples.items():
+                if isinstance(samples, list):
+                    for sample in samples:
+                        if isinstance(sample, dict) and sample.get('ssid'):
+                            special_sample_ids.append(sample['ssid'])
+        
+        print(f"Extracted special sample IDs for storage: {special_sample_ids}")
+        
         if not scid:
             return JsonResponse({'error': 'Step configuration ID (scid) is required'}, status=400)
         
@@ -1145,17 +1200,17 @@ def save_step_config(request):
         
         # Check if any values have actually changed
         current_containers = current_config.get('containers', []) or []
-        current_special_samples = current_config.get('special_samples', {}) or {}   # Now using special_samples column
+        current_special_sample_ids = current_config.get('special_samples', []) or []   # This is the raw ID list from DB
         current_pages = current_config.get('pages', []) or []
         current_sample_data = current_config.get('sample_data', []) or []
         current_step_scripts = current_config.get('step_scripts', []) or []
         
-        # Compare all fields for changes
+        # Compare all fields for changes (compare extracted IDs with stored IDs)
         config_unchanged = (
             current_config['step_name'] == step_name and
             current_config['create_samples'] == create_samples and
             current_containers == container_refs and
-            current_special_samples == special_samples and  # Compare special_samples data to special_samples column
+            current_special_sample_ids == special_sample_ids and  # Compare extracted IDs to stored IDs
             current_pages == pages and
             current_sample_data == sample_data and
             current_step_scripts == step_scripts
@@ -1185,7 +1240,7 @@ def save_step_config(request):
                 step_scripts = %s
             WHERE scid = %s
             RETURNING scid, step_name
-        """, (step_name, json.dumps(container_refs), json.dumps(special_samples), 
+        """, (step_name, json.dumps(container_refs), json.dumps(special_sample_ids), 
               create_samples, json.dumps(pages), json.dumps(sample_data), 
               json.dumps(step_scripts), scid))
         
