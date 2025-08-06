@@ -485,6 +485,7 @@
         gap: 8px;
         cursor: grab;
         transition: all 0.2s;
+        position: relative;
     }
     
     
@@ -542,27 +543,64 @@
     .special-sample-remove:hover {
         background-color: var(--red-dark);
     }
-    
-    /* Special sample type colors - using CSS custom properties for dynamic types */
-    .special-sample-item[data-sample-type="1"] { border-left: 4px solid #ff9800; }
-    .special-sample-item[data-sample-type="2"] { border-left: 4px solid #2196f3; }
-    .special-sample-item[data-sample-type="3"] { border-left: 4px solid #9c27b0; }
-    .special-sample-item[data-sample-type="4"] { border-left: 4px solid #607d8b; }
-    .special-sample-item[data-sample-type="5"] { border-left: 4px solid #4caf50; }
-    .special-sample-item[data-sample-type="6"] { border-left: 4px solid #f44336; }
-    .special-sample-item[data-sample-type="7"] { border-left: 4px solid #ffc107; }
-    .special-sample-item[data-sample-type="8"] { border-left: 4px solid #009688; }
 
-    /* Container preview colors for special sample types in modal */
-    .container-preview[data-type="1"] { background-color: rgba(255, 152, 0, 0.2); border-color: #ff9800; }
-    .container-preview[data-type="2"] { background-color: rgba(33, 150, 243, 0.2); border-color: #2196f3; }
-    .container-preview[data-type="3"] { background-color: rgba(156, 39, 176, 0.2); border-color: #9c27b0; }
-    .container-preview[data-type="4"] { background-color: rgba(96, 125, 139, 0.2); border-color: #607d8b; }
-    .container-preview[data-type="5"] { background-color: rgba(76, 175, 80, 0.2); border-color: #4caf50; }
-    .container-preview[data-type="6"] { background-color: rgba(244, 67, 54, 0.2); border-color: #f44336; }
-    .container-preview[data-type="7"] { background-color: rgba(255, 193, 7, 0.2); border-color: #ffc107; }
-    .container-preview[data-type="8"] { background-color: rgba(0, 150, 136, 0.2); border-color: #009688; }
+    --data-color1:"#9c27b0";
+    --data-color2:"#5dcb51ff";
+    --data-color3:"#0077ffff";
+    --data-color4:"#ffd500ff";
+    --data-color5:"#e53030ff";
+    --data-color6:"#9e78e0ff";
+    --data-color7:"#cbe91eff";
+    --data-color8:"#0bbdd0ff";
+    --data-color9:"#e96900ff";
+    --data-color10:"#f78ae6ff";
+
     
+    /* Combined color styles for items - left border styling */
+    .special-sample-item[data-sample-type="1"],
+    .container-item.color-1 { border-left: 4px solid var(--data-color1); }
+    .special-sample-item[data-sample-type="2"],
+    .container-item.color-2 { border-left: 4px solid var(--data-color2); }
+    .special-sample-item[data-sample-type="3"],
+    .container-item.color-3 { border-left: 4px solid var(--data-color3); }
+    .special-sample-item[data-sample-type="4"],
+    .container-item.color-4 { border-left: 4px solid var(--data-color4); }
+    .special-sample-item[data-sample-type="5"],
+    .container-item.color-5 { border-left: 4px solid var(--data-color5); }
+    .special-sample-item[data-sample-type="6"],
+    .container-item.color-6 { border-left: 4px solid var(--data-color6); }
+    .special-sample-item[data-sample-type="7"],
+    .container-item.color-7 { border-left: 4px solid var(--data-color7); }
+    .special-sample-item[data-sample-type="8"],
+    .container-item.color-8 { border-left: 4px solid var(--data-color8); }
+    .special-sample-item[data-sample-type="9"],
+    .container-item.color-9 { border-left: 4px solid var(--data-color9); }
+    .special-sample-item[data-sample-type="10"],
+    .container-item.color-10 { border-left: 4px solid var(--data-color10); }
+
+    /* Combined container preview colors for modal */
+    .container-preview[data-type="1"],
+    .container-preview.color-1 { background-color: rgba(var(--data-color1-rgb), 0.5); border-color: var(--data-color1); }
+    .container-preview[data-type="2"],
+    .container-preview.color-2 { background-color: rgba(var(--data-color2-rgb), 0.5); border-color: var(--data-color2); }
+    .container-preview[data-type="3"],
+    .container-preview.color-3 { background-color: rgba(var(--data-color3-rgb), 0.5); border-color: var(--data-color3); }
+    .container-preview[data-type="4"],
+    .container-preview.color-4 { background-color: rgba(var(--data-color4-rgb), 0.5); border-color: var(--data-color4); }
+    .container-preview[data-type="5"],
+    .container-preview.color-5 { background-color: rgba(var(--data-color5-rgb), 0.5); border-color: var(--data-color5); }
+    .container-preview[data-type="6"],
+    .container-preview.color-6 { background-color: rgba(var(--data-color6-rgb), 0.5); border-color: var(--data-color6); }
+    .container-preview[data-type="7"],
+    .container-preview.color-7 { background-color: rgba(var(--data-color7-rgb), 0.5); border-color: var(--data-color7); }
+    .container-preview[data-type="8"],
+    .container-preview.color-8 { background-color: rgba(var(--data-color8-rgb), 0.5); border-color: var(--data-color8); }
+    .container-preview[data-type="9"],
+    .container-preview.color-9 { background-color: rgba(var(--data-color9-rgb), 0.5); border-color: var(--data-color9); }
+    .container-preview[data-type="10"],
+    .container-preview.color-10 { background-color: rgba(var(--data-color10-rgb), 0.5); border-color: var(--data-color10); }
+    
+    /* Container Configuration Styles */
     .container-item {
         background-color: var(--inputbg);
         border: 1px solid var(--gray-med);
@@ -574,19 +612,10 @@
         gap: 8px;
         cursor: grab;
         transition: all 0.2s;
+        position:relative;
     }
     
-    /* Container color styles for container items - left border only */
-    .container-item.color-1 { border-left: 4px solid #2196f3; }
-    .container-item.color-2 { border-left: 4px solid #9c27b0; }
-    .container-item.color-3 { border-left: 4px solid #4caf50; }
-    .container-item.color-4 { border-left: 4px solid #ff9800; }
-    .container-item.color-5 { border-left: 4px solid #f44336; }
-    .container-item.color-6 { border-left: 4px solid #009688; }
-    .container-item.color-7 { border-left: 4px solid #e91e63; }
-    .container-item.color-8 { border-left: 4px solid #8bc34a; }
-    .container-item.color-9 { border-left: 4px solid #3f51b5; }
-    .container-item.color-10 { border-left: 4px solid #ffc107; }
+    
     
     .container-item.dragging {
         opacity: 0.5;
@@ -742,24 +771,6 @@
         position: relative;
         overflow: hidden;
     }
-    
-    /* Container color styles matching settings_containers */
-    .container-preview.color-1 { background-color: rgba(33, 150, 243, 0.2); border-color: #2196f3; }
-    .container-preview.color-2 { background-color: rgba(156, 39, 176, 0.2); border-color: #9c27b0; }
-    .container-preview.color-3 { background-color: rgba(76, 175, 80, 0.2); border-color: #4caf50; }
-    .container-preview.color-4 { background-color: rgba(255, 152, 0, 0.2); border-color: #ff9800; }
-    .container-preview.color-5 { background-color: rgba(244, 67, 54, 0.2); border-color: #f44336; }
-    .container-preview.color-6 { background-color: rgba(0, 150, 136, 0.2); border-color: #009688; }
-    .container-preview.color-7 { background-color: rgba(233, 30, 99, 0.2); border-color: #e91e63; }
-    .container-preview.color-8 { background-color: rgba(139, 195, 74, 0.2); border-color: #8bc34a; }
-    .container-preview.color-9 { background-color: rgba(63, 81, 181, 0.2); border-color: #3f51b5; }
-    .container-preview.color-10 { background-color: rgba(255, 193, 7, 0.2); border-color: #ffc107; }
-    
-    /* Special sample type colors for modal previews */
-    .container-preview.type-1 { background-color: rgba(255, 152, 0, 0.2); border-color: #ff9800; }
-    .container-preview.type-2 { background-color: rgba(33, 150, 243, 0.2); border-color: #2196f3; }
-    .container-preview.type-3 { background-color: rgba(156, 39, 176, 0.2); border-color: #9c27b0; }
-    .container-preview.type-4 { background-color: rgba(96, 125, 139, 0.2); border-color: #607d8b; }
 
     #pylims_request_error {
         border: solid 1px var(--red-med);
