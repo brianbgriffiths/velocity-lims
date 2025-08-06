@@ -544,21 +544,8 @@
         background-color: var(--red-dark);
     }
 
-    --data-color1:"#9c27b0";
-    --data-color2:"#5dcb51ff";
-    --data-color3:"#0077ffff";
-    --data-color4:"#ffd500ff";
-    --data-color5:"#e53030ff";
-    --data-color6:"#9e78e0ff";
-    --data-color7:"#cbe91eff";
-    --data-color8:"#0bbdd0ff";
-    --data-color9:"#e96900ff";
-    --data-color10:"#f78ae6ff";
-
-    
-    /* Combined color styles for items - left border styling */
-    .special-sample-item[data-sample-type="1"],
-    .container-item.color-1 { border-left: 4px solid var(--data-color1); }
+    .container-preview[data-type="1"],
+    .container-preview.color-1 { background-color: rgba(var(--data-color1-rgb), 0.5); border-color: var(--data-color1); }
     .special-sample-item[data-sample-type="2"],
     .container-item.color-2 { border-left: 4px solid var(--data-color2); }
     .special-sample-item[data-sample-type="3"],
