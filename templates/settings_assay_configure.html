@@ -441,7 +441,7 @@
     }
     
     .btn-add-special-sample {
-        background-color: var(--blue-med);
+        background-color: var(--green-med);
         color: white;
         border: none;
         padding: 4px 8px;
@@ -455,7 +455,7 @@
     }
     
     .btn-add-special-sample:hover {
-        background-color: var(--blue-dark);
+        background-color: var(--green-dark);
     }
     
     .enabled-special-samples {
@@ -602,23 +602,24 @@
         color: var(--gray-dark);
     }
     
-    .container-remove {
-        background-color: var(--red-med);
+    .container-config-button {
+        background-color: var(--blue-med);
         color: white;
         border: none;
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 9px;
+        font-size: 10px;
         transition: background-color 0.2s;
+        margin-left: auto;
     }
     
-    .container-remove:hover {
-        background-color: var(--red-dark);
+    .container-config-button:hover {
+        background-color: var(--blue-dark);
     }
     
     .container-selector-modal {
@@ -924,13 +925,10 @@
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        transition: all 0.2s;
     }
     
     .btn-remove-sample:hover {
         background-color: var(--pink-dark);
-        border-color: var(--pink-darkest);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
     
     .btn-remove-sample:active {
@@ -956,6 +954,107 @@
     
     .special-sample-config-button:hover {
         background-color: var(--blue-dark);
+    }
+    
+    /* Container Configuration Modal */
+    .container-config-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: none;
+        z-index: 1002;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .container-config-dialog {
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        width: 90%;
+        max-width: 600px;
+        max-height: 80%;
+        overflow-y: auto;
+    }
+    
+    .container-config-modal-header {
+        background-color: var(--accent1);
+        color: white;
+        padding: 15px;
+        font-weight: bold;
+        border-radius: 5px 5px 0 0;
+    }
+    
+    .container-config-content {
+        padding: 20px;
+    }
+    
+    .container-config-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid var(--gray-light);
+    }
+    
+    .btn-container-config-save {
+        background-color: var(--green-med);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .btn-container-config-save:hover {
+        background-color: var(--green-dark);
+    }
+    
+    .btn-container-config-cancel {
+        background-color: var(--gray-med);
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+    }
+    
+    .btn-container-config-cancel:hover {
+        background-color: var(--gray-dark);
+    }
+    
+    .btn-remove-container {
+        background-color: var(--pink-med);
+        color: white;
+        border: 1px solid var(--pink-dark);
+        padding: 8px 15px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: bold;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.2s;
+    }
+    
+    .btn-remove-container:hover {
+        background-color: var(--pink-dark);
+        border-color: var(--pink-darkest);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-remove-container:active {
+        transform: translateY(1px);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 </style>
 {% endblock %}
@@ -1220,6 +1319,28 @@
                     <button type="button" class="btn-config-cancel" onclick="hideSpecialSampleConfigModal()">Cancel</button>
                     <button type="button" class="btn-remove-sample" onclick="removeCurrentSpecialSample()">Remove Control</button>
                     <button type="button" class="btn-config-save" onclick="saveSpecialSampleConfig()">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Container Configuration Modal -->
+    <div class="container-config-modal" id="containerConfigModal">
+        <div class="container-config-dialog">
+            <div class="container-config-modal-header">
+                <span><i class="fas fa-cog"></i> Configure <span id="configContainerName">Container</span></span>
+            </div>
+            <div class="container-config-content">
+                <!-- Container configuration options will be added here based on your requirements -->
+                <div class="config-section">
+                    <div class="config-section-title">Container Options</div>
+                    <p>Container configuration options will be implemented based on your specific requirements.</p>
+                </div>
+                
+                <div class="container-config-buttons">
+                    <button type="button" class="btn-container-config-cancel" onclick="hideContainerConfigModal()">Cancel</button>
+                    <button type="button" class="btn-remove-container" onclick="removeCurrentContainer()">Remove Container</button>
+                    <button type="button" class="btn-container-config-save" onclick="saveContainerConfig()">Save Configuration</button>
                 </div>
             </div>
         </div>
@@ -2175,8 +2296,8 @@ function createContainerItemHTML(container, index) {
                 <div class="container-name">${typeName}</div>
                 <div class="container-details">${rows}×${columns} wells</div>
             </div>
-            <button class="container-remove" onclick="removeContainer(${cid})" title="Remove container">
-                <i class="fas fa-times"></i>
+            <button class="container-config-button" onclick="showContainerConfigModal(${cid}, '${typeName}')" title="Configure container">
+                <i class="fas fa-cog"></i>
             </button>
         </div>
     `;
@@ -2548,6 +2669,64 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Container Configuration Modal Functions
+let currentContainerId = null;
+let currentContainerName = null;
+
+function showContainerConfigModal(containerId, containerName) {
+    currentContainerId = containerId;
+    currentContainerName = containerName;
+    
+    // Update modal title
+    document.getElementById('configContainerName').textContent = containerName;
+    
+    // Show modal
+    document.getElementById('containerConfigModal').style.display = 'flex';
+    
+    console.log('Showing container config modal for:', containerId, containerName);
+}
+
+function hideContainerConfigModal() {
+    document.getElementById('containerConfigModal').style.display = 'none';
+    currentContainerId = null;
+    currentContainerName = null;
+}
+
+// Close container modal when clicking outside
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('containerConfigModal');
+    const dialog = document.querySelector('.container-config-dialog');
+    
+    if (modal && modal.style.display === 'flex' && !dialog.contains(event.target)) {
+        hideContainerConfigModal();
+    }
+});
+
+function saveContainerConfig() {
+    if (!currentContainerId) {
+        console.error('No container selected for configuration');
+        return;
+    }
+    
+    console.log('Saving container configuration for:', currentContainerId);
+    
+    // TODO: Implement container configuration saving based on your requirements
+    pylims_ui.success('Container configuration saved successfully');
+    hideContainerConfigModal();
+}
+
+function removeCurrentContainer() {
+    if (!currentContainerId) {
+        console.error('No container selected for removal');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to remove the container "${currentContainerName}"?`)) {
+        removeContainer(currentContainerId);
+        hideContainerConfigModal();
+    }
+}
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', function() {
