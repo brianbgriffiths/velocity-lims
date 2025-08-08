@@ -603,8 +603,8 @@
     }
     
     .container-config-button {
-        background-color: var(--blue-med);
-        color: white;
+        background-color: var(--blue-light);
+        color: var(--blue-dark);
         border: none;
         width: 20px;
         height: 20px;
@@ -619,7 +619,8 @@
     }
     
     .container-config-button:hover {
-        background-color: var(--blue-dark);
+        background-color: var(--blue-med);
+        color: black;
     }
     
     .container-selector-modal {
@@ -836,6 +837,13 @@
         background-color: white;
     }
     
+    .config-row input[type="text"] {
+        padding: 5px;
+        border: 1px solid var(--gray-med);
+        border-radius: 3px;
+        font-size: 12px;
+    }
+    
     .placement-options {
         display: flex;
         gap: 15px;
@@ -937,8 +945,8 @@
     }
     
     .special-sample-config-button {
-        background-color: var(--blue-med);
-        color: white;
+        background-color: var(--blue-light);
+        color: var(--blue-dark);
         border: none;
         width: 20px;
         height: 20px;
@@ -953,7 +961,8 @@
     }
     
     .special-sample-config-button:hover {
-        background-color: var(--blue-dark);
+        background-color: var(--blue-med);
+        color: black;
     }
     
     /* Container Configuration Modal */
@@ -1331,10 +1340,75 @@
                 <span><i class="fas fa-cog"></i> Configure <span id="configContainerName">Container</span></span>
             </div>
             <div class="container-config-content">
-                <!-- Container configuration options will be added here based on your requirements -->
                 <div class="config-section">
-                    <div class="config-section-title">Container Options</div>
-                    <p>Container configuration options will be implemented based on your specific requirements.</p>
+                    <div class="config-section-title">Container Usage</div>
+                    <div class="config-row">
+                        <label>Role:</label>
+                        <select id="containerRole">
+                            <option value="input">Input Container</option>
+                            <option value="output">Output Container</option>
+                            <option value="storage">Storage Container</option>
+                            <option value="reaction">Reaction Container</option>
+                        </select>
+                    </div>
+                    <div class="config-row">
+                        <label>Priority:</label>
+                        <input type="number" id="containerPriority" min="1" max="10" value="1">
+                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
+                            1 = highest priority
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="config-section-title">Container Behavior</div>
+                    <div class="config-row">
+                        <label>
+                            <input type="checkbox" id="containerRequired" style="margin-right: 5px;">
+                            Required for step
+                        </label>
+                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
+                            Step cannot proceed without this container
+                        </span>
+                    </div>
+                    <div class="config-row">
+                        <label>
+                            <input type="checkbox" id="containerAutoCreate" style="margin-right: 5px;">
+                            Auto-create if needed
+                        </label>
+                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
+                            Automatically create container when step starts
+                        </span>
+                    </div>
+                    <div class="config-row">
+                        <label>
+                            <input type="checkbox" id="containerReusable" style="margin-right: 5px;">
+                            Reusable
+                        </label>
+                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
+                            Container can be used in multiple steps
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="config-section-title">Well Configuration</div>
+                    <div class="config-row">
+                        <label>Fill pattern:</label>
+                        <select id="containerFillPattern">
+                            <option value="row_wise">Row-wise (A1, A2, A3...)</option>
+                            <option value="column_wise">Column-wise (A1, B1, C1...)</option>
+                            <option value="spiral">Spiral</option>
+                            <option value="user_defined">User defined</option>
+                        </select>
+                    </div>
+                    <div class="config-row">
+                        <label>Skip wells:</label>
+                        <input type="text" id="containerSkipWells" placeholder="A1,B2,H12" style="width: 150px;">
+                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
+                            Comma-separated well positions
+                        </span>
+                    </div>
                 </div>
                 
                 <div class="container-config-buttons">
@@ -2681,6 +2755,9 @@ function showContainerConfigModal(containerId, containerName) {
     // Update modal title
     document.getElementById('configContainerName').textContent = containerName;
     
+    // Load existing configuration
+    loadContainerConfig(containerId);
+    
     // Show modal
     document.getElementById('containerConfigModal').style.display = 'flex';
     
@@ -2709,11 +2786,52 @@ function saveContainerConfig() {
         return;
     }
     
-    console.log('Saving container configuration for:', currentContainerId);
+    // Collect configuration data from form
+    const config = {
+        container_id: currentContainerId,
+        role: document.getElementById('containerRole').value,
+        priority: parseInt(document.getElementById('containerPriority').value),
+        required: document.getElementById('containerRequired').checked,
+        auto_create: document.getElementById('containerAutoCreate').checked,
+        reusable: document.getElementById('containerReusable').checked,
+        fill_pattern: document.getElementById('containerFillPattern').value,
+        skip_wells: document.getElementById('containerSkipWells').value.split(',').map(w => w.trim()).filter(w => w)
+    };
     
-    // TODO: Implement container configuration saving based on your requirements
+    console.log('Saving container configuration for:', currentContainerId, config);
+    
+    // Store configuration in container configurations object
+    if (!window.containerConfigurations) {
+        window.containerConfigurations = {};
+    }
+    window.containerConfigurations[currentContainerId] = config;
+    
     pylims_ui.success('Container configuration saved successfully');
     hideContainerConfigModal();
+}
+
+function loadContainerConfig(containerId) {
+    // Load existing configuration if available
+    if (window.containerConfigurations && window.containerConfigurations[containerId]) {
+        const config = window.containerConfigurations[containerId];
+        
+        document.getElementById('containerRole').value = config.role || 'input';
+        document.getElementById('containerPriority').value = config.priority || 1;
+        document.getElementById('containerRequired').checked = config.required || false;
+        document.getElementById('containerAutoCreate').checked = config.auto_create || false;
+        document.getElementById('containerReusable').checked = config.reusable || false;
+        document.getElementById('containerFillPattern').value = config.fill_pattern || 'row_wise';
+        document.getElementById('containerSkipWells').value = (config.skip_wells || []).join(', ');
+    } else {
+        // Set default values
+        document.getElementById('containerRole').value = 'input';
+        document.getElementById('containerPriority').value = 1;
+        document.getElementById('containerRequired').checked = false;
+        document.getElementById('containerAutoCreate').checked = false;
+        document.getElementById('containerReusable').checked = false;
+        document.getElementById('containerFillPattern').value = 'row_wise';
+        document.getElementById('containerSkipWells').value = '';
+    }
 }
 
 function removeCurrentContainer() {
