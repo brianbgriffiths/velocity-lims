@@ -979,6 +979,10 @@
         justify-content: center;
     }
     
+    .container-config-modal.show {
+        display: flex !important;
+    }
+    
     .container-config-dialog {
         background-color: white;
         border-radius: 5px;
@@ -2699,23 +2703,26 @@ function showContainerConfigModal(containerId, containerName) {
         console.error('configContainerName element not found!');
     }
     
-    // Load existing configuration
-    try {
-        loadContainerConfig(containerId);
-    } catch (error) {
-        console.error('Error loading container config:', error);
-    }
+    // Show modal using CSS class
+    modal.classList.add('show');
     
-    // Show modal with force
-    modal.style.setProperty('display', 'flex', 'important');
-    modal.style.visibility = 'visible';
-    console.log('Modal display set to flex with important, should be visible now');
+    console.log('Modal show class added, should be visible now');
     console.log('Modal element:', modal);
     console.log('Modal computed style:', window.getComputedStyle(modal).display);
+    console.log('Modal classes:', modal.className);
+    
+    // Check if anything is resetting it after a delay
+    setTimeout(() => {
+        console.log('After 100ms - Modal classes:', modal.className);
+        console.log('After 100ms - Modal computed style:', window.getComputedStyle(modal).display);
+    }, 100);
 }
 
 function hideContainerConfigModal() {
-    document.getElementById('containerConfigModal').style.display = 'none';
+    const modal = document.getElementById('containerConfigModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
     currentContainerId = null;
     currentContainerName = null;
 }
