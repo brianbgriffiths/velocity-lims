@@ -2770,21 +2770,6 @@ function toggleRenameOptions() {
     }
 }
 
-// Handle output for dropdown change
-document.addEventListener('DOMContentLoaded', function() {
-    // Add event listener for output for dropdown when DOM is loaded
-    setTimeout(() => {
-        const outputForSelect = document.getElementById('outputFor');
-        const nSamplesRow = document.getElementById('nSamplesRow');
-        
-        if (outputForSelect && nSamplesRow) {
-            outputForSelect.addEventListener('change', function() {
-                nSamplesRow.style.display = this.value === 'n_samples' ? 'flex' : 'none';
-            });
-        }
-    }, 100);
-});
-
 function hideContainerConfigModal() {
     const modal = document.getElementById('containerConfigModal');
     if (modal) {
@@ -2905,6 +2890,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize special sample types from server data
     initializeSpecialSampleTypes();
     console.log('Special sample types initialized, page ready');
+    
+    // Setup container config event listeners
+    setTimeout(() => {
+        const outputForSelect = document.getElementById('outputFor');
+        const nSamplesRow = document.getElementById('nSamplesRow');
+        
+        if (outputForSelect && nSamplesRow) {
+            outputForSelect.addEventListener('change', function() {
+                nSamplesRow.style.display = this.value === 'n_samples' ? 'flex' : 'none';
+            });
+        }
+    }, 100);
 });
 </script>
 {% endblock %}
