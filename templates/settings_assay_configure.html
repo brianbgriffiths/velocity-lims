@@ -2749,19 +2749,38 @@ let currentContainerId = null;
 let currentContainerName = null;
 
 function showContainerConfigModal(containerId, containerName) {
+    console.log('showContainerConfigModal called with:', containerId, containerName);
+    
     currentContainerId = containerId;
     currentContainerName = containerName;
     
+    // Check if modal exists
+    const modal = document.getElementById('containerConfigModal');
+    if (!modal) {
+        console.error('Container config modal not found!');
+        return;
+    }
+    
     // Update modal title
-    document.getElementById('configContainerName').textContent = containerName;
+    const titleElement = document.getElementById('configContainerName');
+    if (titleElement) {
+        titleElement.textContent = containerName;
+    } else {
+        console.error('configContainerName element not found!');
+    }
     
     // Load existing configuration
-    loadContainerConfig(containerId);
+    try {
+        loadContainerConfig(containerId);
+    } catch (error) {
+        console.error('Error loading container config:', error);
+    }
     
     // Show modal
-    document.getElementById('containerConfigModal').style.display = 'flex';
-    
-    console.log('Showing container config modal for:', containerId, containerName);
+    modal.style.display = 'flex';
+    console.log('Modal display set to flex, should be visible now');
+    console.log('Modal element:', modal);
+    console.log('Modal computed style:', window.getComputedStyle(modal).display);
 }
 
 function hideContainerConfigModal() {
@@ -2811,26 +2830,44 @@ function saveContainerConfig() {
 }
 
 function loadContainerConfig(containerId) {
+    console.log('Loading config for container:', containerId);
+    
+    // Helper function to safely set element value
+    function safeSetValue(elementId, value, type = 'value') {
+        const element = document.getElementById(elementId);
+        if (element) {
+            if (type === 'checked') {
+                element.checked = value;
+            } else {
+                element.value = value;
+            }
+        } else {
+            console.error(`Element ${elementId} not found!`);
+        }
+    }
+    
     // Load existing configuration if available
     if (window.containerConfigurations && window.containerConfigurations[containerId]) {
         const config = window.containerConfigurations[containerId];
+        console.log('Found existing config:', config);
         
-        document.getElementById('containerRole').value = config.role || 'input';
-        document.getElementById('containerPriority').value = config.priority || 1;
-        document.getElementById('containerRequired').checked = config.required || false;
-        document.getElementById('containerAutoCreate').checked = config.auto_create || false;
-        document.getElementById('containerReusable').checked = config.reusable || false;
-        document.getElementById('containerFillPattern').value = config.fill_pattern || 'row_wise';
-        document.getElementById('containerSkipWells').value = (config.skip_wells || []).join(', ');
+        safeSetValue('containerRole', config.role || 'input');
+        safeSetValue('containerPriority', config.priority || 1);
+        safeSetValue('containerRequired', config.required || false, 'checked');
+        safeSetValue('containerAutoCreate', config.auto_create || false, 'checked');
+        safeSetValue('containerReusable', config.reusable || false, 'checked');
+        safeSetValue('containerFillPattern', config.fill_pattern || 'row_wise');
+        safeSetValue('containerSkipWells', (config.skip_wells || []).join(', '));
     } else {
+        console.log('No existing config found, setting defaults');
         // Set default values
-        document.getElementById('containerRole').value = 'input';
-        document.getElementById('containerPriority').value = 1;
-        document.getElementById('containerRequired').checked = false;
-        document.getElementById('containerAutoCreate').checked = false;
-        document.getElementById('containerReusable').checked = false;
-        document.getElementById('containerFillPattern').value = 'row_wise';
-        document.getElementById('containerSkipWells').value = '';
+        safeSetValue('containerRole', 'input');
+        safeSetValue('containerPriority', 1);
+        safeSetValue('containerRequired', false, 'checked');
+        safeSetValue('containerAutoCreate', false, 'checked');
+        safeSetValue('containerReusable', false, 'checked');
+        safeSetValue('containerFillPattern', 'row_wise');
+        safeSetValue('containerSkipWells', '');
     }
 }
 
