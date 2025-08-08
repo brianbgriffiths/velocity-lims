@@ -1344,10 +1344,53 @@
                 <span><i class="fas fa-cog"></i> Configure <span id="configContainerName">Container</span></span>
             </div>
             <div class="container-config-content">
-                <p>Container configuration modal is working!</p>
+                <div class="config-section">
+                    <div class="config-section-title">Output Generation</div>
+                    <div class="config-row">
+                        <label>Create:</label>
+                        <input type="number" id="outputCount" min="0" max="999" value="1">
+                        <span>outputs for</span>
+                        <select id="outputFor">
+                            <option value="every_input">every input</option>
+                            <option value="n_samples">N samples</option>
+                            <option value="absolute">absolute</option>
+                        </select>
+                    </div>
+                    <div class="config-row" id="nSamplesRow" style="display: none;">
+                        <label>N samples:</label>
+                        <input type="number" id="nSamplesCount" min="1" max="999" value="1">
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="config-section-title">Container Naming</div>
+                    <div class="config-row">
+                        <label>
+                            <input type="checkbox" id="renameContainer" style="margin-right: 5px;" onchange="toggleRenameOptions()">
+                            Rename container
+                        </label>
+                    </div>
+                    <div class="config-row" id="renameTextRow" style="display: none;">
+                        <label>New name:</label>
+                        <input type="text" id="containerNewName" placeholder="Enter new container name" style="width: 200px;">
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="config-section-title">Container Placement</div>
+                    <div class="config-row">
+                        <label>Placement:</label>
+                        <select id="containerPlacement">
+                            <option value="operator">Operator</option>
+                            <option value="script">Script</option>
+                            <option value="disabled">Disabled</option>
+                        </select>
+                    </div>
+                </div>
                 
                 <div class="container-config-buttons">
                     <button type="button" class="btn-container-config-cancel" onclick="hideContainerConfigModal()">Cancel</button>
+                    <button type="button" class="btn-remove-container" onclick="removeCurrentContainer()">Remove Container</button>
                     <button type="button" class="btn-container-config-save" onclick="saveContainerConfig()">Save Configuration</button>
                 </div>
             </div>
@@ -2703,20 +2746,44 @@ function showContainerConfigModal(containerId, containerName) {
         console.error('configContainerName element not found!');
     }
     
+    // Load existing configuration
+    try {
+        loadContainerConfig(containerId);
+    } catch (error) {
+        console.error('Error loading container config:', error);
+    }
+    
     // Show modal using CSS class
     modal.classList.add('show');
     
     console.log('Modal show class added, should be visible now');
-    console.log('Modal element:', modal);
-    console.log('Modal computed style:', window.getComputedStyle(modal).display);
-    console.log('Modal classes:', modal.className);
-    
-    // Check if anything is resetting it after a delay
-    setTimeout(() => {
-        console.log('After 100ms - Modal classes:', modal.className);
-        console.log('After 100ms - Modal computed style:', window.getComputedStyle(modal).display);
-    }, 100);
 }
+}
+
+// Toggle functions for container config
+function toggleRenameOptions() {
+    const renameCheckbox = document.getElementById('renameContainer');
+    const renameTextRow = document.getElementById('renameTextRow');
+    
+    if (renameCheckbox && renameTextRow) {
+        renameTextRow.style.display = renameCheckbox.checked ? 'flex' : 'none';
+    }
+}
+
+// Handle output for dropdown change
+document.addEventListener('DOMContentLoaded', function() {
+    // Add event listener for output for dropdown when DOM is loaded
+    setTimeout(() => {
+        const outputForSelect = document.getElementById('outputFor');
+        const nSamplesRow = document.getElementById('nSamplesRow');
+        
+        if (outputForSelect && nSamplesRow) {
+            outputForSelect.addEventListener('change', function() {
+                nSamplesRow.style.display = this.value === 'n_samples' ? 'flex' : 'none';
+            });
+        }
+    }, 100);
+});
 
 function hideContainerConfigModal() {
     const modal = document.getElementById('containerConfigModal');
@@ -2746,13 +2813,12 @@ function saveContainerConfig() {
     // Collect configuration data from form
     const config = {
         container_id: currentContainerId,
-        role: document.getElementById('containerRole').value,
-        priority: parseInt(document.getElementById('containerPriority').value),
-        required: document.getElementById('containerRequired').checked,
-        auto_create: document.getElementById('containerAutoCreate').checked,
-        reusable: document.getElementById('containerReusable').checked,
-        fill_pattern: document.getElementById('containerFillPattern').value,
-        skip_wells: document.getElementById('containerSkipWells').value.split(',').map(w => w.trim()).filter(w => w)
+        output_count: parseInt(document.getElementById('outputCount').value),
+        output_for: document.getElementById('outputFor').value,
+        n_samples_count: parseInt(document.getElementById('nSamplesCount').value),
+        rename_container: document.getElementById('renameContainer').checked,
+        container_new_name: document.getElementById('containerNewName').value.trim(),
+        placement: document.getElementById('containerPlacement').value
     };
     
     console.log('Saving container configuration for:', currentContainerId, config);
@@ -2789,23 +2855,34 @@ function loadContainerConfig(containerId) {
         const config = window.containerConfigurations[containerId];
         console.log('Found existing config:', config);
         
-        safeSetValue('containerRole', config.role || 'input');
-        safeSetValue('containerPriority', config.priority || 1);
-        safeSetValue('containerRequired', config.required || false, 'checked');
-        safeSetValue('containerAutoCreate', config.auto_create || false, 'checked');
-        safeSetValue('containerReusable', config.reusable || false, 'checked');
-        safeSetValue('containerFillPattern', config.fill_pattern || 'row_wise');
-        safeSetValue('containerSkipWells', (config.skip_wells || []).join(', '));
+        safeSetValue('outputCount', config.output_count || 1);
+        safeSetValue('outputFor', config.output_for || 'every_input');
+        safeSetValue('nSamplesCount', config.n_samples_count || 1);
+        safeSetValue('renameContainer', config.rename_container || false, 'checked');
+        safeSetValue('containerNewName', config.container_new_name || '');
+        safeSetValue('containerPlacement', config.placement || 'operator');
+        
+        // Handle dynamic visibility
+        toggleRenameOptions();
+        const nSamplesRow = document.getElementById('nSamplesRow');
+        if (nSamplesRow) {
+            nSamplesRow.style.display = config.output_for === 'n_samples' ? 'flex' : 'none';
+        }
     } else {
         console.log('No existing config found, setting defaults');
         // Set default values
-        safeSetValue('containerRole', 'input');
-        safeSetValue('containerPriority', 1);
-        safeSetValue('containerRequired', false, 'checked');
-        safeSetValue('containerAutoCreate', false, 'checked');
-        safeSetValue('containerReusable', false, 'checked');
-        safeSetValue('containerFillPattern', 'row_wise');
-        safeSetValue('containerSkipWells', '');
+        safeSetValue('outputCount', 1);
+        safeSetValue('outputFor', 'every_input');
+        safeSetValue('nSamplesCount', 1);
+        safeSetValue('renameContainer', false, 'checked');
+        safeSetValue('containerNewName', '');
+        safeSetValue('containerPlacement', 'operator');
+        
+        // Reset dynamic visibility
+        const renameTextRow = document.getElementById('renameTextRow');
+        const nSamplesRow = document.getElementById('nSamplesRow');
+        if (renameTextRow) renameTextRow.style.display = 'none';
+        if (nSamplesRow) nSamplesRow.style.display = 'none';
     }
 }
 
