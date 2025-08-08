@@ -1340,80 +1340,10 @@
                 <span><i class="fas fa-cog"></i> Configure <span id="configContainerName">Container</span></span>
             </div>
             <div class="container-config-content">
-                <div class="config-section">
-                    <div class="config-section-title">Container Usage</div>
-                    <div class="config-row">
-                        <label>Role:</label>
-                        <select id="containerRole">
-                            <option value="input">Input Container</option>
-                            <option value="output">Output Container</option>
-                            <option value="storage">Storage Container</option>
-                            <option value="reaction">Reaction Container</option>
-                        </select>
-                    </div>
-                    <div class="config-row">
-                        <label>Priority:</label>
-                        <input type="number" id="containerPriority" min="1" max="10" value="1">
-                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
-                            1 = highest priority
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="config-section">
-                    <div class="config-section-title">Container Behavior</div>
-                    <div class="config-row">
-                        <label>
-                            <input type="checkbox" id="containerRequired" style="margin-right: 5px;">
-                            Required for step
-                        </label>
-                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
-                            Step cannot proceed without this container
-                        </span>
-                    </div>
-                    <div class="config-row">
-                        <label>
-                            <input type="checkbox" id="containerAutoCreate" style="margin-right: 5px;">
-                            Auto-create if needed
-                        </label>
-                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
-                            Automatically create container when step starts
-                        </span>
-                    </div>
-                    <div class="config-row">
-                        <label>
-                            <input type="checkbox" id="containerReusable" style="margin-right: 5px;">
-                            Reusable
-                        </label>
-                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
-                            Container can be used in multiple steps
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="config-section">
-                    <div class="config-section-title">Well Configuration</div>
-                    <div class="config-row">
-                        <label>Fill pattern:</label>
-                        <select id="containerFillPattern">
-                            <option value="row_wise">Row-wise (A1, A2, A3...)</option>
-                            <option value="column_wise">Column-wise (A1, B1, C1...)</option>
-                            <option value="spiral">Spiral</option>
-                            <option value="user_defined">User defined</option>
-                        </select>
-                    </div>
-                    <div class="config-row">
-                        <label>Skip wells:</label>
-                        <input type="text" id="containerSkipWells" placeholder="A1,B2,H12" style="width: 150px;">
-                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
-                            Comma-separated well positions
-                        </span>
-                    </div>
-                </div>
+                <p>Container configuration modal is working!</p>
                 
                 <div class="container-config-buttons">
                     <button type="button" class="btn-container-config-cancel" onclick="hideContainerConfigModal()">Cancel</button>
-                    <button type="button" class="btn-remove-container" onclick="removeCurrentContainer()">Remove Container</button>
                     <button type="button" class="btn-container-config-save" onclick="saveContainerConfig()">Save Configuration</button>
                 </div>
             </div>
@@ -2776,9 +2706,10 @@ function showContainerConfigModal(containerId, containerName) {
         console.error('Error loading container config:', error);
     }
     
-    // Show modal
-    modal.style.display = 'flex';
-    console.log('Modal display set to flex, should be visible now');
+    // Show modal with force
+    modal.style.setProperty('display', 'flex', 'important');
+    modal.style.visibility = 'visible';
+    console.log('Modal display set to flex with important, should be visible now');
     console.log('Modal element:', modal);
     console.log('Modal computed style:', window.getComputedStyle(modal).display);
 }
