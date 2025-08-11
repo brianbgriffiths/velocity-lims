@@ -2426,16 +2426,30 @@ function loadContainersInterface(containers) {
         enabledContainersDiv.innerHTML = '<div class="no-containers">No containers configured for this step</div>';
         enabledContainerIds.clear();
         updateContainerConfigTextarea([]);
+        // Clear container configurations
+        window.containerConfigurations = {};
         return;
     }
     
     enabledContainerIds.clear();
+    // Initialize or clear container configurations
+    if (!window.containerConfigurations) {
+        window.containerConfigurations = {};
+    }
+    
     let html = '';
     
     containers.forEach((container, index) => {
         console.log(`Container ${index}:`, container);
         console.log(`Container ${index} keys:`, Object.keys(container));
         enabledContainerIds.add(container.cid);
+        
+        // Load container configuration if it exists
+        if (container.config) {
+            window.containerConfigurations[container.cid] = container.config;
+            console.log(`Loaded config for container ${container.cid}:`, container.config);
+        }
+        
         html += createContainerItemHTML(container, index);
     });
     
@@ -2459,7 +2473,12 @@ function createContainerItemHTML(container, index) {
     const cid = container.cid;
     const color = container.color || 1; // Default to color 1 if no color specified
     
-    console.log('Creating container item:', { container, typeName, rows, columns, cid, color });
+    // Check if container has configuration
+    const hasConfig = window.containerConfigurations && window.containerConfigurations[cid] && 
+                     Object.keys(window.containerConfigurations[cid]).length > 1; // More than just container_id
+    const configIndicator = hasConfig ? '<i class="fas fa-check-circle" style="color: var(--success-color); margin-left: 5px;"></i>' : '';
+    
+    console.log('Creating container item:', { container, typeName, rows, columns, cid, color, hasConfig });
     
     return `
         <div class="container-item color-${color}" data-container-id="${cid}" draggable="true">
@@ -2467,7 +2486,7 @@ function createContainerItemHTML(container, index) {
                 <i class="fas fa-grip-vertical"></i>
             </div>
             <div class="container-info">
-                <div class="container-name">${typeName}</div>
+                <div class="container-name">${typeName}${configIndicator}</div>
                 <div class="container-details">${rows}×${columns} wells</div>
             </div>
             <button type="button" class="container-config-button" onclick="showContainerConfigModal(${cid}, '${typeName}')" title="Configure container">
@@ -2563,11 +2582,17 @@ function getContainersFromInterface() {
         const containerId = parseInt(item.dataset.containerId);
         const container = availableContainers.find(c => c.cid === containerId);
         if (container) {
-            containers.push(container);
+            // Create container object with configuration
+            const containerWithConfig = {
+                ...container,
+                config: window.containerConfigurations && window.containerConfigurations[containerId] ? 
+                    window.containerConfigurations[containerId] : {}
+            };
+            containers.push(containerWithConfig);
         }
     });
     
-    console.log('Getting containers from interface:', containers);
+    console.log('Getting containers from interface with configs:', containers);
     return containers;
 }
 
@@ -3119,6 +3144,16 @@ function saveContainerConfig() {
         window.containerConfigurations = {};
     }
     window.containerConfigurations[currentContainerId] = config;
+    
+    // Refresh the container display to show the configuration indicator
+    const containerItem = document.querySelector(`[data-container-id="${currentContainerId}"]`);
+    if (containerItem) {
+        const container = availableContainers.find(c => c.cid === currentContainerId);
+        if (container) {
+            const index = Array.from(containerItem.parentNode.children).indexOf(containerItem);
+            containerItem.outerHTML = createContainerItemHTML(container, index);
+        }
+    }
     
     pylims_ui.success('Container configuration saved successfully');
     hideContainerConfigModal();
