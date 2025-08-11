@@ -2963,9 +2963,14 @@ function initializeTokenSystem() {
     
     function showTokenPopup() {
         const rect = input.getBoundingClientRect();
+        const modalRect = document.getElementById('containerConfigModal').getBoundingClientRect();
+        const wrapper = input.closest('.container-name-input-wrapper');
+        
+        // Position relative to the input wrapper
         popup.style.display = 'block';
-        popup.style.left = (rect.left + window.scrollX) + 'px';
-        popup.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+        popup.style.left = '0px';
+        popup.style.top = (input.offsetHeight + 2) + 'px';
+        
         isPopupVisible = true;
         selectedIndex = -1;
         updateSelection();
