@@ -1040,6 +1040,21 @@
         display: inline-block;
     }
     
+    .token-select {
+        width: 100%;
+        padding: 2px 4px;
+        border: 1px solid var(--gray-med);
+        border-radius: 2px;
+        font-size: 11px;
+        background-color: white;
+        margin-top: 4px;
+    }
+    
+    .token-select:focus {
+        border-color: var(--accent3);
+        outline: none;
+    }
+    
     .container-config-dialog {
         background-color: white;
         border-radius: 5px;
@@ -1432,6 +1447,32 @@
                         <div class="container-name-input-wrapper">
                             <input type="text" id="containerNewName" placeholder="e.g., Prefix_{requisition_id}" style="width: 200px;" autocomplete="off">
                             <div class="token-popup" id="tokenPopup">
+                                <div class="token-option" data-token="container_value">
+                                    <span class="token-option-icon"><i class="fas fa-cube"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Container Value</div>
+                                        <select class="token-select" id="containerValueSelect" onclick="event.stopPropagation()">
+                                            <option value="">Select container parameter</option>
+                                            <option value="barcode">Container Barcode</option>
+                                            <option value="type">Container Type</option>
+                                            <option value="position">Container Position</option>
+                                            <option value="status">Container Status</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="token-option" data-token="batch_value">
+                                    <span class="token-option-icon"><i class="fas fa-layer-group"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Batch Value</div>
+                                        <select class="token-select" id="batchValueSelect" onclick="event.stopPropagation()">
+                                            <option value="">Select batch parameter</option>
+                                            <option value="batch_id">Batch ID</option>
+                                            <option value="batch_date">Batch Date</option>
+                                            <option value="batch_operator">Batch Operator</option>
+                                            <option value="batch_notes">Batch Notes</option>
+                                        </select>
+                                    </div>
+                                </div>
                                 <div class="token-option" data-token="requisition_id">
                                     <span class="token-option-icon"><i class="fas fa-file-alt"></i></span>
                                     <div class="token-option-text">
@@ -1451,20 +1492,6 @@
                                     <div class="token-option-text">
                                         <div>Sample Name</div>
                                         <div class="token-option-description">Name of the sample</div>
-                                    </div>
-                                </div>
-                                <div class="token-option" data-token="batch_value">
-                                    <span class="token-option-icon"><i class="fas fa-layer-group"></i></span>
-                                    <div class="token-option-text">
-                                        <div>Batch Value</div>
-                                        <div class="token-option-description">Select batch parameter</div>
-                                    </div>
-                                </div>
-                                <div class="token-option" data-token="container_value">
-                                    <span class="token-option-icon"><i class="fas fa-cube"></i></span>
-                                    <div class="token-option-text">
-                                        <div>Container Value</div>
-                                        <div class="token-option-description">Select container parameter</div>
                                     </div>
                                 </div>
                                 <div class="token-option" data-token="container_order">
@@ -2936,9 +2963,7 @@ function initializeTokenSystem() {
             case 'Enter':
             case 'Tab':
                 e.preventDefault();
-                if (selectedIndex >= 0) {
-                    insertToken(options[selectedIndex].dataset.token);
-                }
+                handleTokenSelection();
                 break;
             case 'Escape':
                 hideTokenPopup();
@@ -2957,9 +2982,67 @@ function initializeTokenSystem() {
     popup.addEventListener('click', function(e) {
         const option = e.target.closest('.token-option');
         if (option) {
-            insertToken(option.dataset.token);
+            const token = option.dataset.token;
+            
+            // Handle special tokens with selects
+            if (token === 'container_value') {
+                const select = option.querySelector('#containerValueSelect');
+                if (select.value) {
+                    insertToken(`container_value:${select.value}`);
+                } else {
+                    // Show message or highlight select
+                    select.focus();
+                    select.style.borderColor = 'var(--red-med)';
+                    setTimeout(() => {
+                        select.style.borderColor = 'var(--gray-med)';
+                    }, 1500);
+                }
+            } else if (token === 'batch_value') {
+                const select = option.querySelector('#batchValueSelect');
+                if (select.value) {
+                    insertToken(`batch_value:${select.value}`);
+                } else {
+                    // Show message or highlight select
+                    select.focus();
+                    select.style.borderColor = 'var(--red-med)';
+                    setTimeout(() => {
+                        select.style.borderColor = 'var(--gray-med)';
+                    }, 1500);
+                }
+            } else {
+                insertToken(token);
+            }
         }
     });
+    
+    // Handle Enter/Tab for tokens with selects
+    function handleTokenSelection() {
+        if (selectedIndex >= 0) {
+            const options = popup.querySelectorAll('.token-option');
+            const selectedOption = options[selectedIndex];
+            const token = selectedOption.dataset.token;
+            
+            if (token === 'container_value') {
+                const select = selectedOption.querySelector('#containerValueSelect');
+                if (select.value) {
+                    insertToken(`container_value:${select.value}`);
+                } else {
+                    select.focus();
+                    return;
+                }
+            } else if (token === 'batch_value') {
+                const select = selectedOption.querySelector('#batchValueSelect');
+                if (select.value) {
+                    insertToken(`batch_value:${select.value}`);
+                } else {
+                    select.focus();
+                    return;
+                }
+            } else {
+                insertToken(token);
+            }
+        }
+    }
     
     function showTokenPopup() {
         const rect = input.getBoundingClientRect();
