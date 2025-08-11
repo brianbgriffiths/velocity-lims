@@ -983,6 +983,63 @@
         display: flex !important;
     }
     
+    /* Token Popup for Container Naming */
+    .token-popup {
+        position: absolute;
+        background: white;
+        border: 1px solid var(--gray-med);
+        border-radius: 3px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        z-index: 10000;
+        max-height: 200px;
+        overflow-y: auto;
+        min-width: 200px;
+        display: none;
+    }
+    
+    .token-option {
+        padding: 8px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--gray-lightest);
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .token-option:last-child {
+        border-bottom: none;
+    }
+    
+    .token-option:hover {
+        background-color: var(--accent9);
+    }
+    
+    .token-option.selected {
+        background-color: var(--accent8);
+    }
+    
+    .token-option-icon {
+        color: var(--accent1);
+        width: 12px;
+        text-align: center;
+    }
+    
+    .token-option-text {
+        flex: 1;
+    }
+    
+    .token-option-description {
+        font-size: 10px;
+        color: var(--gray-dark);
+        font-style: italic;
+    }
+    
+    .container-name-input-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+    
     .container-config-dialog {
         background-color: white;
         border-radius: 5px;
@@ -1372,7 +1429,67 @@
                     </div>
                     <div class="config-row" id="renameTextRow" style="display: none;">
                         <label>New name:</label>
-                        <input type="text" id="containerNewName" placeholder="Enter new container name" style="width: 200px;">
+                        <div class="container-name-input-wrapper">
+                            <input type="text" id="containerNewName" placeholder="e.g., Prefix_{requisition_id}" style="width: 200px;" autocomplete="off">
+                            <div class="token-popup" id="tokenPopup">
+                                <div class="token-option" data-token="requisition_id">
+                                    <span class="token-option-icon"><i class="fas fa-file-alt"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Requisition ID</div>
+                                        <div class="token-option-description">Unique requisition identifier</div>
+                                    </div>
+                                </div>
+                                <div class="token-option" data-token="specimen_id">
+                                    <span class="token-option-icon"><i class="fas fa-vial"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Specimen ID</div>
+                                        <div class="token-option-description">Sample specimen identifier</div>
+                                    </div>
+                                </div>
+                                <div class="token-option" data-token="sample_name">
+                                    <span class="token-option-icon"><i class="fas fa-tag"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Sample Name</div>
+                                        <div class="token-option-description">Name of the sample</div>
+                                    </div>
+                                </div>
+                                <div class="token-option" data-token="batch_value">
+                                    <span class="token-option-icon"><i class="fas fa-layer-group"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Batch Value</div>
+                                        <div class="token-option-description">Select batch parameter</div>
+                                    </div>
+                                </div>
+                                <div class="token-option" data-token="container_value">
+                                    <span class="token-option-icon"><i class="fas fa-cube"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Container Value</div>
+                                        <div class="token-option-description">Select container parameter</div>
+                                    </div>
+                                </div>
+                                <div class="token-option" data-token="container_order">
+                                    <span class="token-option-icon"><i class="fas fa-sort-numeric-up"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Container Order</div>
+                                        <div class="token-option-description">Sequential container number</div>
+                                    </div>
+                                </div>
+                                <div class="token-option" data-token="container_count">
+                                    <span class="token-option-icon"><i class="fas fa-calculator"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Container Count</div>
+                                        <div class="token-option-description">Total number of containers</div>
+                                    </div>
+                                </div>
+                                <div class="token-option" data-token="sample_count">
+                                    <span class="token-option-icon"><i class="fas fa-list-ol"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Sample Count</div>
+                                        <div class="token-option-description">Total number of samples</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
@@ -2767,6 +2884,128 @@ function toggleRenameOptions() {
     
     if (renameCheckbox && renameTextRow) {
         renameTextRow.style.display = renameCheckbox.checked ? 'flex' : 'none';
+        
+        // Initialize token system when showing rename options
+        if (renameCheckbox.checked) {
+            initializeTokenSystem();
+        }
+    }
+}
+
+// Token system for container naming
+function initializeTokenSystem() {
+    const input = document.getElementById('containerNewName');
+    const popup = document.getElementById('tokenPopup');
+    
+    if (!input || !popup) return;
+    
+    let selectedIndex = -1;
+    let isPopupVisible = false;
+    let cursorPosition = 0;
+    
+    // Handle input events
+    input.addEventListener('input', function(e) {
+        const value = this.value;
+        cursorPosition = this.selectionStart;
+        
+        // Check if user typed opening brace
+        if (value.charAt(cursorPosition - 1) === '{') {
+            showTokenPopup();
+        } else if (isPopupVisible && (value.charAt(cursorPosition - 1) === '}' || !value.includes('{'))) {
+            hideTokenPopup();
+        }
+    });
+    
+    // Handle keydown for navigation and selection
+    input.addEventListener('keydown', function(e) {
+        if (!isPopupVisible) return;
+        
+        const options = popup.querySelectorAll('.token-option');
+        
+        switch(e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                selectedIndex = Math.min(selectedIndex + 1, options.length - 1);
+                updateSelection();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                selectedIndex = Math.max(selectedIndex - 1, -1);
+                updateSelection();
+                break;
+            case 'Enter':
+            case 'Tab':
+                e.preventDefault();
+                if (selectedIndex >= 0) {
+                    insertToken(options[selectedIndex].dataset.token);
+                }
+                break;
+            case 'Escape':
+                hideTokenPopup();
+                break;
+        }
+    });
+    
+    // Handle clicks outside to close popup
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !popup.contains(e.target)) {
+            hideTokenPopup();
+        }
+    });
+    
+    // Handle token option clicks
+    popup.addEventListener('click', function(e) {
+        const option = e.target.closest('.token-option');
+        if (option) {
+            insertToken(option.dataset.token);
+        }
+    });
+    
+    function showTokenPopup() {
+        const rect = input.getBoundingClientRect();
+        popup.style.display = 'block';
+        popup.style.left = (rect.left + window.scrollX) + 'px';
+        popup.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+        isPopupVisible = true;
+        selectedIndex = -1;
+        updateSelection();
+    }
+    
+    function hideTokenPopup() {
+        popup.style.display = 'none';
+        isPopupVisible = false;
+        selectedIndex = -1;
+    }
+    
+    function updateSelection() {
+        const options = popup.querySelectorAll('.token-option');
+        options.forEach((option, index) => {
+            option.classList.toggle('selected', index === selectedIndex);
+        });
+    }
+    
+    function insertToken(token) {
+        const value = input.value;
+        const start = input.selectionStart;
+        
+        // Find the opening brace position
+        let bracePos = start - 1;
+        while (bracePos >= 0 && value.charAt(bracePos) !== '{') {
+            bracePos--;
+        }
+        
+        if (bracePos >= 0) {
+            // Replace from opening brace to cursor with token
+            const newValue = value.substring(0, bracePos) + '{' + token + '}' + value.substring(start);
+            input.value = newValue;
+            
+            // Set cursor position after the inserted token
+            const newCursorPos = bracePos + token.length + 2;
+            input.setSelectionRange(newCursorPos, newCursorPos);
+        }
+        
+        hideTokenPopup();
+        input.focus();
     }
 }
 
