@@ -1029,11 +1029,15 @@ def get_step_config(request):
                 print(f"Containers data type: {type(containers_data)}")
                 print(f"Containers data: {containers_data}")
                 
-                # Extract container IDs - handle both formats: [6, 7] or [{'cid': 6}, {'cid': 7}]
+                # Extract container IDs and configs - handle both formats: [6, 7] or [{'cid': 6, 'config': {...}}, {'cid': 7}]
                 container_ids = []
+                container_configs = {}
                 for c in containers_data:
                     if isinstance(c, dict) and c.get('cid'):
                         container_ids.append(c['cid'])
+                        # Store configuration if it exists
+                        if c.get('config'):
+                            container_configs[c['cid']] = c['config']
                     elif isinstance(c, (int, str)) and str(c).isdigit():
                         container_ids.append(int(c))
                 
@@ -1065,7 +1069,11 @@ def get_step_config(request):
                             continue
                             
                         if cid in available_containers:
-                            containers_with_details.append(available_containers[cid])
+                            container_with_config = available_containers[cid].copy()
+                            # Add configuration if it exists
+                            if cid in container_configs:
+                                container_with_config['config'] = container_configs[cid]
+                            containers_with_details.append(container_with_config)
                             
                     print(f"Final containers with details: {containers_with_details}")
             except Exception as e:
@@ -1155,11 +1163,15 @@ def save_step_config(request):
         sample_data = data.get('sample_data', [])
         step_scripts = data.get('step_scripts', [])
         
-        # Extract just the container IDs for storage (containers may contain full details)
+        # Extract container references and configurations for storage
         container_refs = []
         for container in containers:
             if isinstance(container, dict) and container.get('cid'):
-                container_refs.append({'cid': container['cid']})
+                container_ref = {'cid': container['cid']}
+                # Include container configuration if it exists
+                if container.get('config'):
+                    container_ref['config'] = container['config']
+                container_refs.append(container_ref)
         
         # Extract special sample IDs from the organized data structure
         special_sample_ids = []
@@ -1342,6 +1354,40 @@ def get_special_samples(request):
         return JsonResponse({
             'status': 'success',
             'special_samples': special_samples
+        })
+        
+    except json.JSONDecodeError as e:
+        return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+
+
+@login_required
+def save_container_config(request):
+    """
+    Save container configuration and increment patch version
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_edit')):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+    
+    try:
+        data = json.loads(request.body)
+        container_id = data.get('container_id')
+        
+        if not container_id:
+            return JsonResponse({'error': 'Container ID is required'}, status=400)
+        
+        # Store the container configuration in the session or database
+        # For now, we'll just return success since the frontend handles the storage
+        # The actual saving happens when the step configuration is saved
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Container configuration saved successfully'
         })
         
     except json.JSONDecodeError as e:

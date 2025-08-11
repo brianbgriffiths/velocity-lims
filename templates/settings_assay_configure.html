@@ -3155,8 +3155,20 @@ function saveContainerConfig() {
         }
     }
     
-    pylims_ui.success('Container configuration saved successfully');
-    hideContainerConfigModal();
+    const pyoptions = {
+        data: config,
+        csrf: csrf,
+        url: 'save_container_config',
+        submit_mode: 'silent'
+    };
+    
+    pylims_post(pyoptions).then(result => {
+        if (result.status === 'success') {
+            hideContainerConfigModal();
+        }
+    }).catch(error => {
+        console.error('Save container config error:', error);
+    });
 }
 
 function loadContainerConfig(containerId) {
