@@ -1904,6 +1904,7 @@ function saveStepConfiguration(isUnifiedSave = false) {
     try {
         // Get containers from visual interface
         const containers = getContainersFromInterface();
+        console.log('Containers being sent to backend:', containers);
         
         // Get special samples from visual interfaces
         const specialSamples = getSpecialSamplesFromInterface();
@@ -2442,25 +2443,56 @@ function loadContainersInterface(containers) {
     containers.forEach((container, index) => {
         console.log(`Container ${index}:`, container);
         console.log(`Container ${index} keys:`, Object.keys(container));
-        enabledContainerIds.add(container.cid);
         
-        // Load container configuration if it exists
-        if (container.config) {
-            window.containerConfigurations[container.cid] = container.config;
-            console.log(`Loaded config for container ${container.cid}:`, container.config);
+        let containerId;
+        
+        // Handle different container formats:
+        // 1. Legacy format: just integers [1, 2, 3]
+        // 2. Object format with cid: {cid: 1, config: {...}}
+        // 3. Full container objects from database
+        if (typeof container === 'number') {
+            // Legacy format: just an integer
+            containerId = container;
+        } else if (container && container.cid) {
+            // Object format with cid
+            containerId = container.cid;
+            
+            // Load container configuration if it exists
+            if (container.config) {
+                window.containerConfigurations[containerId] = container.config;
+                console.log(`Loaded config for container ${containerId}:`, container.config);
+            }
+        } else {
+            console.warn('Unknown container format:', container);
+            return;
         }
         
-        html += createContainerItemHTML(container, index);
+        enabledContainerIds.add(containerId);
+        
+        // Initialize empty config if none exists (for legacy data)
+        if (!window.containerConfigurations[containerId]) {
+            window.containerConfigurations[containerId] = {};
+        }
+        
+        // Find the full container details from availableContainers
+        const fullContainer = availableContainers.find(c => c.cid === containerId);
+        if (fullContainer) {
+            html += createContainerItemHTML(fullContainer, index);
+        } else {
+            console.warn(`Container ${containerId} not found in availableContainers`);
+        }
     });
     
     enabledContainersDiv.innerHTML = html;
     updateContainerConfigTextarea(containers);
     enableContainerDragAndDrop();
     
-    // Ensure these containers are in our availableContainers list
+    // Make sure all containers are in our availableContainers list
+    // (This might load them from the server if needed)
     containers.forEach(container => {
-        if (!availableContainers.find(c => c.cid === container.cid)) {
-            availableContainers.push(container);
+        const containerId = typeof container === 'number' ? container : container.cid;
+        if (!availableContainers.find(c => c.cid === containerId)) {
+            console.log(`Container ${containerId} not in availableContainers, may need to load from server`);
         }
     });
 }
@@ -2580,19 +2612,20 @@ function getContainersFromInterface() {
     
     containerItems.forEach(item => {
         const containerId = parseInt(item.dataset.containerId);
-        const container = availableContainers.find(c => c.cid === containerId);
-        if (container) {
-            // Create container object with configuration
-            const containerWithConfig = {
-                ...container,
-                config: window.containerConfigurations && window.containerConfigurations[containerId] ? 
-                    window.containerConfigurations[containerId] : {}
-            };
-            containers.push(containerWithConfig);
+        // Only store container ID and config, not full container details
+        const containerData = {
+            cid: containerId
+        };
+        
+        // Include container configuration if it exists
+        if (window.containerConfigurations && window.containerConfigurations[containerId]) {
+            containerData.config = window.containerConfigurations[containerId];
         }
+        
+        containers.push(containerData);
     });
     
-    console.log('Getting containers from interface with configs:', containers);
+    console.log('Getting containers from interface with configs only:', containers);
     return containers;
 }
 
