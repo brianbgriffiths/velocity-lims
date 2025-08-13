@@ -2440,6 +2440,8 @@ function loadContainersInterface(containers) {
     
     console.log('loadContainersInterface called with:', containers);
     console.log('Container count:', containers ? containers.length : 0);
+    console.log('Container data type:', typeof containers);
+    console.log('Is containers array?', Array.isArray(containers));
     
     if (!containers || containers.length === 0) {
         enabledContainersDiv.innerHTML = '<div class="no-containers">No containers configured for this step</div>';
@@ -2459,7 +2461,7 @@ function loadContainersInterface(containers) {
     let html = '';
     
     containers.forEach((container, index) => {
-        console.log(`Container ${index}:`, container);
+        console.log(`Processing container ${index}:`, container);
         console.log(`Container ${index} keys:`, Object.keys(container));
         
         let containerId;
@@ -2472,16 +2474,20 @@ function loadContainersInterface(containers) {
         if (typeof container === 'number') {
             // Legacy format: just an integer
             containerId = container;
+            console.log(`Legacy format container ID: ${containerId}`);
             // Find the full container details from availableContainers
             fullContainer = availableContainers.find(c => c.cid === containerId);
+            console.log(`Found full container for legacy ID ${containerId}:`, fullContainer);
         } else if (container && container.cid) {
             // Object format with cid
             containerId = container.cid;
+            console.log(`Object format container ID: ${containerId}`);
             
             // Check if this is a full container object (has type_name) or simplified (just cid + config)
             if (container.type_name) {
                 // Full container object from backend
                 fullContainer = container;
+                console.log(`Using full container object for ID ${containerId}`);
                 // Also add to availableContainers if not already there
                 if (!availableContainers.find(c => c.cid === containerId)) {
                     availableContainers.push(container);
@@ -2489,6 +2495,7 @@ function loadContainersInterface(containers) {
             } else {
                 // Simplified format, find full details in availableContainers
                 fullContainer = availableContainers.find(c => c.cid === containerId);
+                console.log(`Found full container for simplified ID ${containerId}:`, fullContainer);
             }
             
             // Load container configuration if it exists
@@ -2503,9 +2510,11 @@ function loadContainersInterface(containers) {
         
         if (!fullContainer) {
             console.warn(`Full container details not found for container ID ${containerId}`);
+            console.warn(`Available containers:`, availableContainers);
             return;
         }
         
+        console.log(`Adding container ID ${containerId} to enabled set`);
         enabledContainerIds.add(containerId);
         
         // Initialize empty config if none exists (for legacy data)
@@ -2513,6 +2522,7 @@ function loadContainersInterface(containers) {
             window.containerConfigurations[containerId] = {};
         }
         
+        console.log(`Creating HTML for container ${containerId}`);
         html += createContainerItemHTML(fullContainer, index);
     });
     
