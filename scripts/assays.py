@@ -1236,6 +1236,12 @@ def save_step_config(request):
         current_enabled_containers = current_containers_data.get('enabled_ids', []) if isinstance(current_containers_data, dict) else current_containers_data
         current_container_configs = current_containers_data.get('configurations', {}) if isinstance(current_containers_data, dict) else {}
         
+        print(f"Current containers data from DB: {current_containers_data}")
+        print(f"Current enabled containers: {current_enabled_containers}")
+        print(f"Current container configs: {current_container_configs}")
+        print(f"New enabled containers: {enabled_containers}")
+        print(f"New container configs: {container_configs}")
+        
         current_special_sample_ids = current_config.get('special_samples', []) or []   # This is the raw ID list from DB
         current_special_sample_config = current_config.get('special_sample_config', {}) or {}
         current_pages = current_config.get('pages', []) or []
@@ -1243,11 +1249,12 @@ def save_step_config(request):
         current_step_scripts = current_config.get('step_scripts', []) or []
         
         # Compare all fields for changes
+        containers_changed = (current_enabled_containers != enabled_containers or current_container_configs != container_configs)
+        
         config_unchanged = (
             current_config['step_name'] == step_name and
             current_config['create_samples'] == create_samples and
-            current_enabled_containers == enabled_containers and
-            current_container_configs == container_configs and
+            not containers_changed and
             current_special_sample_ids == special_sample_ids and  # Compare extracted IDs to stored IDs
             current_special_sample_config == special_sample_config and
             current_pages == pages and
@@ -1255,7 +1262,11 @@ def save_step_config(request):
             current_step_scripts == step_scripts
         )
         
+        print(f"Containers changed: {containers_changed}")
+        print(f"Config unchanged: {config_unchanged}")
+        
         if config_unchanged:
+            print("Configuration unchanged, returning early")
             conn.close()
             return JsonResponse({
                 'status': 'success',
@@ -1266,6 +1277,8 @@ def save_step_config(request):
                 },
                 'message': 'Step configuration unchanged'
             })
+        
+        print("Configuration changed, proceeding with update")
         
         # Update step configuration
         try:
@@ -1293,58 +1306,80 @@ def save_step_config(request):
             print(f"Data being saved: containers={json.dumps(containers_data)}")
             conn.close()
             return JsonResponse({'error': f'Database update failed: {str(db_error)}'}, status=500)
-            
-            result = cursor.fetchone()
-            print(f"Database update result: {result}")
-            
-        except Exception as db_error:
-            print(f"Database update error: {db_error}")
-            print(f"Data being saved: containers={json.dumps(containers_data)}")
-            conn.close()
-            return JsonResponse({'error': f'Database update failed: {str(db_error)}'}, status=500)
         
         if not result:
+            conn.close()
             return JsonResponse({'error': 'Step configuration not found'}, status=404)
         
-        # Find which assay version contains this step and increment its patch version
-        cursor.execute("""
-            SELECT avid, assay_steps, version_major, version_minor, version_patch
-            FROM velocity.assay_versions 
-            WHERE JSON_EXTRACT_PATH_TEXT(assay_steps::text, '0') = %s 
-               OR %s = ANY(SELECT CAST(value AS TEXT) FROM JSON_ARRAY_ELEMENTS_TEXT(assay_steps))
-        """, (str(scid), str(scid)))
+        print(f"Step configuration updated successfully: {result}")
         
-        version_data = cursor.fetchone()
+        # Find which assay version contains this step and increment its patch version
+        try:
+            print(f"Looking for assay version containing step {scid}")
+            cursor.execute("""
+                SELECT avid, assay_steps, version_major, version_minor, version_patch
+                FROM velocity.assay_versions 
+                WHERE JSON_EXTRACT_PATH_TEXT(assay_steps::text, '0') = %s 
+                   OR %s = ANY(SELECT CAST(value AS TEXT) FROM JSON_ARRAY_ELEMENTS_TEXT(assay_steps))
+            """, (str(scid), str(scid)))
+            
+            version_data = cursor.fetchone()
+            print(f"Found version data: {version_data}")
+            
+        except Exception as version_error:
+            print(f"Error finding version data: {version_error}")
+            conn.close()
+            return JsonResponse({'error': f'Error finding version data: {str(version_error)}'}, status=500)
         
         if version_data:
             # Increment patch version
-            new_patch = (version_data['version_patch'] or 0) + 1
-            
-            cursor.execute("""
-                UPDATE velocity.assay_versions 
-                SET version_patch = %s,
-                    modified = CURRENT_TIMESTAMP
-                WHERE avid = %s
-                RETURNING avid, version_major, version_minor, version_patch
-            """, (new_patch, version_data['avid']))
-            
-            updated_version = cursor.fetchone()
+            try:
+                new_patch = (version_data['version_patch'] or 0) + 1
+                print(f"Incrementing patch version to: {new_patch}")
+                
+                cursor.execute("""
+                    UPDATE velocity.assay_versions 
+                    SET version_patch = %s,
+                        modified = CURRENT_TIMESTAMP
+                    WHERE avid = %s
+                    RETURNING avid, version_major, version_minor, version_patch
+                """, (new_patch, version_data['avid']))
+                
+                updated_version = cursor.fetchone()
+                print(f"Updated version: {updated_version}")
+                
+            except Exception as patch_error:
+                print(f"Error updating patch version: {patch_error}")
+                conn.close()
+                return JsonResponse({'error': f'Error updating patch version: {str(patch_error)}'}, status=500)
         else:
+            print("No version data found for this step")
             updated_version = None
         
         conn.commit()
         conn.close()
         
+        print("Transaction committed successfully")
+        
+        # Prepare response
         response_data = {
             'status': 'success',
-            'step_config': result,
-            'message': f'Step configuration "{step_name}" updated successfully'
+            'config_unchanged': False,
+            'step_config': {
+                'scid': result['scid'],
+                'step_name': result['step_name']
+            },
+            'message': 'Step configuration saved successfully'
         }
         
         if updated_version:
-            response_data['version'] = updated_version
-            response_data['message'] += f' (v{updated_version["version_major"]}.{updated_version["version_minor"]}.{updated_version["version_patch"]})'
+            response_data['version'] = {
+                'version_major': updated_version['version_major'],
+                'version_minor': updated_version['version_minor'],
+                'version_patch': updated_version['version_patch']
+            }
         
+        print(f"Sending response: {response_data}")
         return JsonResponse(response_data)
         
     except json.JSONDecodeError as e:
