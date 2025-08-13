@@ -1316,6 +1316,17 @@ def save_step_config(request):
         # Find which assay version contains this step and increment its patch version
         try:
             print(f"Looking for assay version containing step {scid}")
+            # First, let's see what's in the assay_versions table
+            cursor.execute("""
+                SELECT avid, assay_steps, version_major, version_minor, version_patch
+                FROM velocity.assay_versions 
+                ORDER BY avid
+            """)
+            
+            all_versions = cursor.fetchall()
+            print(f"All versions in database: {all_versions}")
+            
+            # Now try the original query
             cursor.execute("""
                 SELECT avid, assay_steps, version_major, version_minor, version_patch
                 FROM velocity.assay_versions 
@@ -1323,7 +1334,19 @@ def save_step_config(request):
             """, (str(scid),))
             
             version_data = cursor.fetchone()
-            print(f"Found version data: {version_data}")
+            print(f"Found version data with JSONB ? query: {version_data}")
+            
+            # If that didn't work, try with @> operator for array containment
+            if not version_data:
+                print("Trying array containment query...")
+                cursor.execute("""
+                    SELECT avid, assay_steps, version_major, version_minor, version_patch
+                    FROM velocity.assay_versions 
+                    WHERE assay_steps::jsonb @> %s
+                """, (json.dumps([scid]),))
+                
+                version_data = cursor.fetchone()
+                print(f"Found version data with @> query: {version_data}")
             
         except Exception as version_error:
             print(f"Error finding version data: {version_error}")
