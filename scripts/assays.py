@@ -1319,9 +1319,8 @@ def save_step_config(request):
             cursor.execute("""
                 SELECT avid, assay_steps, version_major, version_minor, version_patch
                 FROM velocity.assay_versions 
-                WHERE JSON_EXTRACT_PATH_TEXT(assay_steps::text, '0') = %s 
-                   OR %s = ANY(SELECT CAST(value AS TEXT) FROM JSON_ARRAY_ELEMENTS_TEXT(assay_steps))
-            """, (str(scid), str(scid)))
+                WHERE assay_steps::jsonb ? %s
+            """, (str(scid),))
             
             version_data = cursor.fetchone()
             print(f"Found version data: {version_data}")
