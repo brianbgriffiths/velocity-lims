@@ -1360,37 +1360,3 @@ def get_special_samples(request):
         return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
     except Exception as e:
         return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
-
-
-@login_required
-def save_container_config(request):
-    """
-    Save container configuration and increment patch version
-    """
-    if request.method != 'POST':
-        return JsonResponse({'error': 'POST method required'}, status=405)
-    
-    # Check permissions
-    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_edit')):
-        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
-    
-    try:
-        data = json.loads(request.body)
-        container_id = data.get('container_id')
-        
-        if not container_id:
-            return JsonResponse({'error': 'Container ID is required'}, status=400)
-        
-        # Store the container configuration in the session or database
-        # For now, we'll just return success since the frontend handles the storage
-        # The actual saving happens when the step configuration is saved
-        
-        return JsonResponse({
-            'status': 'success',
-            'message': 'Container configuration saved successfully'
-        })
-        
-    except json.JSONDecodeError as e:
-        return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
-    except Exception as e:
-        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)

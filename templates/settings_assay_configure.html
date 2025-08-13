@@ -3155,19 +3155,15 @@ function saveContainerConfig() {
         }
     }
     
-    const pyoptions = {
-        data: config,
-        csrf: csrf,
-        url: 'save_container_config',
-        submit_mode: 'silent'
-    };
-    
-    pylims_post(pyoptions).then(result => {
+    // Save the step configuration to persist container config to database
+    saveStepConfiguration(true).then(result => {
         if (result.status === 'success') {
             hideContainerConfigModal();
+            pylims_ui.success('Container configuration saved successfully');
         }
     }).catch(error => {
         console.error('Save container config error:', error);
+        pylims_ui.error('Failed to save container configuration');
     });
 }
 
