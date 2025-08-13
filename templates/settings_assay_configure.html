@@ -2641,8 +2641,8 @@ function showContainerSelector() {
     const modal = document.getElementById('containerSelectorModal');
     modal.style.display = 'flex';
     
-    // Always load available containers to ensure we have all types
-    loadAvailableContainers();
+    // Just render available containers (they should already be loaded)
+    renderAvailableContainers();
 }
 
 function hideContainerSelector() {
@@ -3295,6 +3295,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize special sample types from server data
     initializeSpecialSampleTypes();
     console.log('Special sample types initialized, page ready');
+    
+    // Load container types once at page initialization
+    loadAvailableContainers();
     
     // Setup container config event listeners
     setTimeout(() => {
