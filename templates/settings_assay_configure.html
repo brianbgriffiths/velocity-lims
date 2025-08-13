@@ -624,6 +624,18 @@
         transition: background-color 0.2s;
     }
     
+    /* Container config button colors to match container border colors */
+    .container-config-button.color-1 { color: var(--data-color1); }
+    .container-config-button.color-2 { color: var(--data-color2); }
+    .container-config-button.color-3 { color: var(--data-color3); }
+    .container-config-button.color-4 { color: var(--data-color4); }
+    .container-config-button.color-5 { color: var(--data-color5); }
+    .container-config-button.color-6 { color: var(--data-color6); }
+    .container-config-button.color-7 { color: var(--data-color7); }
+    .container-config-button.color-8 { color: var(--data-color8); }
+    .container-config-button.color-9 { color: var(--data-color9); }
+    .container-config-button.color-10 { color: var(--data-color10); }
+    
     .container-config-button:hover {
         background-color: var(--blue-med);
         color: black;
@@ -2533,6 +2545,10 @@ function createContainerItemHTML(container, index) {
     const hasConfig = window.containerConfigurations && window.containerConfigurations[cid] && 
                      Object.keys(window.containerConfigurations[cid]).length > 1; // More than just container_id
     
+    // Use thin gear for unconfigured, solid gear for configured
+    const gearIcon = hasConfig ? 'fas fa-cog' : 'far fa-cog';
+    const buttonTitle = hasConfig ? 'Container configured - click to edit' : 'Configure container';
+    
     console.log('Creating container item:', { container, typeName, rows, columns, cid, color, hasConfig });
     
     return `
@@ -2544,11 +2560,8 @@ function createContainerItemHTML(container, index) {
                 <div class="container-name">${typeName}</div>
                 <div class="container-details">${rows}×${columns} wells</div>
             </div>
-            <div class="container-status">
-                ${hasConfig ? '<i class="fas fa-check-circle" style="color: var(--success-color);" title="Container configured"></i>' : ''}
-            </div>
-            <button type="button" class="container-config-button" onclick="showContainerConfigModal(${cid}, '${typeName}')" title="Configure container">
-                <i class="fas fa-cog"></i>
+            <button type="button" class="container-config-button color-${color}" onclick="showContainerConfigModal(${cid}, '${typeName}')" title="${buttonTitle}">
+                <i class="${gearIcon}"></i>
             </button>
         </div>
     `;
