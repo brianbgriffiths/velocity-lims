@@ -613,28 +613,16 @@
         background-color: var(--blue-light);
         color: var(--blue-dark);
         border: none;
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
         border-radius: 3px;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 10px;
+        font-size: 11px;
         transition: background-color 0.2s;
     }
-    
-    /* Container config button colors to match container border colors */
-    .container-config-button.color-1 { color: var(--data-color1); }
-    .container-config-button.color-2 { color: var(--data-color2); }
-    .container-config-button.color-3 { color: var(--data-color3); }
-    .container-config-button.color-4 { color: var(--data-color4); }
-    .container-config-button.color-5 { color: var(--data-color5); }
-    .container-config-button.color-6 { color: var(--data-color6); }
-    .container-config-button.color-7 { color: var(--data-color7); }
-    .container-config-button.color-8 { color: var(--data-color8); }
-    .container-config-button.color-9 { color: var(--data-color9); }
-    .container-config-button.color-10 { color: var(--data-color10); }
     
     .container-config-button:hover {
         background-color: var(--blue-med);
@@ -2560,7 +2548,7 @@ function createContainerItemHTML(container, index) {
                 <div class="container-name">${typeName}</div>
                 <div class="container-details">${rows}×${columns} wells</div>
             </div>
-            <button type="button" class="container-config-button color-${color}" onclick="showContainerConfigModal(${cid}, '${typeName}')" title="${buttonTitle}">
+            <button type="button" class="container-config-button" onclick="showContainerConfigModal(${cid}, '${typeName}')" title="${buttonTitle}">
                 <i class="${gearIcon}"></i>
             </button>
         </div>
