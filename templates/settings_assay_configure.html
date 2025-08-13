@@ -2651,6 +2651,7 @@ function hideContainerSelector() {
 }
 
 function loadAvailableContainers() {
+    console.log('loadAvailableContainers called');
     const pyoptions = {
         data: {},
         csrf: csrf,
@@ -2662,6 +2663,7 @@ function loadAvailableContainers() {
         console.log('Available containers response:', result);
         if (result.status === 'success') {
             const newContainers = result.container_types || [];
+            console.log('New containers from API:', newContainers);
             
             // Merge new containers with existing ones, avoiding duplicates
             newContainers.forEach(newContainer => {
@@ -2682,6 +2684,10 @@ function loadAvailableContainers() {
 
 function renderAvailableContainers() {
     const listDiv = document.getElementById('availableContainersList');
+    
+    console.log('renderAvailableContainers called');
+    console.log('availableContainers:', availableContainers);
+    console.log('enabledContainerIds:', Array.from(enabledContainerIds));
     
     if (availableContainers.length === 0) {
         listDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--gray-med);">No container types available</div>';
