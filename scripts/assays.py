@@ -1190,6 +1190,10 @@ def save_step_config(request):
         enabled_containers = containers_data.get('enabled_ids', [])
         container_configs = containers_data.get('configurations', {})
         
+        print(f"Received containers_data: {containers_data}")
+        print(f"Enabled containers: {enabled_containers}")
+        print(f"Container configs: {container_configs}")
+        
         # Extract special sample IDs from the organized data structure
         special_sample_ids = []
         if isinstance(special_samples, dict):
@@ -1264,23 +1268,40 @@ def save_step_config(request):
             })
         
         # Update step configuration
-        cursor.execute("""
-            UPDATE velocity.step_config
-            SET step_name = %s,
-                containers = %s,
-                special_samples = %s,
-                create_samples = %s,
-                pages = %s,
-                sample_data = %s,
-                step_scripts = %s,
-                special_sample_config = %s
-            WHERE scid = %s
-            RETURNING scid, step_name
-        """, (step_name, json.dumps(containers_data), json.dumps(special_sample_ids), 
-              create_samples, json.dumps(pages), json.dumps(sample_data), 
-              json.dumps(step_scripts), json.dumps(special_sample_config), scid))
-        
-        result = cursor.fetchone()
+        try:
+            cursor.execute("""
+                UPDATE velocity.step_config
+                SET step_name = %s,
+                    containers = %s,
+                    special_samples = %s,
+                    create_samples = %s,
+                    pages = %s,
+                    sample_data = %s,
+                    step_scripts = %s,
+                    special_sample_config = %s
+                WHERE scid = %s
+                RETURNING scid, step_name
+            """, (step_name, json.dumps(containers_data), json.dumps(special_sample_ids), 
+                  create_samples, json.dumps(pages), json.dumps(sample_data), 
+                  json.dumps(step_scripts), json.dumps(special_sample_config), scid))
+            
+            result = cursor.fetchone()
+            print(f"Database update result: {result}")
+            
+        except Exception as db_error:
+            print(f"Database update error: {db_error}")
+            print(f"Data being saved: containers={json.dumps(containers_data)}")
+            conn.close()
+            return JsonResponse({'error': f'Database update failed: {str(db_error)}'}, status=500)
+            
+            result = cursor.fetchone()
+            print(f"Database update result: {result}")
+            
+        except Exception as db_error:
+            print(f"Database update error: {db_error}")
+            print(f"Data being saved: containers={json.dumps(containers_data)}")
+            conn.close()
+            return JsonResponse({'error': f'Database update failed: {str(db_error)}'}, status=500)
         
         if not result:
             return JsonResponse({'error': 'Step configuration not found'}, status=404)
