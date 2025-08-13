@@ -2641,12 +2641,8 @@ function showContainerSelector() {
     const modal = document.getElementById('containerSelectorModal');
     modal.style.display = 'flex';
     
-    // Load available containers if not already loaded
-    if (availableContainers.length === 0) {
-        loadAvailableContainers();
-    } else {
-        renderAvailableContainers();
-    }
+    // Always load available containers to ensure we have all types
+    loadAvailableContainers();
 }
 
 function hideContainerSelector() {
@@ -2665,8 +2661,16 @@ function loadAvailableContainers() {
     pylims_post(pyoptions).then(result => {
         console.log('Available containers response:', result);
         if (result.status === 'success') {
-            availableContainers = result.container_types || [];
-            console.log('Loaded available containers:', availableContainers);
+            const newContainers = result.container_types || [];
+            
+            // Merge new containers with existing ones, avoiding duplicates
+            newContainers.forEach(newContainer => {
+                if (!availableContainers.find(existing => existing.cid === newContainer.cid)) {
+                    availableContainers.push(newContainer);
+                }
+            });
+            
+            console.log('Merged available containers:', availableContainers);
             renderAvailableContainers();
         }
     }).catch(error => {
@@ -2728,6 +2732,15 @@ function addContainer(containerId) {
     console.log('Adding container:', container);
     enabledContainerIds.add(containerId);
     
+    // Initialize empty configuration for the new container
+    if (!window.containerConfigurations) {
+        window.containerConfigurations = {};
+    }
+    if (!window.containerConfigurations[containerId]) {
+        window.containerConfigurations[containerId] = {};
+        console.log(`Initialized empty configuration for container ${containerId}`);
+    }
+    
     // Add to the enabled containers display
     const enabledContainersDiv = document.getElementById('enabledContainers');
     const noContainersDiv = enabledContainersDiv.querySelector('.no-containers');
@@ -2758,6 +2771,12 @@ function removeContainer(containerId) {
     }
     
     enabledContainerIds.delete(containerId);
+    
+    // Remove container configuration
+    if (window.containerConfigurations && window.containerConfigurations[containerId]) {
+        delete window.containerConfigurations[containerId];
+        console.log(`Removed configuration for container ${containerId}`);
+    }
     
     // Remove from DOM
     const containerItem = document.querySelector(`[data-container-id="${containerId}"]`);
