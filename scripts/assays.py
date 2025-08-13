@@ -1029,53 +1029,74 @@ def get_step_config(request):
                 print(f"Containers data type: {type(containers_data)}")
                 print(f"Containers data: {containers_data}")
                 
-                # Extract container IDs and configs - handle both formats: [6, 7] or [{'cid': 6, 'config': {...}}, {'cid': 7}]
-                container_ids = []
-                container_configs = {}
-                for c in containers_data:
-                    if isinstance(c, dict) and c.get('cid'):
-                        container_ids.append(c['cid'])
-                        # Store configuration if it exists
-                        if c.get('config'):
-                            container_configs[c['cid']] = c['config']
-                    elif isinstance(c, (int, str)) and str(c).isdigit():
-                        container_ids.append(int(c))
+                # Handle different formats:
+                # New format: {enabled_ids: [1,2], configurations: {1: {config}}}
+                # Legacy format: [1, 2, 3] or [{cid: 1}, {cid: 2}]
                 
-                print(f"Container IDs to fetch: {container_ids}")
+                if isinstance(containers_data, dict) and 'enabled_ids' in containers_data:
+                    # New format
+                    enabled_ids = containers_data.get('enabled_ids', [])
+                    configurations = containers_data.get('configurations', {})
+                    
+                    if enabled_ids:
+                        # Fetch container details from database
+                        placeholders = ','.join(['%s'] * len(enabled_ids))
+                        cursor.execute(f"""
+                            SELECT cid, type_name, rows, columns, well_type, border_type, color,
+                                   restricted_well_map, special_well_map, corner_types,
+                                   margin_width, well_padding
+                            FROM velocity.container_config 
+                            WHERE cid IN ({placeholders})
+                            ORDER BY type_name
+                        """, enabled_ids)
+                        
+                        available_containers = {c['cid']: c for c in cursor.fetchall()}
+                        
+                        # Build containers with their configurations
+                        for container_id in enabled_ids:
+                            if container_id in available_containers:
+                                container = available_containers[container_id].copy()
+                                if str(container_id) in configurations:
+                                    container['config'] = configurations[str(container_id)]
+                                elif container_id in configurations:
+                                    container['config'] = configurations[container_id]
+                                containers_with_details.append(container)
                 
-                if container_ids:
-                    # Create placeholders for the IN clause
-                    placeholders = ','.join(['%s'] * len(container_ids))
-                    cursor.execute(f"""
-                        SELECT cid, type_name, rows, columns, well_type, border_type, color,
-                               restricted_well_map, special_well_map, corner_types,
-                               margin_width, well_padding
-                        FROM velocity.container_config 
-                        WHERE cid IN ({placeholders})
-                        ORDER BY type_name
-                    """, container_ids)
+                else:
+                    # Legacy format handling
+                    container_ids = []
+                    container_configs = {}
                     
-                    available_containers = {c['cid']: c for c in cursor.fetchall()}
-                    print(f"Available containers from DB: {available_containers}")
+                    if isinstance(containers_data, list):
+                        for c in containers_data:
+                            if isinstance(c, dict) and c.get('cid'):
+                                container_ids.append(c['cid'])
+                                if c.get('config'):
+                                    container_configs[c['cid']] = c['config']
+                            elif isinstance(c, (int, str)) and str(c).isdigit():
+                                container_ids.append(int(c))
                     
-                    # Maintain the order from the original containers list and add full details
-                    for i, c in enumerate(containers_data):
-                        # Get the container ID from either format
-                        if isinstance(c, dict) and c.get('cid'):
-                            cid = c['cid']
-                        elif isinstance(c, (int, str)) and str(c).isdigit():
-                            cid = int(c)
-                        else:
-                            continue
-                            
-                        if cid in available_containers:
-                            container_with_config = available_containers[cid].copy()
-                            # Add configuration if it exists
-                            if cid in container_configs:
-                                container_with_config['config'] = container_configs[cid]
-                            containers_with_details.append(container_with_config)
-                            
-                    print(f"Final containers with details: {containers_with_details}")
+                    if container_ids:
+                        placeholders = ','.join(['%s'] * len(container_ids))
+                        cursor.execute(f"""
+                            SELECT cid, type_name, rows, columns, well_type, border_type, color,
+                                   restricted_well_map, special_well_map, corner_types,
+                                   margin_width, well_padding
+                            FROM velocity.container_config 
+                            WHERE cid IN ({placeholders})
+                            ORDER BY type_name
+                        """, container_ids)
+                        
+                        available_containers = {c['cid']: c for c in cursor.fetchall()}
+                        
+                        for container_id in container_ids:
+                            if container_id in available_containers:
+                                container = available_containers[container_id].copy()
+                                if container_id in container_configs:
+                                    container['config'] = container_configs[container_id]
+                                containers_with_details.append(container)
+                        
+                print(f"Final containers with details: {containers_with_details}")
             except Exception as e:
                 print(f"Error fetching container details: {e}")
                 # Fall back to original containers data if there's an error
@@ -1163,15 +1184,11 @@ def save_step_config(request):
         sample_data = data.get('sample_data', [])
         step_scripts = data.get('step_scripts', [])
         
-        # Extract container references and configurations for storage
-        container_refs = []
-        for container in containers:
-            if isinstance(container, dict) and container.get('cid'):
-                container_ref = {'cid': container['cid']}
-                # Include container configuration if it exists
-                if container.get('config'):
-                    container_ref['config'] = container['config']
-                container_refs.append(container_ref)
+        # containers now contains enabled IDs and configurations
+        # Format: {enabled_ids: [1,2,3], configurations: {1: {config}, 2: {config}}}
+        containers_data = data.get('containers', {})
+        enabled_containers = containers_data.get('enabled_ids', [])
+        container_configs = containers_data.get('configurations', {})
         
         # Extract special sample IDs from the organized data structure
         special_sample_ids = []
@@ -1211,18 +1228,22 @@ def save_step_config(request):
             return JsonResponse({'error': 'Step configuration not found'}, status=404)
         
         # Check if any values have actually changed
-        current_containers = current_config.get('containers', []) or []
+        current_containers_data = current_config.get('containers', {}) or {}
+        current_enabled_containers = current_containers_data.get('enabled_ids', []) if isinstance(current_containers_data, dict) else current_containers_data
+        current_container_configs = current_containers_data.get('configurations', {}) if isinstance(current_containers_data, dict) else {}
+        
         current_special_sample_ids = current_config.get('special_samples', []) or []   # This is the raw ID list from DB
         current_special_sample_config = current_config.get('special_sample_config', {}) or {}
         current_pages = current_config.get('pages', []) or []
         current_sample_data = current_config.get('sample_data', []) or []
         current_step_scripts = current_config.get('step_scripts', []) or []
         
-        # Compare all fields for changes (compare extracted IDs with stored IDs)
+        # Compare all fields for changes
         config_unchanged = (
             current_config['step_name'] == step_name and
             current_config['create_samples'] == create_samples and
-            current_containers == container_refs and
+            current_enabled_containers == enabled_containers and
+            current_container_configs == container_configs and
             current_special_sample_ids == special_sample_ids and  # Compare extracted IDs to stored IDs
             current_special_sample_config == special_sample_config and
             current_pages == pages and
@@ -1255,7 +1276,7 @@ def save_step_config(request):
                 special_sample_config = %s
             WHERE scid = %s
             RETURNING scid, step_name
-        """, (step_name, json.dumps(container_refs), json.dumps(special_sample_ids), 
+        """, (step_name, json.dumps(containers_data), json.dumps(special_sample_ids), 
               create_samples, json.dumps(pages), json.dumps(sample_data), 
               json.dumps(step_scripts), json.dumps(special_sample_config), scid))
         

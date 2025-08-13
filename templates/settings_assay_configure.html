@@ -2445,17 +2445,33 @@ function loadContainersInterface(containers) {
         console.log(`Container ${index} keys:`, Object.keys(container));
         
         let containerId;
+        let fullContainer = null;
         
         // Handle different container formats:
         // 1. Legacy format: just integers [1, 2, 3]
-        // 2. Object format with cid: {cid: 1, config: {...}}
-        // 3. Full container objects from database
+        // 2. Simplified format: {cid: 1, config: {...}}
+        // 3. Full container objects from database: {cid: 1, type_name: "...", rows: 8, ...}
         if (typeof container === 'number') {
             // Legacy format: just an integer
             containerId = container;
+            // Find the full container details from availableContainers
+            fullContainer = availableContainers.find(c => c.cid === containerId);
         } else if (container && container.cid) {
             // Object format with cid
             containerId = container.cid;
+            
+            // Check if this is a full container object (has type_name) or simplified (just cid + config)
+            if (container.type_name) {
+                // Full container object from backend
+                fullContainer = container;
+                // Also add to availableContainers if not already there
+                if (!availableContainers.find(c => c.cid === containerId)) {
+                    availableContainers.push(container);
+                }
+            } else {
+                // Simplified format, find full details in availableContainers
+                fullContainer = availableContainers.find(c => c.cid === containerId);
+            }
             
             // Load container configuration if it exists
             if (container.config) {
@@ -2467,6 +2483,11 @@ function loadContainersInterface(containers) {
             return;
         }
         
+        if (!fullContainer) {
+            console.warn(`Full container details not found for container ID ${containerId}`);
+            return;
+        }
+        
         enabledContainerIds.add(containerId);
         
         // Initialize empty config if none exists (for legacy data)
@@ -2474,27 +2495,12 @@ function loadContainersInterface(containers) {
             window.containerConfigurations[containerId] = {};
         }
         
-        // Find the full container details from availableContainers
-        const fullContainer = availableContainers.find(c => c.cid === containerId);
-        if (fullContainer) {
-            html += createContainerItemHTML(fullContainer, index);
-        } else {
-            console.warn(`Container ${containerId} not found in availableContainers`);
-        }
+        html += createContainerItemHTML(fullContainer, index);
     });
     
     enabledContainersDiv.innerHTML = html;
     updateContainerConfigTextarea(containers);
     enableContainerDragAndDrop();
-    
-    // Make sure all containers are in our availableContainers list
-    // (This might load them from the server if needed)
-    containers.forEach(container => {
-        const containerId = typeof container === 'number' ? container : container.cid;
-        if (!availableContainers.find(c => c.cid === containerId)) {
-            console.log(`Container ${containerId} not in availableContainers, may need to load from server`);
-        }
-    });
 }
 
 function createContainerItemHTML(container, index) {
@@ -2607,26 +2613,24 @@ function updateContainersFromDOM() {
 }
 
 function getContainersFromInterface() {
-    const containerItems = document.querySelectorAll('.container-item');
-    const containers = [];
+    // Return object with enabled container IDs and their configurations
+    const containersData = {
+        enabled_ids: Array.from(enabledContainerIds),
+        configurations: {}
+    };
     
-    containerItems.forEach(item => {
-        const containerId = parseInt(item.dataset.containerId);
-        // Only store container ID and config, not full container details
-        const containerData = {
-            cid: containerId
-        };
-        
-        // Include container configuration if it exists
+    // Only include containers that have actual configuration
+    enabledContainerIds.forEach(containerId => {
         if (window.containerConfigurations && window.containerConfigurations[containerId]) {
-            containerData.config = window.containerConfigurations[containerId];
+            const config = window.containerConfigurations[containerId];
+            if (config && Object.keys(config).length > 0) {
+                containersData.configurations[containerId] = config;
+            }
         }
-        
-        containers.push(containerData);
     });
     
-    console.log('Getting containers from interface with configs only:', containers);
-    return containers;
+    console.log('Getting containers data for step config:', containersData);
+    return containersData;
 }
 
 function updateContainerConfigTextarea(containers) {
