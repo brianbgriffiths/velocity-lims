@@ -602,6 +602,13 @@
         color: var(--gray-dark);
     }
     
+    .container-status {
+        display: flex;
+        align-items: center;
+        margin-left: auto;
+        margin-right: 4px;
+    }
+    
     .container-config-button {
         background-color: var(--blue-light);
         color: var(--blue-dark);
@@ -615,7 +622,6 @@
         justify-content: center;
         font-size: 10px;
         transition: background-color 0.2s;
-        margin-left: auto;
     }
     
     .container-config-button:hover {
@@ -1997,6 +2003,15 @@ let specialSampleTypeNames = {}; // Will be populated from server data
 
 // Initialize special sample types data on page load
 function initializeSpecialSampleTypes() {
+    console.log('initializeSpecialSampleTypes called');
+    console.log('specialSampleTypesData from Django:', specialSampleTypesData);
+    console.log('specialSampleTypes variable:', specialSampleTypes);
+    
+    if (!specialSampleTypes || specialSampleTypes.length === 0) {
+        console.warn('No special sample types found to initialize');
+        return;
+    }
+    
     // Populate type names and initialize enabled IDs tracking
     specialSampleTypes.forEach(type => {
         specialSampleTypeNames[type.sstid] = type.special_type_name;
@@ -2049,6 +2064,9 @@ function generateSpecialSampleCards() {
 
 function loadSpecialSamplesInterface(specialSamples) {
     console.log('loadSpecialSamplesInterface called with:', specialSamples);
+    console.log('specialSamples type:', typeof specialSamples);
+    console.log('specialSamples is array:', Array.isArray(specialSamples));
+    console.log('specialSamples keys:', specialSamples ? Object.keys(specialSamples) : 'null/undefined');
     
     // Clear all special sample containers
     specialSampleTypes.forEach(type => {
@@ -2514,7 +2532,6 @@ function createContainerItemHTML(container, index) {
     // Check if container has configuration
     const hasConfig = window.containerConfigurations && window.containerConfigurations[cid] && 
                      Object.keys(window.containerConfigurations[cid]).length > 1; // More than just container_id
-    const configIndicator = hasConfig ? '<i class="fas fa-check-circle" style="color: var(--success-color); margin-left: 5px;"></i>' : '';
     
     console.log('Creating container item:', { container, typeName, rows, columns, cid, color, hasConfig });
     
@@ -2524,8 +2541,11 @@ function createContainerItemHTML(container, index) {
                 <i class="fas fa-grip-vertical"></i>
             </div>
             <div class="container-info">
-                <div class="container-name">${typeName}${configIndicator}</div>
+                <div class="container-name">${typeName}</div>
                 <div class="container-details">${rows}×${columns} wells</div>
+            </div>
+            <div class="container-status">
+                ${hasConfig ? '<i class="fas fa-check-circle" style="color: var(--success-color);" title="Container configured"></i>' : ''}
             </div>
             <button type="button" class="container-config-button" onclick="showContainerConfigModal(${cid}, '${typeName}')" title="Configure container">
                 <i class="fas fa-cog"></i>
