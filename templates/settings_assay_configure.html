@@ -2295,40 +2295,6 @@ function hideSpecialSampleSelector() {
     modal.style.display = 'none';
 }
 
-function loadAvailableSpecialSamples() {
-    console.log('loadAvailableSpecialSamples called for type:', currentSpecialSampleType);
-    const pyoptions = {
-        data: {
-            special_type_id: currentSpecialSampleType  // Changed from special_type to special_type_id
-        },
-        csrf: csrf,
-        url: 'get_special_samples/',
-        submit_mode: 'silent'
-    };
-    
-    pylims_post(pyoptions).then(result => {
-        console.log('Available special samples response:', result);
-        if (result.status === 'success') {
-            const newSamples = result.special_samples || [];
-            console.log('New samples from API:', newSamples);
-            
-            // Merge new samples with existing ones, avoiding duplicates
-            newSamples.forEach(newSample => {
-                if (!availableSpecialSamples.find(existing => existing.ssid === newSample.ssid)) {
-                    availableSpecialSamples.push(newSample);
-                }
-            });
-            
-            console.log('Merged available special samples:', availableSpecialSamples);
-            renderAvailableSpecialSamples();
-        }
-    }).catch(error => {
-        console.error('Error loading special samples:', error);
-        document.getElementById('availableSpecialSamplesList').innerHTML = 
-            '<div style="text-align: center; padding: 20px; color: var(--red-med);">Failed to load special samples</div>';
-    });
-}
-
 function loadAllAvailableSpecialSamples() {
     console.log('loadAllAvailableSpecialSamples called');
     console.log('specialSampleTypes:', specialSampleTypes);
@@ -2340,7 +2306,7 @@ function loadAllAvailableSpecialSamples() {
                 special_type_id: type.sstid
             },
             csrf: csrf,
-            url: 'get_special_samples/',
+            url: 'get_special_samples',
             submit_mode: 'silent'
         };
         
