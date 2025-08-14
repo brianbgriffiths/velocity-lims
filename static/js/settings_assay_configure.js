@@ -807,6 +807,8 @@ function loadAllAvailableSpecialSamples() {
     
     // Load special samples for each type
     specialSampleTypes.forEach(type => {
+        console.log(`Loading special samples for type ${type.sstid} (${type.special_type_name})`);
+        
         const pyoptions = {
             data: {
                 special_type_id: type.sstid
@@ -817,18 +819,22 @@ function loadAllAvailableSpecialSamples() {
         };
         
         pylims_post(pyoptions).then(result => {
-            console.log(`Special samples response for type ${type.sstid} (${type.special_type_name}):`, result);
+            console.log(`Special samples response for type ${type.sstid}:`, result);
             if (result.status === 'success') {
                 const newSamples = result.special_samples || [];
+                console.log(`New samples from API for type ${type.sstid}:`, newSamples);
                 
                 // Merge new samples with existing ones, avoiding duplicates
                 newSamples.forEach(newSample => {
                     if (!availableSpecialSamples.find(existing => existing.ssid === newSample.ssid)) {
                         availableSpecialSamples.push(newSample);
+                        console.log(`Added special sample ${newSample.ssid} (${newSample.special_name}) to available samples`);
+                    } else {
+                        console.log(`Special sample ${newSample.ssid} (${newSample.special_name}) already exists in available samples`);
                     }
                 });
                 
-                console.log(`Total available special samples: ${availableSpecialSamples.length}`);
+                console.log('All available special samples after loading type', type.sstid, ':', availableSpecialSamples);
             } else {
                 console.error(`Failed to load special samples for type ${type.sstid}:`, result);
             }
