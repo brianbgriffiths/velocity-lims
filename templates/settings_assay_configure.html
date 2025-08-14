@@ -1912,7 +1912,7 @@ function saveStepConfiguration(isUnifiedSave = false) {
         const containers = getContainersFromInterface();
         console.log('Containers being sent to backend:', containers);
         
-        // Get special samples from visual interfaces
+        // Get special samples from visual interfaces (new format matching containers)
         const specialSamples = getSpecialSamplesFromInterface();
         
         // Parse other JSON fields
@@ -1926,7 +1926,6 @@ function saveStepConfiguration(isUnifiedSave = false) {
                 step_name: stepName,
                 containers: containers,
                 special_samples: specialSamples,
-                special_sample_config: specialSampleConfigs,
                 create_samples: document.getElementById('createSamples').checked ? 1 : 0,
                 pages: pages,
                 sample_data: sampleData,
@@ -2062,11 +2061,9 @@ function generateSpecialSampleCards() {
     console.log('Generated special sample cards for types:', specialSampleTypes);
 }
 
-function loadSpecialSamplesInterface(specialSamples) {
-    console.log('loadSpecialSamplesInterface called with:', specialSamples);
-    console.log('specialSamples type:', typeof specialSamples);
-    console.log('specialSamples is array:', Array.isArray(specialSamples));
-    console.log('specialSamples keys:', specialSamples ? Object.keys(specialSamples) : 'null/undefined');
+function loadSpecialSamplesInterface(specialSamplesData) {
+    console.log('loadSpecialSamplesInterface called with:', specialSamplesData);
+    console.log('specialSamplesData type:', typeof specialSamplesData);
     
     // Clear all special sample containers
     specialSampleTypes.forEach(type => {
@@ -2082,18 +2079,52 @@ function loadSpecialSamplesInterface(specialSamples) {
         enabledSpecialSampleIds[typeId].clear();
     });
     
-    // Check if specialSamples is null, undefined, or empty object
-    if (!specialSamples || (typeof specialSamples === 'object' && Object.keys(specialSamples).length === 0)) {
+    // Check if data is null, undefined, or empty
+    if (!specialSamplesData || 
+        (typeof specialSamplesData === 'object' && Object.keys(specialSamplesData).length === 0)) {
         return;
     }
     
-    // Handle the new organized structure where specialSamples is an object organized by type ID
-    // e.g., {1: [samples...], 2: [samples...]}
-    if (typeof specialSamples === 'object' && !Array.isArray(specialSamples)) {
+    // Handle new format: {enabled_ids: [1,2,3], configurations: {1: {special_type: 1}, 2: {special_type: 2}}}
+    if (specialSamplesData.enabled_ids && specialSamplesData.configurations) {
+        console.log('Processing special samples in new format');
+        
+        specialSamplesData.enabled_ids.forEach(sampleId => {
+            const config = specialSamplesData.configurations[sampleId];
+            if (!config || !config.special_type) return;
+            
+            const specialType = config.special_type;
+            const sample = availableSpecialSamples.find(s => s.ssid === sampleId);
+            
+            if (sample) {
+                const containerId = `enabled_${specialType}`;
+                const container = document.getElementById(containerId);
+                
+                if (container) {
+                    // Remove "no samples" message if present
+                    const noSamplesDiv = container.querySelector('.no-special-samples');
+                    if (noSamplesDiv) {
+                        container.innerHTML = '';
+                    }
+                    
+                    // Create and add sample item
+                    const sampleElement = createSpecialSampleItemHTML(sample, specialType);
+                    container.appendChild(sampleElement);
+                    
+                    // Update tracking
+                    enabledSpecialSampleIds[specialType].add(sampleId);
+                }
+            }
+        });
+        return;
+    }
+    
+    // Legacy handling for old format (organized by type or array)
+    if (typeof specialSamplesData === 'object' && !Array.isArray(specialSamplesData)) {
         // Process each type in the organized structure
-        Object.keys(specialSamples).forEach(typeId => {
+        Object.keys(specialSamplesData).forEach(typeId => {
             const typeIdInt = parseInt(typeId);
-            const samplesForType = specialSamples[typeId];
+            const samplesForType = specialSamplesData[typeId];
             
             if (Array.isArray(samplesForType) && samplesForType.length > 0) {
                 const containerId = `enabled_${typeId}`;
@@ -2114,14 +2145,14 @@ function loadSpecialSamplesInterface(specialSamples) {
     }
     
     // Legacy handling: if specialSamples is still an array (fallback)
-    if (Array.isArray(specialSamples)) {
+    if (Array.isArray(specialSamplesData)) {
         // Group special samples by type
         const samplesByType = {};
         specialSampleTypes.forEach(type => {
             samplesByType[type.sstid] = [];
         });
         
-        specialSamples.forEach(sample => {
+        specialSamplesData.forEach(sample => {
             const type = sample.special_type || sample.type_id;
             if (samplesByType[type]) {
                 samplesByType[type].push(sample);
@@ -2136,7 +2167,7 @@ function loadSpecialSamplesInterface(specialSamples) {
         });
         
         // Ensure these samples are in our availableSpecialSamples list
-        specialSamples.forEach(sample => {
+        specialSamplesData.forEach(sample => {
             if (!availableSpecialSamples.find(s => s.ssid === sample.ssid)) {
                 availableSpecialSamples.push(sample);
             }
@@ -2248,7 +2279,8 @@ function getSpecialSampleDragAfterElement(container, y) {
 }
 
 function getSpecialSamplesFromInterface() {
-    const allSpecialSamples = [];
+    const enabledIds = [];
+    const configurations = {};
     
     // Get samples from each type container
     specialSampleTypes.forEach(type => {
@@ -2260,17 +2292,25 @@ function getSpecialSamplesFromInterface() {
         sampleItems.forEach(item => {
             const sampleId = parseInt(item.dataset.sampleId);
             const sampleType = parseInt(item.dataset.sampleType);
-            const sample = availableSpecialSamples.find(s => s.ssid === sampleId);
-            if (sample) {
-                // Ensure the sample has the correct type
-                const sampleCopy = { ...sample, special_type: sampleType };
-                allSpecialSamples.push(sampleCopy);
-            }
+            
+            // Add to enabled IDs list
+            enabledIds.push(sampleId);
+            
+            // Create configuration for this sample
+            configurations[sampleId] = {
+                special_type: sampleType,
+                // Add any other configuration options here as needed
+            };
         });
     });
     
-    console.log('Getting special samples from interface:', allSpecialSamples);
-    return allSpecialSamples;
+    const result = {
+        enabled_ids: enabledIds,
+        configurations: configurations
+    };
+    
+    console.log('Getting special samples from interface (new format):', result);
+    return result;
 }
 
 function updateSpecialSamplesFromDOM() {

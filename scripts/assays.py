@@ -1177,8 +1177,7 @@ def save_step_config(request):
         scid = data.get('scid')
         step_name = data.get('step_name', '').strip()
         containers = data.get('containers', [])
-        special_samples = data.get('special_samples', {})  # Changed from controls to special_samples
-        special_sample_config = data.get('special_sample_config', {})  # New configuration field
+        special_samples_data = data.get('special_samples', {})  # New format: {enabled_ids: [...], configurations: {...}}
         create_samples = data.get('create_samples', 1)
         pages = data.get('pages', [])
         sample_data = data.get('sample_data', [])
@@ -1194,17 +1193,8 @@ def save_step_config(request):
         print(f"Enabled containers: {enabled_containers}")
         print(f"Container configs: {container_configs}")
         
-        # Extract special sample IDs from the organized data structure
-        special_sample_ids = []
-        if isinstance(special_samples, dict):
-            # special_samples is organized by type: {type_id: [samples...]}
-            for type_id, samples in special_samples.items():
-                if isinstance(samples, list):
-                    for sample in samples:
-                        if isinstance(sample, dict) and sample.get('ssid'):
-                            special_sample_ids.append(sample['ssid'])
-        
-        print(f"Extracted special sample IDs for storage: {special_sample_ids}")
+        # Handle special samples in new format
+        print(f"Received special_samples_data: {special_samples_data}")
         
         if not scid:
             return JsonResponse({'error': 'Step configuration ID (scid) is required'}, status=400)
@@ -1221,7 +1211,7 @@ def save_step_config(request):
         # First, get current step configuration to check for changes
         cursor.execute("""
             SELECT step_name, containers, special_samples, create_samples, 
-                   pages, sample_data, step_scripts, special_sample_config
+                   pages, sample_data, step_scripts
             FROM velocity.step_config
             WHERE scid = %s
         """, (scid,))
@@ -1242,27 +1232,28 @@ def save_step_config(request):
         print(f"New enabled containers: {enabled_containers}")
         print(f"New container configs: {container_configs}")
         
-        current_special_sample_ids = current_config.get('special_samples', []) or []   # This is the raw ID list from DB
-        current_special_sample_config = current_config.get('special_sample_config', {}) or {}
+        # Handle current special samples data (could be old or new format)
+        current_special_samples_raw = current_config.get('special_samples', {}) or {}
         current_pages = current_config.get('pages', []) or []
         current_sample_data = current_config.get('sample_data', []) or []
         current_step_scripts = current_config.get('step_scripts', []) or []
         
         # Compare all fields for changes
         containers_changed = (current_enabled_containers != enabled_containers or current_container_configs != container_configs)
+        special_samples_changed = (current_special_samples_raw != special_samples_data)
         
         config_unchanged = (
             current_config['step_name'] == step_name and
             current_config['create_samples'] == create_samples and
             not containers_changed and
-            current_special_sample_ids == special_sample_ids and  # Compare extracted IDs to stored IDs
-            current_special_sample_config == special_sample_config and
+            not special_samples_changed and
             current_pages == pages and
             current_sample_data == sample_data and
             current_step_scripts == step_scripts
         )
         
         print(f"Containers changed: {containers_changed}")
+        print(f"Special samples changed: {special_samples_changed}")
         print(f"Config unchanged: {config_unchanged}")
         
         if config_unchanged:
@@ -1290,13 +1281,12 @@ def save_step_config(request):
                     create_samples = %s,
                     pages = %s,
                     sample_data = %s,
-                    step_scripts = %s,
-                    special_sample_config = %s
+                    step_scripts = %s
                 WHERE scid = %s
                 RETURNING scid, step_name
-            """, (step_name, json.dumps(containers_data), json.dumps(special_sample_ids), 
+            """, (step_name, json.dumps(containers_data), json.dumps(special_samples_data), 
                   create_samples, json.dumps(pages), json.dumps(sample_data), 
-                  json.dumps(step_scripts), json.dumps(special_sample_config), scid))
+                  json.dumps(step_scripts), scid))
             
             result = cursor.fetchone()
             print(f"Database update result: {result}")
