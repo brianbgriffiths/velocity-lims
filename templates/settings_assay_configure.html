@@ -2330,10 +2330,17 @@ function loadAvailableSpecialSamples() {
 function renderAvailableSpecialSamples() {
     const listDiv = document.getElementById('availableSpecialSamplesList');
     
+    console.log('renderAvailableSpecialSamples called');
+    console.log('availableSpecialSamples:', availableSpecialSamples);
+    console.log('currentSpecialSampleType:', currentSpecialSampleType);
+    console.log('enabledSpecialSampleIds:', enabledSpecialSampleIds);
+    
     // Filter samples by current type
     const samplesForType = availableSpecialSamples.filter(sample => 
         sample.special_type === currentSpecialSampleType
     );
+    
+    console.log('samplesForType:', samplesForType);
     
     if (samplesForType.length === 0) {
         const typeName = specialSampleTypeNames[currentSpecialSampleType]?.toLowerCase() || 'samples';
