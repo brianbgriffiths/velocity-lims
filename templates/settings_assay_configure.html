@@ -6,6 +6,7 @@
 <script src="{% static 'js/pylims_request.js' %}"></script>
 <script src="{% static 'js/pylims_ui.js' %}"></script>
 <link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<link rel="stylesheet" href="{% static 'css/settings_assay_configure.css' %}">
 
 {% endblock %}
 
@@ -398,4 +399,5 @@ let draggedElement = null;
 const avid = {{ assay.avid|default:"null" }};
 
 </script>
+<script src="{% static 'js/settings_assay_configure.js' %}"></script>
 {% endblock %}
