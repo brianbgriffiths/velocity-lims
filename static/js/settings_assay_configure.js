@@ -1,10 +1,10 @@
 // Settings Assay Configure JavaScript
 
-// Global variables - these need to be initialized by the template
-let csrf, assayId, specialSampleTypesData;
-let selectedStepId = null;
-let isReorderMode = false;
-let draggedElement = null;
+// Global variables are defined in the template:
+// - csrf: CSRF token from Django
+// - assayId: Current assay ID
+// - specialSampleTypesData: Available special sample types
+// - selectedStepId, isReorderMode, draggedElement: Already defined in template
 
 function saveAll() {
     const versionName = document.getElementById('versionName').value.trim();
