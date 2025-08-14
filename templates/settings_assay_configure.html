@@ -2286,12 +2286,8 @@ function showSpecialSampleSelector(type) {
     typeLabel.textContent = specialSampleTypeNames[type];
     modal.style.display = 'flex';
     
-    // Load available special samples if not already loaded
-    if (availableSpecialSamples.length === 0) {
-        loadAvailableSpecialSamples();
-    } else {
-        renderAvailableSpecialSamples();
-    }
+    // Just render available special samples (they should already be loaded)
+    renderAvailableSpecialSamples();
 }
 
 function hideSpecialSampleSelector() {
@@ -2300,6 +2296,7 @@ function hideSpecialSampleSelector() {
 }
 
 function loadAvailableSpecialSamples() {
+    console.log('loadAvailableSpecialSamples called for type:', currentSpecialSampleType);
     const pyoptions = {
         data: {
             special_type_id: currentSpecialSampleType  // Changed from special_type to special_type_id
@@ -2312,18 +2309,59 @@ function loadAvailableSpecialSamples() {
     pylims_post(pyoptions).then(result => {
         console.log('Available special samples response:', result);
         if (result.status === 'success') {
-            availableSpecialSamples = [...availableSpecialSamples, ...(result.special_samples || [])];
-            // Remove duplicates
-            availableSpecialSamples = availableSpecialSamples.filter((sample, index, self) => 
-                index === self.findIndex(s => s.ssid === sample.ssid)
-            );
-            console.log('Loaded available special samples:', availableSpecialSamples);
+            const newSamples = result.special_samples || [];
+            console.log('New samples from API:', newSamples);
+            
+            // Merge new samples with existing ones, avoiding duplicates
+            newSamples.forEach(newSample => {
+                if (!availableSpecialSamples.find(existing => existing.ssid === newSample.ssid)) {
+                    availableSpecialSamples.push(newSample);
+                }
+            });
+            
+            console.log('Merged available special samples:', availableSpecialSamples);
             renderAvailableSpecialSamples();
         }
     }).catch(error => {
         console.error('Error loading special samples:', error);
         document.getElementById('availableSpecialSamplesList').innerHTML = 
             '<div style="text-align: center; padding: 20px; color: var(--red-med);">Failed to load special samples</div>';
+    });
+}
+
+function loadAllAvailableSpecialSamples() {
+    console.log('loadAllAvailableSpecialSamples called');
+    console.log('specialSampleTypes:', specialSampleTypes);
+    
+    // Load special samples for each type
+    specialSampleTypes.forEach(type => {
+        const pyoptions = {
+            data: {
+                special_type_id: type.sstid
+            },
+            csrf: csrf,
+            url: 'get_special_samples/',
+            submit_mode: 'silent'
+        };
+        
+        pylims_post(pyoptions).then(result => {
+            console.log(`Special samples response for type ${type.sstid}:`, result);
+            if (result.status === 'success') {
+                const newSamples = result.special_samples || [];
+                console.log(`New samples from API for type ${type.sstid}:`, newSamples);
+                
+                // Merge new samples with existing ones, avoiding duplicates
+                newSamples.forEach(newSample => {
+                    if (!availableSpecialSamples.find(existing => existing.ssid === newSample.ssid)) {
+                        availableSpecialSamples.push(newSample);
+                    }
+                });
+                
+                console.log('All available special samples after loading type', type.sstid, ':', availableSpecialSamples);
+            }
+        }).catch(error => {
+            console.error(`Error loading special samples for type ${type.sstid}:`, error);
+        });
     });
 }
 
@@ -3342,6 +3380,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load container types once at page initialization
     loadAvailableContainers();
+    
+    // Load all special sample types once at page initialization
+    loadAllAvailableSpecialSamples();
     
     // Setup container config event listeners
     setTimeout(() => {
