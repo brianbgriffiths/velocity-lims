@@ -800,8 +800,15 @@ function loadAllAvailableSpecialSamples() {
     console.log('loadAllAvailableSpecialSamples called');
     console.log('specialSampleTypes:', specialSampleTypes);
     
+    if (!specialSampleTypes || specialSampleTypes.length === 0) {
+        console.warn('No special sample types available to load samples for');
+        return;
+    }
+    
     // Load special samples for each type
     specialSampleTypes.forEach(type => {
+        console.log(`Loading special samples for type: ${type.sstid} (${type.special_type_name})`);
+        
         const pyoptions = {
             data: {
                 special_type_id: type.sstid
@@ -812,7 +819,7 @@ function loadAllAvailableSpecialSamples() {
         };
         
         pylims_post(pyoptions).then(result => {
-            console.log(`Special samples response for type ${type.sstid}:`, result);
+            console.log(`Special samples response for type ${type.sstid} (${type.special_type_name}):`, result);
             if (result.status === 'success') {
                 const newSamples = result.special_samples || [];
                 console.log(`New samples from API for type ${type.sstid}:`, newSamples);
@@ -821,10 +828,13 @@ function loadAllAvailableSpecialSamples() {
                 newSamples.forEach(newSample => {
                     if (!availableSpecialSamples.find(existing => existing.ssid === newSample.ssid)) {
                         availableSpecialSamples.push(newSample);
+                        console.log(`Added sample ${newSample.ssid} (${newSample.special_name}) to available samples`);
                     }
                 });
                 
-                console.log('All available special samples after loading type', type.sstid, ':', availableSpecialSamples);
+                console.log(`Total available special samples after loading type ${type.sstid}:`, availableSpecialSamples.length);
+            } else {
+                console.error(`Failed to load special samples for type ${type.sstid}:`, result);
             }
         }).catch(error => {
             console.error(`Error loading special samples for type ${type.sstid}:`, error);

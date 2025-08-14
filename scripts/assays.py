@@ -700,6 +700,41 @@ def settings_assay_configure(request, assay_id):
             ORDER BY special_type_name
         """)
         special_sample_types = cursor.fetchall()
+        print(f"Special sample types loaded: {special_sample_types}")
+        
+        # If no types are found with show_in_config=true, get all types
+        if not special_sample_types:
+            print("No special sample types found with show_in_config=true, loading all types")
+            cursor.execute("""
+                SELECT sstid, special_type_name, show_in_config
+                FROM velocity.special_sample_types
+                ORDER BY special_type_name
+            """)
+            special_sample_types = cursor.fetchall()
+            print(f"All special sample types: {special_sample_types}")
+        
+        # Also check what special samples exist in the database
+        cursor.execute("""
+            SELECT COUNT(*) as total_samples,
+                   COUNT(CASE WHEN special_status = 1 THEN 1 END) as active_samples,
+                   COUNT(CASE WHEN special_status = 2 THEN 1 END) as status_2_samples
+            FROM velocity.special_samples
+        """)
+        sample_counts = cursor.fetchone()
+        print(f"Special samples in database - Total: {sample_counts['total_samples']}, Status=1: {sample_counts['active_samples']}, Status=2: {sample_counts['status_2_samples']}")
+        
+        # Check samples by type
+        cursor.execute("""
+            SELECT ss.special_type, sst.special_type_name, 
+                   COUNT(*) as total,
+                   COUNT(CASE WHEN ss.special_status = 1 THEN 1 END) as active
+            FROM velocity.special_samples ss
+            LEFT JOIN velocity.special_sample_types sst ON ss.special_type = sst.sstid
+            GROUP BY ss.special_type, sst.special_type_name
+            ORDER BY ss.special_type
+        """)
+        samples_by_type = cursor.fetchall()
+        print(f"Samples by type: {samples_by_type}")
         
         conn.close()
         
@@ -1129,7 +1164,7 @@ def get_step_config(request):
                             SELECT ss.*, sst.sstid as type_id, sst.special_type_name
                             FROM velocity.special_samples ss
                             JOIN velocity.special_sample_types sst ON ss.special_type = sst.sstid
-                            WHERE ss.ssid IN ({placeholders}) AND ss.special_status = 2
+                            WHERE ss.ssid IN ({placeholders}) AND ss.special_status = 1
                             ORDER BY sst.special_type_name, ss.special_name
                         """, special_samples_ids)
                         
@@ -1162,7 +1197,7 @@ def get_step_config(request):
                         SELECT ss.*, sst.sstid as type_id, sst.special_type_name
                         FROM velocity.special_samples ss
                         JOIN velocity.special_sample_types sst ON ss.special_type = sst.sstid
-                        WHERE ss.ssid IN ({placeholders}) AND ss.special_status = 2
+                        WHERE ss.ssid IN ({placeholders}) AND ss.special_status = 1
                         ORDER BY sst.special_type_name, ss.special_name
                     """, special_samples_data)
                     
@@ -1456,6 +1491,8 @@ def get_special_samples(request):
         data = json.loads(request.body)
         special_type_id = data.get('special_type_id')  # This is now sstid from special_sample_types
         
+        print(f"get_special_samples called with type_id: {special_type_id}")
+        
         if not special_type_id:
             return JsonResponse({'error': 'special_type_id is required'}, status=400)
         
@@ -1477,6 +1514,8 @@ def get_special_samples(request):
         """, (special_type_id,))
         
         special_samples = cursor.fetchall()
+        print(f"Found {len(special_samples)} special samples for type {special_type_id}")
+        print(f"Special samples: {special_samples}")
         
         conn.close()
         
