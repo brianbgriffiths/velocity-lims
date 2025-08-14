@@ -472,6 +472,23 @@ function initializeSpecialSampleTypes() {
         return;
     }
     
+    // Add explicit filtering to ensure only show_in_config = true types are used
+    const filteredTypes = specialSampleTypes.filter(type => {
+        const showInConfig = type.show_in_config === true || type.show_in_config === 1;
+        console.log(`Type ${type.sstid} (${type.special_type_name}): show_in_config = ${type.show_in_config}, will show: ${showInConfig}`);
+        return showInConfig;
+    });
+    
+    console.log('Filtered special sample types (only show_in_config = true):', filteredTypes);
+    
+    // Update the global specialSampleTypes to only include filtered types
+    specialSampleTypes = filteredTypes;
+    
+    if (specialSampleTypes.length === 0) {
+        console.warn('No special sample types with show_in_config = true found');
+        return;
+    }
+    
     // Populate type names and initialize enabled IDs tracking
     specialSampleTypes.forEach(type => {
         specialSampleTypeNames[type.sstid] = type.special_type_name;
