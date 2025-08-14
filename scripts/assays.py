@@ -1007,7 +1007,7 @@ def get_step_config(request):
         # Get step configuration details
         cursor.execute("""
             SELECT scid, step_name, containers, special_samples, create_samples, 
-                   pages, sample_data, step_scripts, special_sample_config
+                   pages, sample_data, step_scripts
             FROM velocity.step_config
             WHERE scid = %s
         """, (scid,))
@@ -1110,42 +1110,82 @@ def get_step_config(request):
         if step_config['special_samples']:
             try:
                 # Parse special_samples JSON if it's a string
-                special_samples_ids = step_config['special_samples']
-                if isinstance(special_samples_ids, str):
-                    special_samples_ids = json.loads(special_samples_ids)
+                special_samples_data = step_config['special_samples']
+                if isinstance(special_samples_data, str):
+                    special_samples_data = json.loads(special_samples_data)
                 
-                print(f"Special samples IDs from step config: {special_samples_ids}")
+                print(f"Special samples data from step config: {special_samples_data}")
                 
-                if special_samples_ids and len(special_samples_ids) > 0:
+                # Handle new format: {enabled_ids: [...], configurations: {...}}
+                if isinstance(special_samples_data, dict) and 'enabled_ids' in special_samples_data:
+                    special_samples_ids = special_samples_data.get('enabled_ids', [])
+                    configurations = special_samples_data.get('configurations', {})
+                    print(f"New format - IDs: {special_samples_ids}, Configs: {configurations}")
+                    
+                    if special_samples_ids and len(special_samples_ids) > 0:
+                        # Get the actual special samples data with their types
+                        placeholders = ','.join(['%s'] * len(special_samples_ids))
+                        cursor.execute(f"""
+                            SELECT ss.*, sst.sstid as type_id, sst.special_type_name
+                            FROM velocity.special_samples ss
+                            JOIN velocity.special_sample_types sst ON ss.special_type = sst.sstid
+                            WHERE ss.ssid IN ({placeholders}) AND ss.special_status = 2
+                            ORDER BY sst.special_type_name, ss.special_name
+                        """, special_samples_ids)
+                        
+                        special_samples_from_db = cursor.fetchall()
+                        print(f"Loaded special samples from DB: {special_samples_from_db}")
+                        
+                        # For each sample, use the special_type from the configuration
+                        for sample in special_samples_from_db:
+                            sample_id = sample['ssid']
+                            config = configurations.get(str(sample_id), configurations.get(sample_id, {}))
+                            type_id = config.get('special_type', sample['type_id'])
+                            
+                            if type_id not in special_samples_organized:
+                                special_samples_organized[type_id] = []
+                            
+                            # Add the configured type to the sample data
+                            sample_with_config = sample.copy()
+                            sample_with_config['special_type'] = type_id
+                            special_samples_organized[type_id].append(sample_with_config)
+                    
+                    # Return the data in the new format for the frontend
+                    step_config['special_samples'] = special_samples_data
+                    
+                # Handle legacy format: array of IDs
+                elif isinstance(special_samples_data, list) and len(special_samples_data) > 0:
+                    print("Legacy format - array of IDs")
                     # Get the actual special samples data with their types
-                    placeholders = ','.join(['%s'] * len(special_samples_ids))
-                    # statuses: 1 = pending, 2= active, 3=archived
+                    placeholders = ','.join(['%s'] * len(special_samples_data))
                     cursor.execute(f"""
                         SELECT ss.*, sst.sstid as type_id, sst.special_type_name
                         FROM velocity.special_samples ss
                         JOIN velocity.special_sample_types sst ON ss.special_type = sst.sstid
                         WHERE ss.ssid IN ({placeholders}) AND ss.special_status = 2
                         ORDER BY sst.special_type_name, ss.special_name
-                    """, special_samples_ids)
+                    """, special_samples_data)
                     
-                    special_samples_data = cursor.fetchall()
-                    print(f"Loaded special samples data: {special_samples_data}")
+                    special_samples_from_db = cursor.fetchall()
+                    print(f"Loaded special samples from DB: {special_samples_from_db}")
                     
                     # Organize by type ID (sstid)
-                    for sample in special_samples_data:
+                    for sample in special_samples_from_db:
                         type_id = sample['type_id']
                         if type_id not in special_samples_organized:
                             special_samples_organized[type_id] = []
                         special_samples_organized[type_id].append(sample)
                     
                     print(f"Organized special samples: {special_samples_organized}")
+                    
+                    # For legacy data, return the organized structure
+                    step_config['special_samples'] = special_samples_organized
                         
             except Exception as e:
                 print(f"Error loading special samples: {e}")
                 special_samples_organized = {}
-        
-        # Replace the raw IDs with organized special samples data
-        step_config['special_samples'] = special_samples_organized
+                # Return empty data on error
+                step_config['special_samples'] = {}
         
         conn.close()
         
