@@ -13,6 +13,54 @@ from settings.views import login_required, context_init, has_permission
 import pylims
 
 
+def archive_assay_version(cursor, avid):
+    """
+    Archive the current state of an assay version before updating it
+    This copies the current version to the assay_versions_archive table
+    """
+    try:
+        # Get the current version data
+        cursor.execute("""
+            SELECT version_name, version_major, version_minor, version_patch, 
+                   modified, assay, assay_steps
+            FROM velocity.assay_versions 
+            WHERE avid = %s
+        """, (avid,))
+        
+        current_version = cursor.fetchone()
+        if not current_version:
+            print(f"Warning: No version found with avid {avid} to archive")
+            return False
+        
+        # Insert into archive table with all available data including original_avid
+        cursor.execute("""
+            INSERT INTO velocity.assay_versions_archive 
+            (original_avid, version_name, version_major, version_minor, version_patch, 
+             modified, assay, assay_steps)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING avaid
+        """, (
+            avid,  # Store the original avid
+            current_version['version_name'],
+            current_version['version_major'],
+            current_version['version_minor'],
+            current_version['version_patch'],
+            current_version['modified'],
+            current_version['assay'],
+            current_version['assay_steps']
+        ))
+        
+        archive_result = cursor.fetchone()
+        archive_id = archive_result['avaid']
+        
+        print(f"Archived version {avid} to archive ID {archive_id}")
+        return True
+        
+    except Exception as e:
+        print(f"Error archiving version {avid}: {str(e)}")
+        return False
+
+
 @login_required
 
 def settings_assays(request):
@@ -869,7 +917,12 @@ def save_step_order(request):
                 }
             })
         
-        # Order changed, update database and increment patch version
+        # Order changed, archive current version before updating
+        archive_success = archive_assay_version(cursor, version_data['avid'])
+        if not archive_success:
+            print("Warning: Failed to archive version before updating, continuing anyway")
+        
+        # Update database and increment patch version
         step_order_json = json.dumps(step_order)
         
         # Update the assay_steps JSON field with the new order and increment patch version
@@ -958,7 +1011,12 @@ def save_version_name(request):
                 }
             })
         
-        # Name changed, update database and increment patch version
+        # Name changed, archive current version before updating
+        archive_success = archive_assay_version(cursor, avid)
+        if not archive_success:
+            print("Warning: Failed to archive version before updating, continuing anyway")
+        
+        # Update database and increment patch version
         cursor.execute("""
             UPDATE velocity.assay_versions 
             SET version_name = %s, 
@@ -1390,6 +1448,11 @@ def save_step_config(request):
             return JsonResponse({'error': f'Error finding version data: {str(version_error)}'}, status=500)
         
         if version_data:
+            # Archive current version before incrementing patch version
+            archive_success = archive_assay_version(cursor, version_data['avid'])
+            if not archive_success:
+                print("Warning: Failed to archive version before updating, continuing anyway")
+            
             # Increment patch version
             try:
                 new_patch = (version_data['version_patch'] or 0) + 1
