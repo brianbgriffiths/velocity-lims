@@ -452,7 +452,7 @@ textarea.form-input {
     color: var(--gray-dark);
 }
 
-.btn-add-special-sample {
+.btn-add-special-sample, .btn-add-page {
     background-color: var(--green-med);
     color: white;
     border: none;
@@ -466,7 +466,7 @@ textarea.form-input {
     gap: 4px;
 }
 
-.btn-add-special-sample:hover {
+.btn-add-special-sample:hover, .btn-add-page:hover {
     background-color: var(--green-dark);
 }
 
