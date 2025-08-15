@@ -1199,8 +1199,6 @@ textarea.form-input {
 .enabled-pages {
     padding: 15px;
     min-height: 100px;
-    position: relative;
-    background-color: white;
 }
 
 .no-pages {
@@ -1221,7 +1219,6 @@ textarea.form-input {
     border-radius: 3px;
     cursor: move;
     transition: all 0.2s ease;
-    border-left-width: 4px;
 }
 
 .page-item:hover {
@@ -1413,15 +1410,18 @@ textarea.form-input {
 .pages-section .enabled-pages {
     padding: 20px;
     min-height: 120px;
-    background-color: var(--white);
+    background-color: white;
     border-radius: 0 0 3px 3px;
+    position:relative;
+
 }
 
 .pages-section .page-item {
     width: 100%;
     margin-bottom: 10px;
     border: solid 1px #000000; /* Black border like other cards */
-    background-color: var(--gray-lightest); /* Match container/special sample items */
+    background-color: var(--inputbg); /* Match container/special sample items */
+    border-left-width: 4px;
 }
 
 .pages-section .page-item:last-child {
