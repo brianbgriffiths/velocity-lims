@@ -2066,13 +2066,52 @@ function loadPagesInterface(pages) {
     console.log('Loading pages interface with data:', pages);
     
     // Debug: Check if element exists and log details
-    const enabledPagesDiv = document.getElementById('enabledPages');
+    let enabledPagesDiv = document.getElementById('enabledPages');
     console.log('enabledPages element:', enabledPagesDiv);
     console.log('All elements with enabledPages class:', document.querySelectorAll('.enabled-pages'));
     console.log('All elements with id enabledPages:', document.querySelectorAll('#enabledPages'));
     
     if (!enabledPagesDiv) {
-        console.error('Pages interface container not found in DOM');
+        console.log('Pages interface container not found in DOM - creating it dynamically');
+        
+        // Find the config cards container and add the pages section
+        const configCardsContainer = document.getElementById('configCardsContainer');
+        if (configCardsContainer) {
+            // Create the pages configuration section
+            const pagesConfigHTML = `
+                <!-- Pages Configuration -->
+                <div class="config-card">
+                    <label class="form-label">Pages Configuration</label>
+                    <div class="pages-config-panel">
+                        <div class="pages-config-header">
+                            <span>Enabled Pages</span>
+                            <button type="button" class="btn-add-page" onclick="showPageSelector()">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
+                        </div>
+                        <div class="enabled-pages" id="enabledPages">
+                            <div class="no-pages">No pages configured</div>
+                        </div>
+                    </div>
+                    <!-- Hidden textarea for data storage -->
+                    <textarea id="pagesConfig" style="display: none;">[]</textarea>
+                </div>
+            `;
+            
+            // Insert after the last config card (containers or special samples)
+            configCardsContainer.insertAdjacentHTML('beforeend', pagesConfigHTML);
+            
+            // Now try to get the element again
+            enabledPagesDiv = document.getElementById('enabledPages');
+            console.log('Created enabledPages element:', enabledPagesDiv);
+        } else {
+            console.error('Config cards container not found - cannot create pages section');
+            return;
+        }
+    }
+    
+    if (!enabledPagesDiv) {
+        console.error('Pages interface container still not found after creation attempt');
         return;
     }
     
