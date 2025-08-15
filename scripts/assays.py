@@ -693,8 +693,7 @@ def settings_assay_configure(request, assay_id):
             steps = []
         
         # Get special sample types for the step configuration
-        cursor.execute("""SELECT * FROM velocity.special_samples ss JOIN velocity.special_sample_types sst ON sst.sstid=ss.special_type
-        """)
+        cursor.execute("""SELECT * FROM velocity.special_samples ss JOIN velocity.special_sample_types sst ON sst.sstid=ss.special_type;""")
         special_sample_types = cursor.fetchall()
         
         conn.close()
