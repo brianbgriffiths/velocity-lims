@@ -2145,7 +2145,7 @@ function createPageItemHTML(page, index) {
             </div>
             <div class="page-item-actions">
                 <button class="page-config-button" onclick="showPageConfigModal(${page.pcid}, '${page.page_name}')">
-                    <i class="fas fa-cog"></i> Config
+                    <i class="fas fa-cog"></i>
                 </button>
             </div>
         </div>
