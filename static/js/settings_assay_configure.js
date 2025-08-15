@@ -292,6 +292,13 @@ function loadStepConfiguration(stepId) {
     if (specialSampleTypes.length === 0) {
         initializeSpecialSampleTypes();
     }
+    
+    // Ensure available special samples are loaded before loading step config
+    if (availableSpecialSamples.length === 0) {
+        console.log('Loading available special samples before step configuration');
+        loadAllAvailableSpecialSamples();
+    }
+    
     loadStepConfigurationData(stepId);
 }
 
@@ -556,12 +563,12 @@ function loadSpecialSamplesInterface(specialSamplesData) {
     console.log('loadSpecialSamplesInterface called with:', specialSamplesData);
     console.log('specialSamplesData type:', typeof specialSamplesData);
     
-    // Clear all special sample containers
+    // Clear all special sample buckets
     specialSampleTypes.forEach(type => {
-        const containerId = `enabled_${type.sstid}`;
-        const container = document.getElementById(containerId);
-        if (container) {
-            container.innerHTML = `<div class="no-special-samples">No ${type.special_type_name.toLowerCase()} configured</div>`;
+        const bucketId = `enabled_${type.sstid}`;
+        const bucket = document.getElementById(bucketId);
+        if (bucket) {
+            bucket.innerHTML = `<div class="no-special-samples">No ${type.special_type_name.toLowerCase()} configured</div>`;
         }
     });
     
@@ -579,32 +586,47 @@ function loadSpecialSamplesInterface(specialSamplesData) {
     // Handle new format: {enabled_ids: [1,2,3], configurations: {1: {special_type: 1}, 2: {special_type: 2}}}
     if (specialSamplesData.enabled_ids && specialSamplesData.configurations) {
         console.log('Processing special samples in new format');
+        console.log('Available special samples for lookup:', availableSpecialSamples);
         
         specialSamplesData.enabled_ids.forEach(sampleId => {
             const config = specialSamplesData.configurations[sampleId];
-            if (!config || !config.special_type) return;
+            if (!config || !config.special_type) {
+                console.warn(`No configuration found for sample ID ${sampleId}`);
+                return;
+            }
             
             const specialType = config.special_type;
             const sample = availableSpecialSamples.find(s => s.ssid === sampleId);
             
+            console.log(`Looking for sample ID ${sampleId} of type ${specialType}:`, sample);
+            
             if (sample) {
-                const containerId = `enabled_${specialType}`;
-                const container = document.getElementById(containerId);
+                const bucketId = `enabled_${specialType}`;
+                const bucket = document.getElementById(bucketId);
                 
-                if (container) {
+                if (bucket) {
                     // Remove "no samples" message if present
-                    const noSamplesDiv = container.querySelector('.no-special-samples');
+                    const noSamplesDiv = bucket.querySelector('.no-special-samples');
                     if (noSamplesDiv) {
-                        container.innerHTML = '';
+                        bucket.innerHTML = '';
                     }
                     
                     // Create and add sample item
                     const sampleElement = createSpecialSampleItemHTML(sample, specialType);
-                    container.appendChild(sampleElement);
+                    bucket.appendChild(sampleElement);
                     
                     // Update tracking
                     enabledSpecialSampleIds[specialType].add(sampleId);
+                    console.log(`Successfully loaded sample ${sampleId} into bucket ${bucketId}`);
+                } else {
+                    console.error(`Bucket ${bucketId} not found for sample ${sampleId}`);
                 }
+            } else {
+                console.error(`Sample with ID ${sampleId} not found in availableSpecialSamples. Available sample IDs:`, availableSpecialSamples.map(s => s.ssid));
+                console.error(`This may indicate that either:
+                1. The sample is not in specialSampleTypesData from Django
+                2. The sample has special_status !== 2 (not active)
+                3. loadAllAvailableSpecialSamples() hasn't run yet`);
             }
         });
         return;
@@ -618,8 +640,8 @@ function loadSpecialSamplesInterface(specialSamplesData) {
             const samplesForType = specialSamplesData[typeId];
             
             if (Array.isArray(samplesForType) && samplesForType.length > 0) {
-                const containerId = `enabled_${typeId}`;
-                loadSpecialSamplesForType(typeIdInt, samplesForType, containerId);
+                const bucketId = `enabled_${typeId}`;
+                loadSpecialSamplesForType(typeIdInt, samplesForType, bucketId);
                 
                 // Update tracking sets
                 samplesForType.forEach(sample => {
@@ -651,10 +673,10 @@ function loadSpecialSamplesInterface(specialSamplesData) {
             }
         });
         
-        // Load each type into its respective container
+        // Load each type into its respective bucket
         specialSampleTypes.forEach(type => {
-            const containerId = `enabled_${type.sstid}`;
-            loadSpecialSamplesForType(type.sstid, samplesByType[type.sstid], containerId);
+            const bucketId = `enabled_${type.sstid}`;
+            loadSpecialSamplesForType(type.sstid, samplesByType[type.sstid], bucketId);
         });
         
         // Ensure these samples are in our availableSpecialSamples list
@@ -666,9 +688,9 @@ function loadSpecialSamplesInterface(specialSamplesData) {
     }
 }
 
-function loadSpecialSamplesForType(type, samples, containerId) {
-    const container = document.getElementById(containerId);
-    if (!container || !samples || samples.length === 0) {
+function loadSpecialSamplesForType(type, samples, bucketId) {
+    const bucket = document.getElementById(bucketId);
+    if (!bucket || !samples || samples.length === 0) {
         return;
     }
     
@@ -677,8 +699,8 @@ function loadSpecialSamplesForType(type, samples, containerId) {
         html += createSpecialSampleItemHTML(sample, type, index);
     });
     
-    container.innerHTML = html;
-    enableSpecialSampleDragAndDrop(containerId);
+    bucket.innerHTML = html;
+    enableSpecialSampleDragAndDrop(bucketId);
 }
 
 function createSpecialSampleItemHTML(sample, type, index) {
@@ -704,11 +726,11 @@ function createSpecialSampleItemHTML(sample, type, index) {
     `;
 }
 
-function enableSpecialSampleDragAndDrop(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
+function enableSpecialSampleDragAndDrop(bucketId) {
+    const bucket = document.getElementById(bucketId);
+    if (!bucket) return;
     
-    const sampleItems = container.querySelectorAll('.special-sample-item');
+    const sampleItems = bucket.querySelectorAll('.special-sample-item');
     
     sampleItems.forEach(item => {
         item.addEventListener('dragstart', handleSpecialSampleDragStart);
@@ -730,12 +752,12 @@ function handleSpecialSampleDragOver(e) {
     e.dataTransfer.dropEffect = 'move';
     
     const afterElement = getSpecialSampleDragAfterElement(e.currentTarget.parentNode, e.clientY);
-    const container = e.currentTarget.parentNode;
+    const bucket = e.currentTarget.parentNode;
     
     if (afterElement == null) {
-        container.appendChild(draggedElement);
+        bucket.appendChild(draggedElement);
     } else {
-        container.insertBefore(draggedElement, afterElement);
+        bucket.insertBefore(draggedElement, afterElement);
     }
 }
 
@@ -754,8 +776,8 @@ function handleSpecialSampleDragEnd(e) {
     draggedElement = null;
 }
 
-function getSpecialSampleDragAfterElement(container, y) {
-    const draggableElements = [...container.querySelectorAll('.special-sample-item:not(.dragging)')];
+function getSpecialSampleDragAfterElement(bucket, y) {
+    const draggableElements = [...bucket.querySelectorAll('.special-sample-item:not(.dragging)')];
     
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
@@ -773,13 +795,13 @@ function getSpecialSamplesFromInterface() {
     const enabledIds = [];
     const configurations = {};
     
-    // Get samples from each type container
+    // Get samples from each type bucket
     specialSampleTypes.forEach(type => {
-        const containerId = `enabled_${type.sstid}`;
-        const container = document.getElementById(containerId);
-        if (!container) return;
+        const bucketId = `enabled_${type.sstid}`;
+        const bucket = document.getElementById(bucketId);
+        if (!bucket) return;
         
-        const sampleItems = container.querySelectorAll('.special-sample-item');
+        const sampleItems = bucket.querySelectorAll('.special-sample-item');
         sampleItems.forEach(item => {
             const sampleId = parseInt(item.dataset.sampleId);
             const sampleType = parseInt(item.dataset.sampleType);
@@ -958,23 +980,23 @@ function addSpecialSample(sampleId) {
     console.log('Adding special sample:', sample);
     enabledSpecialSampleIds[currentSpecialSampleType].add(sampleId);
     
-    // Find the container ID for this type
-    const containerId = `enabled_${currentSpecialSampleType}`;
-    const container = document.getElementById(containerId);
+    // Find the bucket ID for this type
+    const bucketId = `enabled_${currentSpecialSampleType}`;
+    const bucket = document.getElementById(bucketId);
     
-    if (!container) return;
+    if (!bucket) return;
     
     // Remove "no samples" message if present
-    const noSamplesDiv = container.querySelector('.no-special-samples');
+    const noSamplesDiv = bucket.querySelector('.no-special-samples');
     if (noSamplesDiv) {
-        container.innerHTML = '';
+        bucket.innerHTML = '';
     }
     
     const sampleHTML = createSpecialSampleItemHTML(sample, currentSpecialSampleType, enabledSpecialSampleIds[currentSpecialSampleType].size - 1);
-    container.insertAdjacentHTML('beforeend', sampleHTML);
+    bucket.insertAdjacentHTML('beforeend', sampleHTML);
     
     // Re-enable drag and drop
-    enableSpecialSampleDragAndDrop(containerId);
+    enableSpecialSampleDragAndDrop(bucketId);
     
     // Update the available samples display
     renderAvailableSpecialSamples();
@@ -1003,11 +1025,11 @@ function removeSpecialSample(sampleId, type) {
     }
     
     // Check if no samples remain for this type
-    const containerId = `enabled_${type}`;
-    const container = document.getElementById(containerId);
-    if (container && enabledSpecialSampleIds[type].size === 0) {
+    const bucketId = `enabled_${type}`;
+    const bucket = document.getElementById(bucketId);
+    if (bucket && enabledSpecialSampleIds[type].size === 0) {
         const typeName = specialSampleTypeNames[type]?.toLowerCase() || 'samples';
-        container.innerHTML = `<div class="no-special-samples">No ${typeName} configured</div>`;
+        bucket.innerHTML = `<div class="no-special-samples">No ${typeName} configured</div>`;
     }
 }
 
