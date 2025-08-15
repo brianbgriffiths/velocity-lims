@@ -807,58 +807,8 @@ function showSpecialSampleSelector(type) {
     console.log(`Opening special sample selector for type ${type} (${specialSampleTypeNames[type]})`);
     console.log('Current availableSpecialSamples:', availableSpecialSamples);
     
-    // Check if we have samples for this type already loaded
-    const samplesForType = availableSpecialSamples.filter(sample => sample.special_type === type);
-    console.log(`Found ${samplesForType.length} samples already loaded for type ${type}`);
-    
-    if (samplesForType.length > 0) {
-        // We have samples for this type, render them immediately
-        renderAvailableSpecialSamples();
-    } else {
-        // No samples loaded for this type yet, load them first
-        console.log(`Loading special samples for type ${type}`);
-        
-        // Show loading message
-        const listDiv = document.getElementById('availableSpecialSamplesList');
-        listDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--gray-med);">Loading samples...</div>';
-        
-        const pyoptions = {
-            data: {
-                special_type_id: type
-            },
-            csrf: csrf,
-            url: 'get_special_samples',
-            submit_mode: 'silent'
-        };
-        
-        pylims_post(pyoptions).then(result => {
-            console.log(`Special samples response for type ${type}:`, result);
-            if (result.status === 'success') {
-                const newSamples = result.special_samples || [];
-                console.log(`Received ${newSamples.length} samples from API for type ${type}:`, newSamples);
-                
-                // Add new samples to availableSpecialSamples array
-                newSamples.forEach(newSample => {
-                    if (!availableSpecialSamples.find(existing => existing.ssid === newSample.ssid)) {
-                        availableSpecialSamples.push(newSample);
-                        console.log(`Added special sample ${newSample.ssid} (${newSample.special_name}) to available samples`);
-                    }
-                });
-                
-                console.log('Updated availableSpecialSamples:', availableSpecialSamples);
-                
-                // Now render the available special samples
-                renderAvailableSpecialSamples();
-            } else {
-                console.error(`Failed to load special samples for type ${type}:`, result);
-                listDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--red-med);">Failed to load samples</div>';
-            }
-        }).catch(error => {
-            console.error(`Error loading special samples for type ${type}:`, error);
-            const listDiv = document.getElementById('availableSpecialSamplesList');
-            listDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--red-med);">Error loading samples</div>';
-        });
-    }
+    // Since we preload all samples, just render them directly
+    renderAvailableSpecialSamples();
 }
 
 function hideSpecialSampleSelector() {
