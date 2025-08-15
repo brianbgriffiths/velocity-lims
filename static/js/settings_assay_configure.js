@@ -268,11 +268,25 @@ function selectStep(stepId, stepName) {
     
     selectedStepId = stepId;
     
+    // Update URL without page reload
+    const newUrl = `/settings_assay_configure/${assayId}/${stepId}/`;
+    window.history.pushState({stepId: stepId, stepName: stepName}, '', newUrl);
+    
     // Update active state
     document.querySelectorAll('.step-item').forEach(item => {
         item.classList.remove('active');
     });
-    event.currentTarget.classList.add('active');
+    
+    // Handle event.currentTarget safely (might not exist when called from URL navigation)
+    if (typeof event !== 'undefined' && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+    } else {
+        // Find the step element by step ID and make it active
+        const stepElement = document.querySelector(`[data-step-id="${stepId}"]`);
+        if (stepElement) {
+            stepElement.classList.add('active');
+        }
+    }
     
     // Hide placeholder and show config panel
     document.getElementById('stepPlaceholder').style.display = 'none';
@@ -421,6 +435,11 @@ function saveStepConfiguration(isUnifiedSave = false) {
                         const stepNameElement = stepItem.querySelector('.step-name');
                         if (stepNameElement) {
                             stepNameElement.textContent = stepName;
+                        }
+                        
+                        // Also update the step config title if this step is currently selected
+                        if (selectedStepId) {
+                            document.getElementById('stepConfigTitle').textContent = `Configure: ${stepName}`;
                         }
                     }
                     
@@ -1948,4 +1967,72 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }, 100);
+    
+    // Handle initial step selection if step ID was provided in URL
+    if (initialStepId) {
+        selectStepFromURL(initialStepId);
+    }
 });
+
+// Handle browser back/forward navigation
+window.addEventListener('popstate', function(event) {
+    if (event.state && event.state.stepId) {
+        // Browser navigated to a step URL
+        selectStepFromURL(event.state.stepId);
+    } else {
+        // Browser navigated to assay config without step
+        clearStepSelection();
+    }
+});
+
+function selectStepFromURL(stepId) {
+    // Find the step element and trigger selection
+    const stepElement = document.querySelector(`[data-step-id="${stepId}"]`);
+    if (stepElement) {
+        const stepName = stepElement.querySelector('.step-name').textContent;
+        
+        // Manually trigger the step selection (can't use event.currentTarget here)
+        selectedStepId = stepId;
+        
+        // Update active state
+        document.querySelectorAll('.step-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        stepElement.classList.add('active');
+        
+        // Hide placeholder and show config panel
+        document.getElementById('stepPlaceholder').style.display = 'none';
+        document.getElementById('stepConfigPanel').style.display = 'block';
+        
+        // Update config panel content
+        document.getElementById('stepConfigTitle').textContent = `Configure: ${stepName}`;
+        
+        console.log('Selected step from URL:', stepId, stepName);
+        
+        // Load step configuration
+        loadStepConfiguration(stepId);
+    } else {
+        console.warn('Step ID from URL not found:', stepId);
+        // Step not found, redirect to assay config without step
+        window.history.replaceState({}, '', `/settings_assay_configure/${assayId}/`);
+    }
+}
+
+function clearStepSelection() {
+    selectedStepId = null;
+    
+    // Clear active state
+    document.querySelectorAll('.step-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Show placeholder and hide config panel
+    document.getElementById('stepPlaceholder').style.display = 'block';
+    document.getElementById('stepConfigPanel').style.display = 'none';
+    
+    // Update URL to assay config without step
+    const newUrl = `/settings_assay_configure/${assayId}/`;
+    window.history.pushState({}, '', newUrl);
+    
+    console.log('Cleared step selection');
+}

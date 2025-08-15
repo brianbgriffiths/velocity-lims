@@ -267,6 +267,25 @@ textarea.form-input {
     font-weight: bold;
     color: var(--accent1);
     margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-close-step {
+    background: none;
+    border: none;
+    color: var(--gray-med);
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 3px;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.btn-close-step:hover {
+    color: var(--red-med);
+    background-color: var(--gray-light);
 }
 
 .btn-add-step {

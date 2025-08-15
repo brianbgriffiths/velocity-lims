@@ -104,7 +104,12 @@
                     </div>
                     
                     <div id="stepConfigPanel" style="display: none;">
-                        <div class="step-config-header" id="stepConfigTitle">Step Configuration</div>
+                        <div class="step-config-header">
+                            <span id="stepConfigTitle">Step Configuration</span>
+                            <button type="button" class="btn-close-step" onclick="clearStepSelection()" title="Back to step list">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
                         <div id="stepConfigContent">
                             <form id="stepConfigForm">
                                 <div class="form-group">
@@ -393,10 +398,11 @@
 const csrf = '{{ csrf_token }}';
 const assayId = {{ assay.assayid|default:"null" }};
 const specialSampleTypesData = {{ special_sample_types_json|safe }};
-let selectedStepId = null;
+let selectedStepId = {{ selected_step_id|default:"null" }};
 let isReorderMode = false;
 let draggedElement = null;
 const avid = {{ assay.avid|default:"null" }};
+const initialStepId = {{ selected_step_id|default:"null" }};
 
 </script>
 <script src="{% static 'js/settings_assay_configure.js' %}"></script>

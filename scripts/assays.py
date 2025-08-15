@@ -636,7 +636,7 @@ def unarchive_assay(request):
 
 
 @login_required
-def settings_assay_configure(request, assay_id):
+def settings_assay_configure(request, assay_id, step_id=None):
     """
     Configure page for an assay version - shows steps and allows editing
     """
@@ -692,6 +692,15 @@ def settings_assay_configure(request, assay_id):
         else:
             steps = []
         
+        # Validate step_id if provided
+        selected_step = None
+        if step_id is not None:
+            # Check if the provided step_id is valid for this assay
+            selected_step = next((step for step in steps if step['scid'] == step_id), None)
+            if not selected_step:
+                # Step ID not found or not part of this assay, redirect to assay config without step
+                return redirect('settings_assay_configure', assay_id=assay_id)
+        
         # Get special sample types for the step configuration
         cursor.execute("""SELECT * FROM velocity.special_samples ss JOIN velocity.special_sample_types sst ON sst.sstid=ss.special_type;""")
         special_sample_types = cursor.fetchall()
@@ -704,7 +713,9 @@ def settings_assay_configure(request, assay_id):
             'assay': assay_data,
             'steps': steps,
             'has_steps': len(steps) > 0,
-            'special_sample_types_json': json.dumps(special_sample_types)
+            'special_sample_types_json': json.dumps(special_sample_types),
+            'selected_step_id': step_id,
+            'selected_step': selected_step
         })
         
         return render(request, 'settings_assay_configure.html', context)
