@@ -339,7 +339,7 @@ textarea.form-input {
 
 .step-item.dragging {
     opacity: 0.5;
-    transform: rotate(2deg);
+    left: 10px;
 }
 
 .steps-list.reorder-mode .step-item {
@@ -1228,7 +1228,8 @@ textarea.form-input {
 
 .page-item.dragging {
     opacity: 0.5;
-    left: 10px
+    left: 10px;
+    position: relative;
 }
 
 .page-item-info {
