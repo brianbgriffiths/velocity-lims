@@ -1251,6 +1251,90 @@ def get_step_config(request):
                 # Return empty data on error
                 step_config['special_samples'] = {}
         
+        # Handle pages configuration - convert from array of ints to new object format
+        pages_with_details = []
+        if step_config['pages']:
+            try:
+                # Parse pages JSON if it's a string
+                pages_data = step_config['pages']
+                if isinstance(pages_data, str):
+                    pages_data = json.loads(pages_data)
+                
+                print(f"Pages data type: {type(pages_data)}")
+                print(f"Pages data: {pages_data}")
+                
+                # Handle different formats:
+                # New format: {enabled_ids: [1,2], configurations: {1: {config}}}
+                # Legacy format: [1, 2, 3]
+                
+                if isinstance(pages_data, dict) and 'enabled_ids' in pages_data:
+                    # New format
+                    enabled_ids = pages_data.get('enabled_ids', [])
+                    configurations = pages_data.get('configurations', {})
+                    
+                    if enabled_ids:
+                        # Fetch page details from database
+                        placeholders = ','.join(['%s'] * len(enabled_ids))
+                        cursor.execute(f"""
+                            SELECT pcid, page as page_name, show_after_complete
+                            FROM velocity.page_config 
+                            WHERE pcid IN ({placeholders})
+                            ORDER BY page_name
+                        """, enabled_ids)
+                        
+                        available_pages = {p['pcid']: p for p in cursor.fetchall()}
+                        
+                        # Build pages with their configurations
+                        for page_id in enabled_ids:
+                            if page_id in available_pages:
+                                page = available_pages[page_id].copy()
+                                if str(page_id) in configurations:
+                                    page['config'] = configurations[str(page_id)]
+                                elif page_id in configurations:
+                                    page['config'] = configurations[page_id]
+                                pages_with_details.append(page)
+                
+                else:
+                    # Legacy format handling - array of IDs
+                    page_ids = []
+                    page_configs = {}
+                    
+                    if isinstance(pages_data, list):
+                        for p in pages_data:
+                            if isinstance(p, dict) and p.get('pcid'):
+                                page_ids.append(p['pcid'])
+                                if p.get('config'):
+                                    page_configs[p['pcid']] = p['config']
+                            elif isinstance(p, (int, str)) and str(p).isdigit():
+                                page_ids.append(int(p))
+                    
+                    if page_ids:
+                        placeholders = ','.join(['%s'] * len(page_ids))
+                        cursor.execute(f"""
+                            SELECT pcid, page as page_name, show_after_complete
+                            FROM velocity.page_config 
+                            WHERE pcid IN ({placeholders})
+                            ORDER BY page_name
+                        """, page_ids)
+                        
+                        available_pages = {p['pcid']: p for p in cursor.fetchall()}
+                        
+                        for page_id in page_ids:
+                            if page_id in available_pages:
+                                page = available_pages[page_id].copy()
+                                if page_id in page_configs:
+                                    page['config'] = page_configs[page_id]
+                                pages_with_details.append(page)
+                        
+                print(f"Final pages with details: {pages_with_details}")
+            except Exception as e:
+                print(f"Error fetching page details: {e}")
+                # Fall back to original pages data if there's an error
+                pages_with_details = step_config['pages']
+        
+        # Update step_config with detailed page information
+        step_config['pages'] = pages_with_details
+        
         conn.close()
         
         return JsonResponse({
@@ -1283,7 +1367,7 @@ def save_step_config(request):
         containers = data.get('containers', [])
         special_samples_data = data.get('special_samples', {})  # New format: {enabled_ids: [...], configurations: {...}}
         create_samples = data.get('create_samples', 1)
-        pages = data.get('pages', [])
+        pages_data = data.get('pages', {})  # New format: {enabled_ids: [...], configurations: {...}}
         sample_data = data.get('sample_data', [])
         step_scripts = data.get('step_scripts', [])
         
@@ -1299,6 +1383,9 @@ def save_step_config(request):
         
         # Handle special samples in new format
         print(f"Received special_samples_data: {special_samples_data}")
+        
+        # Handle pages in new format
+        print(f"Received pages_data: {pages_data}")
         
         if not scid:
             return JsonResponse({'error': 'Step configuration ID (scid) is required'}, status=400)
@@ -1338,26 +1425,28 @@ def save_step_config(request):
         
         # Handle current special samples data (could be old or new format)
         current_special_samples_raw = current_config.get('special_samples', {}) or {}
-        current_pages = current_config.get('pages', []) or []
+        current_pages_raw = current_config.get('pages', {}) or {}
         current_sample_data = current_config.get('sample_data', []) or []
         current_step_scripts = current_config.get('step_scripts', []) or []
         
         # Compare all fields for changes
         containers_changed = (current_enabled_containers != enabled_containers or current_container_configs != container_configs)
         special_samples_changed = (current_special_samples_raw != special_samples_data)
+        pages_changed = (current_pages_raw != pages_data)
         
         config_unchanged = (
             current_config['step_name'] == step_name and
             current_config['create_samples'] == create_samples and
             not containers_changed and
             not special_samples_changed and
-            current_pages == pages and
+            not pages_changed and
             current_sample_data == sample_data and
             current_step_scripts == step_scripts
         )
         
         print(f"Containers changed: {containers_changed}")
         print(f"Special samples changed: {special_samples_changed}")
+        print(f"Pages changed: {pages_changed}")
         print(f"Config unchanged: {config_unchanged}")
         
         if config_unchanged:
@@ -1389,7 +1478,7 @@ def save_step_config(request):
                 WHERE scid = %s
                 RETURNING scid, step_name
             """, (step_name, json.dumps(containers_data), json.dumps(special_samples_data), 
-                  create_samples, json.dumps(pages), json.dumps(sample_data), 
+                  create_samples, json.dumps(pages_data), json.dumps(sample_data), 
                   json.dumps(step_scripts), scid))
             
             result = cursor.fetchone()
@@ -1578,5 +1667,45 @@ def get_special_samples(request):
         
     except json.JSONDecodeError as e:
         return JsonResponse({'error': f'Invalid JSON data: {str(e)}'}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+
+
+@login_required
+def get_available_pages(request):
+    """
+    Get all available pages from page_config table
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    
+    # Check permissions
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_view')):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+    
+    try:
+        conn = psycopg.connect(
+            dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass, 
+            host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row
+        )
+        cursor = conn.cursor()
+        
+        # Get all available pages
+        cursor.execute("""
+            SELECT pcid, page as page_name, show_after_complete
+            FROM velocity.page_config
+            ORDER BY page_name
+        """)
+        
+        available_pages = cursor.fetchall()
+        print(f"DEBUG: Returning {len(available_pages)} available pages")
+        
+        conn.close()
+        
+        return JsonResponse({
+            'status': 'success',
+            'available_pages': available_pages
+        })
+        
     except Exception as e:
         return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
