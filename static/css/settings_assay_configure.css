@@ -1214,16 +1214,21 @@ textarea.form-input {
     justify-content: space-between;
     padding: 12px 15px;
     margin-bottom: 10px;
-    background-color: var(--gray-lightest);
-    border: solid 1px var(--gray-med);
+    background-color: var(--white);
+    border: solid 1px #000000;
     border-radius: 3px;
     cursor: move;
     transition: all 0.2s ease;
 }
 
 .page-item:hover {
-    background-color: var(--gray-light);
-    border-color: var(--accent1);
+    background-color: var(--gray-lightest);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.page-item.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
 }
 
 .page-item.dragging {
@@ -1410,16 +1415,19 @@ textarea.form-input {
 .pages-section .enabled-pages {
     padding: 20px;
     min-height: 120px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 15px;
 }
 
 .pages-section .page-item {
-    margin-bottom: 0; /* Remove margin since we're using grid gap */
+    width: 100%;
+    margin-bottom: 10px;
+    border: solid 1px #000000; /* Black border like other cards */
+    background-color: var(--white);
+}
+
+.pages-section .page-item:last-child {
+    margin-bottom: 0;
 }
 
 .pages-section .no-pages {
-    grid-column: 1 / -1; /* Span all columns when empty */
     padding: 40px 0;
 }

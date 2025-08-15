@@ -2131,7 +2131,6 @@ function loadPagesInterface(pages) {
 
 function createPageItemHTML(page, index) {
     const config = page.config || {};
-    const order = config.order || (index + 1);
     const required = config.required ? 'Required' : 'Optional';
     const showAfterComplete = page.show_after_complete ? 'Show after complete' : '';
     
@@ -2141,7 +2140,7 @@ function createPageItemHTML(page, index) {
                 <i class="fas fa-grip-vertical page-item-drag"></i>
                 <div>
                     <div class="page-item-name">${page.page_name}</div>
-                    <div class="page-item-details">Order: ${order} • ${required} ${showAfterComplete ? '• ' + showAfterComplete : ''}</div>
+                    <div class="page-item-details">${required} ${showAfterComplete ? '• ' + showAfterComplete : ''}</div>
                 </div>
             </div>
             <div class="page-item-actions">
