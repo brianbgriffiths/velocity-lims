@@ -1423,6 +1423,7 @@ textarea.form-input {
     border: solid 1px #000000; /* Black border like other cards */
     background-color: var(--inputbg); /* Match container/special sample items */
     border-left-width: 4px;
+    box-sizing: border-box;
 }
 
 .pages-section .page-item:last-child {
