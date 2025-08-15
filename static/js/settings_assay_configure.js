@@ -339,7 +339,10 @@ function loadStepConfigurationData(stepId) {
             document.getElementById('createSamples').checked = config.create_samples === 1;
             
             // Populate JSON fields with proper formatting
-            document.getElementById('pagesConfig').value = JSON.stringify(config.pages || [], null, 2);
+            const pagesConfigElement = document.getElementById('pagesConfig');
+            if (pagesConfigElement) {
+                pagesConfigElement.value = JSON.stringify(config.pages || [], null, 2);
+            }
             document.getElementById('sampleDataConfig').value = JSON.stringify(config.sample_data || [], null, 2);
             document.getElementById('stepScriptsConfig').value = JSON.stringify(config.step_scripts || [], null, 2);
             
@@ -2199,7 +2202,10 @@ function getPagesFromInterface() {
 }
 
 function updatePageConfigTextarea(pages) {
-    document.getElementById('pagesConfig').value = JSON.stringify(pages, null, 2);
+    const pagesConfigElement = document.getElementById('pagesConfig');
+    if (pagesConfigElement) {
+        pagesConfigElement.value = JSON.stringify(pages, null, 2);
+    }
 }
 
 function showPageSelector() {
