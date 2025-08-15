@@ -831,50 +831,42 @@ function hideSpecialSampleSelector() {
 
 function loadAllAvailableSpecialSamples() {
     console.log('loadAllAvailableSpecialSamples called');
-    console.log('specialSampleTypes:', specialSampleTypes);
+    console.log('specialSampleTypesData from Django:', specialSampleTypesData);
     
-    if (!specialSampleTypes || specialSampleTypes.length === 0) {
-        console.warn('No special sample types available to load samples for');
+    // Clear the available samples array
+    availableSpecialSamples = [];
+    
+    // Check if we have special sample data from Django
+    if (!specialSampleTypesData || !Array.isArray(specialSampleTypesData)) {
+        console.warn('No specialSampleTypesData available');
         return;
     }
     
-    // Load special samples for each type
-    specialSampleTypes.forEach(type => {
-        console.log(`Loading special samples for type ${type.sstid} (${type.special_type_name})`);
-        
-        const pyoptions = {
-            data: {
-                special_type_id: type.sstid
-            },
-            csrf: csrf,
-            url: 'get_special_samples',
-            submit_mode: 'silent'
-        };
-        
-        pylims_post(pyoptions).then(result => {
-            console.log(`Special samples response for type ${type.sstid}:`, result);
-            if (result.status === 'success') {
-                const newSamples = result.special_samples || [];
-                console.log(`New samples from API for type ${type.sstid}:`, newSamples);
-                
-                // Merge new samples with existing ones, avoiding duplicates
-                newSamples.forEach(newSample => {
-                    if (!availableSpecialSamples.find(existing => existing.ssid === newSample.ssid)) {
-                        availableSpecialSamples.push(newSample);
-                        console.log(`Added special sample ${newSample.ssid} (${newSample.special_name}) to available samples`);
-                    } else {
-                        console.log(`Special sample ${newSample.ssid} (${newSample.special_name}) already exists in available samples`);
-                    }
-                });
-                
-                console.log('All available special samples after loading type', type.sstid, ':', availableSpecialSamples);
-            } else {
-                console.error(`Failed to load special samples for type ${type.sstid}:`, result);
+    // Filter and populate availableSpecialSamples from the Django data
+    specialSampleTypesData.forEach(sample => {
+        // Only include samples that have a valid special_type and are active
+        if (sample.special_type && sample.special_status === 1) {
+            // Check if this sample's type should be shown in config
+            const sampleType = specialSampleTypes.find(type => type.sstid === sample.special_type);
+            if (sampleType && (sampleType.show_in_config === true || sampleType.show_in_config === 1)) {
+                availableSpecialSamples.push(sample);
+                console.log(`Added special sample ${sample.ssid} (${sample.special_name}) of type ${sample.special_type}`);
             }
-        }).catch(error => {
-            console.error(`Error loading special samples for type ${type.sstid}:`, error);
-        });
+        }
     });
+    
+    console.log(`Loaded ${availableSpecialSamples.length} available special samples from Django data:`, availableSpecialSamples);
+    
+    // Group samples by type for debugging
+    const samplesByType = {};
+    availableSpecialSamples.forEach(sample => {
+        if (!samplesByType[sample.special_type]) {
+            samplesByType[sample.special_type] = [];
+        }
+        samplesByType[sample.special_type].push(sample);
+    });
+    
+    console.log('Available special samples grouped by type:', samplesByType);
 }
 
 function renderAvailableSpecialSamples(currentSpecialSampleType) {
