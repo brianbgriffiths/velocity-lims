@@ -353,6 +353,7 @@ function loadStepConfigurationData(stepId) {
             loadSpecialSamplesInterface(config.special_samples || []);
             
             // Load pages into visual interface
+            console.log('About to call loadPagesInterface with:', config.pages);
             loadPagesInterface(config.pages || []);
             
             // Store current step config globally for page functions
@@ -2058,7 +2059,16 @@ function clearStepSelection() {
 function loadPagesInterface(pages) {
     console.log('Loading pages interface with data:', pages);
     
+    // Debug: Check if element exists and log details
     const enabledPagesDiv = document.getElementById('enabledPages');
+    console.log('enabledPages element:', enabledPagesDiv);
+    console.log('All elements with enabledPages class:', document.querySelectorAll('.enabled-pages'));
+    console.log('All elements with id enabledPages:', document.querySelectorAll('#enabledPages'));
+    
+    if (!enabledPagesDiv) {
+        console.error('Pages interface container not found in DOM');
+        return;
+    }
     
     if (!pages || pages.length === 0) {
         enabledPagesDiv.innerHTML = '<div class="no-pages">No pages configured</div>';
