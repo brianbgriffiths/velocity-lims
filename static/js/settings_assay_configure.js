@@ -479,10 +479,23 @@ function initializeSpecialSampleTypes() {
         return showInConfig;
     });
     
-    console.log('Filtered special sample types (only show_in_config = true):', filteredTypes);
+    // Remove duplicates based on sstid to ensure each type appears only once
+    const uniqueTypes = [];
+    const seenIds = new Set();
     
-    // Update the global specialSampleTypes to only include filtered types
-    specialSampleTypes = filteredTypes;
+    filteredTypes.forEach(type => {
+        if (!seenIds.has(type.sstid)) {
+            seenIds.add(type.sstid);
+            uniqueTypes.push(type);
+        } else {
+            console.warn(`Duplicate special sample type found and removed: ${type.sstid} (${type.special_type_name})`);
+        }
+    });
+    
+    console.log('Filtered and deduplicated special sample types:', uniqueTypes);
+    
+    // Update the global specialSampleTypes to only include unique filtered types
+    specialSampleTypes = uniqueTypes;
     
     if (specialSampleTypes.length === 0) {
         console.warn('No special sample types with show_in_config = true found');
@@ -808,7 +821,7 @@ function showSpecialSampleSelector(type) {
     console.log('Current availableSpecialSamples:', availableSpecialSamples);
     
     // Since we preload all samples, just render them directly
-    renderAvailableSpecialSamples();
+    renderAvailableSpecialSamples(type);
 }
 
 function hideSpecialSampleSelector() {
@@ -864,12 +877,12 @@ function loadAllAvailableSpecialSamples() {
     });
 }
 
-function renderAvailableSpecialSamples() {
+function renderAvailableSpecialSamples(currentSpecialSampleType) {
     const listDiv = document.getElementById('availableSpecialSamplesList');
     
     console.log('renderAvailableSpecialSamples called');
-    console.log('availableSpecialSamples:', availableSpecialSamples);
     console.log('currentSpecialSampleType:', currentSpecialSampleType);
+    console.log('specialSampleTypesData:', specialSampleTypesData);
     console.log('enabledSpecialSampleIds:', enabledSpecialSampleIds);
     
     if (!currentSpecialSampleType) {
@@ -878,7 +891,7 @@ function renderAvailableSpecialSamples() {
         return;
     }
     
-    // Filter samples by current type
+    // Filter samples by current type from specialSampleTypesData
     const samplesForType = availableSpecialSamples.filter(sample => 
         sample.special_type === currentSpecialSampleType
     );
