@@ -612,8 +612,8 @@ function loadSpecialSamplesInterface(specialSamplesData) {
                     }
                     
                     // Create and add sample item
-                    const sampleElement = createSpecialSampleItemHTML(sample, specialType);
-                    bucket.appendChild(sampleElement);
+                    const sampleHTML = createSpecialSampleItemHTML(sample, specialType);
+                    bucket.insertAdjacentHTML('beforeend', sampleHTML);
                     
                     // Update tracking
                     enabledSpecialSampleIds[specialType].add(sampleId);
