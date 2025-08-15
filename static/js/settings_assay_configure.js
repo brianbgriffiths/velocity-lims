@@ -354,7 +354,13 @@ function loadStepConfigurationData(stepId) {
             
             // Load pages into visual interface
             console.log('About to call loadPagesInterface with:', config.pages);
-            loadPagesInterface(config.pages || []);
+            console.log('Before loadPagesInterface - checking container existence:');
+            console.log('enabledContainers:', document.getElementById('enabledContainers'));
+            console.log('enabledPages (before delay):', document.getElementById('enabledPages'));
+            setTimeout(() => {
+                console.log('enabledPages (after delay):', document.getElementById('enabledPages'));
+                loadPagesInterface(config.pages || []);
+            }, 100); // Small delay to ensure DOM is ready
             
             // Store current step config globally for page functions
             currentStepConfig = config;
