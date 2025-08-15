@@ -842,16 +842,27 @@ function loadAllAvailableSpecialSamples() {
         return;
     }
     
-    // Filter and populate availableSpecialSamples from the Django data
-    specialSampleTypesData.forEach(sample => {
-        // Only include samples that have a valid special_type and are active
-        if (sample.special_type && sample.special_status === 1) {
+    console.log(`Processing ${specialSampleTypesData.length} total special samples from Django`);
+    
+    // Process special samples from Django data - only active ones (status 2)
+    specialSampleTypesData.forEach((sample, index) => {
+        console.log(`Processing sample ${index}:`, sample);
+        
+        // Only include active samples (status 2) that have a special_type
+        if (sample.special_type && sample.special_status === 2) {
             // Check if this sample's type should be shown in config
             const sampleType = specialSampleTypes.find(type => type.sstid === sample.special_type);
+            console.log(`Sample ${sample.ssid} type ${sample.special_type} - found sampleType:`, sampleType);
+            
             if (sampleType && (sampleType.show_in_config === true || sampleType.show_in_config === 1)) {
                 availableSpecialSamples.push(sample);
-                console.log(`Added special sample ${sample.ssid} (${sample.special_name}) of type ${sample.special_type}`);
+                console.log(`✓ Added special sample ${sample.ssid} (${sample.special_name}) of type ${sample.special_type} (status: ${sample.special_status})`);
+            } else {
+                console.log(`✗ Skipped sample ${sample.ssid} - type not configured for display or not found`);
             }
+        } else {
+            const reason = !sample.special_type ? 'no special_type' : `status ${sample.special_status} (not active)`;
+            console.log(`✗ Skipped sample ${sample.ssid} - ${reason}`);
         }
     });
     
@@ -867,6 +878,15 @@ function loadAllAvailableSpecialSamples() {
     });
     
     console.log('Available special samples grouped by type:', samplesByType);
+    
+    // Show detailed info for each type
+    Object.keys(samplesByType).forEach(typeId => {
+        const typeName = specialSampleTypeNames[typeId] || 'Unknown';
+        console.log(`Type ${typeId} (${typeName}): ${samplesByType[typeId].length} samples`);
+        samplesByType[typeId].forEach(sample => {
+            console.log(`  - ${sample.ssid}: ${sample.special_name} (status: ${sample.special_status})`);
+        });
+    });
 }
 
 function renderAvailableSpecialSamples(currentSpecialSampleType) {
