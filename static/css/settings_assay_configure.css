@@ -1155,3 +1155,223 @@ textarea.form-input {
     transform: translateY(1px);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
+
+/* Page Configuration Styles */
+.pages-config-panel {
+    border: solid 1px var(--gray-med);
+    border-radius: 3px;
+    background-color: var(--white);
+}
+
+.pages-config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background-color: var(--gray-lightest);
+    border-bottom: solid 1px var(--gray-med);
+    border-radius: 3px 3px 0 0;
+}
+
+.pages-config-header span {
+    font-size: 14px;
+    font-weight: bold;
+    color: var(--gray-darkest);
+}
+
+.btn-add-page {
+    background-color: var(--accent1);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-add-page:hover {
+    background-color: var(--accent2);
+}
+
+.enabled-pages {
+    padding: 15px;
+    min-height: 100px;
+}
+
+.no-pages {
+    text-align: center;
+    color: var(--gray-dark);
+    font-style: italic;
+    padding: 30px 0;
+}
+
+.page-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    background-color: var(--gray-lightest);
+    border: solid 1px var(--gray-med);
+    border-radius: 3px;
+    cursor: move;
+    transition: all 0.2s ease;
+}
+
+.page-item:hover {
+    background-color: var(--gray-light);
+    border-color: var(--accent1);
+}
+
+.page-item.dragging {
+    opacity: 0.5;
+    transform: rotate(2deg);
+}
+
+.page-item-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.page-item-drag {
+    cursor: move;
+    color: var(--gray-dark);
+    font-size: 14px;
+}
+
+.page-item-name {
+    font-weight: bold;
+    color: var(--gray-darkest);
+}
+
+.page-item-details {
+    font-size: 12px;
+    color: var(--gray-dark);
+}
+
+.page-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.page-config-button {
+    background-color: var(--blue);
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.page-config-button:hover {
+    background-color: var(--blue-dark);
+}
+
+/* Page Configuration Modal */
+.page-config-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+}
+
+.page-config-modal.show {
+    display: flex;
+}
+
+.page-config-dialog {
+    background-color: white;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.page-config-header {
+    padding: 20px 25px 15px;
+    border-bottom: solid 1px var(--gray-med);
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--gray-darkest);
+}
+
+.page-config-content {
+    padding: 20px 25px;
+}
+
+.page-config-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 15px 25px 20px;
+    border-top: solid 1px var(--gray-med);
+}
+
+.btn-page-config-save {
+    background-color: var(--accent1);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.btn-page-config-save:hover {
+    background-color: var(--accent2);
+}
+
+.btn-page-config-cancel {
+    background-color: var(--gray-med);
+    color: var(--gray-darkest);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-page-config-cancel:hover {
+    background-color: var(--gray-dark);
+    color: white;
+}
+
+.btn-remove-page {
+    background-color: var(--pink);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: auto;
+}
+
+.btn-remove-page:hover {
+    background-color: var(--pink-dark);
+    border-color: var(--pink-darkest);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-remove-page:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}

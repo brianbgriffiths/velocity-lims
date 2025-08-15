@@ -148,11 +148,29 @@
                                     </div>
                                     
                                     <!-- Special Samples Configuration Cards will be generated here dynamically -->
+                                    
+                                    <!-- Pages Configuration -->
+                                    <div class="config-card">
+                                        <label class="form-label">Pages Configuration</label>
+                                        <div class="pages-config-panel">
+                                            <div class="pages-config-header">
+                                                <span>Enabled Pages</span>
+                                                <button type="button" class="btn-add-page" onclick="showPageSelector()">
+                                                    <i class="fas fa-plus"></i> Add
+                                                </button>
+                                            </div>
+                                            <div class="enabled-pages" id="enabledPages">
+                                                <div class="no-pages">No pages configured</div>
+                                            </div>
+                                        </div>
+                                        <!-- Hidden textarea for data storage -->
+                                        <textarea id="pagesConfig" style="display: none;">[]</textarea>
+                                    </div>
                                 </div>
                                 
-                                <div class="form-group">
-                                    <label class="form-label" for="pagesConfig">Pages Configuration</label>
-                                    <textarea id="pagesConfig" class="form-input" rows="4" placeholder="JSON array of page configurations">[]</textarea>
+                                <div class="form-group" style="display: none;">
+                                    <label class="form-label" for="pagesConfigOld">Pages Configuration (Old)</label>
+                                    <textarea id="pagesConfigOld" class="form-input" rows="4" placeholder="JSON array of page configurations">[]</textarea>
                                 </div>
                                 
                                 <div class="form-group">
@@ -386,6 +404,85 @@
                     <button type="button" class="btn-container-config-cancel" onclick="hideContainerConfigModal()">Cancel</button>
                     <button type="button" class="btn-remove-container" onclick="removeCurrentContainer()">Remove Container</button>
                     <button type="button" class="btn-container-config-save" onclick="saveContainerConfig()">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Page Selector Modal -->
+    <div class="container-selector-modal" id="pageSelectorModal">
+        <div class="container-selector-dialog">
+            <div class="container-selector-header">
+                <span><i class="fas fa-file-alt"></i> Add Page</span>
+                <button class="container-selector-close" onclick="hidePageSelector()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="container-selector-content">
+                <div id="availablePagesList">
+                    <div style="text-align: center; padding: 20px; color: var(--gray-med);">
+                        Loading available pages...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Page Configuration Modal -->
+    <div class="page-config-modal" id="pageConfigModal">
+        <div class="page-config-dialog">
+            <div class="page-config-header">
+                <span><i class="fas fa-cog"></i> Configure <span id="configPageName">Page</span></span>
+            </div>
+            <div class="page-config-content">
+                <div class="config-section">
+                    <div class="config-section-title">Page Ordering</div>
+                    <div class="config-row">
+                        <label>Order:</label>
+                        <input type="number" id="pageOrder" min="1" max="99" value="1">
+                        <span>Position in step sequence</span>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="config-section-title">Page Display</div>
+                    <div class="config-row">
+                        <label>
+                            <input type="checkbox" id="pageRequired" style="margin-right: 5px;">
+                            Required
+                        </label>
+                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
+                            User must complete this page to proceed
+                        </span>
+                    </div>
+                    <div class="config-row">
+                        <label>
+                            <input type="checkbox" id="pageShowAfterComplete" style="margin-right: 5px;">
+                            Show after completion
+                        </label>
+                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
+                            Display page after step completion
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="config-section-title">Page Conditions</div>
+                    <div class="config-row">
+                        <label>Show when:</label>
+                        <select id="pageCondition">
+                            <option value="always">Always</option>
+                            <option value="has_samples">Has samples</option>
+                            <option value="has_errors">Has errors</option>
+                            <option value="script_condition">Script condition</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="page-config-buttons">
+                    <button type="button" class="btn-page-config-cancel" onclick="hidePageConfigModal()">Cancel</button>
+                    <button type="button" class="btn-remove-page" onclick="removeCurrentPage()">Remove Page</button>
+                    <button type="button" class="btn-page-config-save" onclick="savePageConfig()">Save Configuration</button>
                 </div>
             </div>
         </div>

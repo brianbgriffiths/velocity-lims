@@ -349,6 +349,12 @@ function loadStepConfigurationData(stepId) {
             // Load special samples into visual interfaces
             loadSpecialSamplesInterface(config.special_samples || []);
             
+            // Load pages into visual interface
+            loadPagesInterface(config.pages || []);
+            
+            // Store current step config globally for page functions
+            currentStepConfig = config;
+            
             // Load special sample configurations
             if (config.special_sample_config) {
                 specialSampleConfigs = config.special_sample_config;
@@ -397,8 +403,10 @@ function saveStepConfiguration(isUnifiedSave = false) {
         // Get special samples from visual interfaces (new format matching containers)
         const specialSamples = getSpecialSamplesFromInterface();
         
+        // Get pages from visual interface (new format matching containers)
+        const pages = getPagesFromInterface();
+        
         // Parse other JSON fields
-        const pages = JSON.parse(document.getElementById('pagesConfig').value || '[]');
         const sampleData = JSON.parse(document.getElementById('sampleDataConfig').value || '[]');
         const stepScripts = JSON.parse(document.getElementById('stepScriptsConfig').value || '[]');
         
@@ -486,6 +494,11 @@ let enabledSpecialSampleIds = {}; // Will be populated dynamically based on load
 let currentSpecialSampleType = null;
 let specialSampleTypes = specialSampleTypesData || []; // Use data from server
 let specialSampleTypeNames = {}; // Will be populated from server data
+
+// Page Management Functions
+let availablePagesData = [];
+let currentPageConfig = null;
+let currentStepConfig = null;
 
 // Initialize special sample types data on page load
 function initializeSpecialSampleTypes() {
@@ -2035,4 +2048,364 @@ function clearStepSelection() {
     window.history.pushState({}, '', newUrl);
     
     console.log('Cleared step selection');
+}
+
+// ===== PAGE CONFIGURATION FUNCTIONS =====
+
+function loadPagesInterface(pages) {
+    console.log('Loading pages interface with data:', pages);
+    
+    const enabledPagesDiv = document.getElementById('enabledPages');
+    
+    if (!pages || pages.length === 0) {
+        enabledPagesDiv.innerHTML = '<div class="no-pages">No pages configured</div>';
+        return;
+    }
+    
+    const pagesHTML = pages.map((page, index) => createPageItemHTML(page, index)).join('');
+    enabledPagesDiv.innerHTML = pagesHTML;
+    
+    // Enable drag and drop
+    enablePageDragAndDrop();
+    
+    console.log('Pages interface loaded successfully');
+}
+
+function createPageItemHTML(page, index) {
+    const config = page.config || {};
+    const order = config.order || (index + 1);
+    const required = config.required ? 'Required' : 'Optional';
+    const showAfterComplete = page.show_after_complete ? 'Show after complete' : '';
+    
+    return `
+        <div class="page-item" data-page-id="${page.pcid}" data-index="${index}" draggable="true">
+            <div class="page-item-info">
+                <i class="fas fa-grip-vertical page-item-drag"></i>
+                <div>
+                    <div class="page-item-name">${page.page_name}</div>
+                    <div class="page-item-details">Order: ${order} • ${required} ${showAfterComplete ? '• ' + showAfterComplete : ''}</div>
+                </div>
+            </div>
+            <div class="page-item-actions">
+                <button class="page-config-button" onclick="showPageConfigModal(${page.pcid}, '${page.page_name}')">
+                    <i class="fas fa-cog"></i> Config
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function enablePageDragAndDrop() {
+    const container = document.getElementById('enabledPages');
+    const draggables = container.querySelectorAll('.page-item');
+    
+    draggables.forEach(draggable => {
+        draggable.removeEventListener('dragstart', handlePageDragStart);
+        draggable.removeEventListener('dragend', handlePageDragEnd);
+        draggable.addEventListener('dragstart', handlePageDragStart);
+        draggable.addEventListener('dragend', handlePageDragEnd);
+    });
+    
+    container.removeEventListener('dragover', handlePageDragOver);
+    container.removeEventListener('drop', handlePageDrop);
+    container.addEventListener('dragover', handlePageDragOver);
+    container.addEventListener('drop', handlePageDrop);
+}
+
+function handlePageDragStart(e) {
+    e.target.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handlePageDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    const container = document.getElementById('enabledPages');
+    const afterElement = getPageDragAfterElement(container, e.clientY);
+    const dragging = document.querySelector('.page-item.dragging');
+    
+    if (afterElement == null) {
+        container.appendChild(dragging);
+    } else {
+        container.insertBefore(dragging, afterElement);
+    }
+}
+
+function handlePageDrop(e) {
+    e.preventDefault();
+    updatePagesFromDOM();
+}
+
+function handlePageDragEnd(e) {
+    e.target.classList.remove('dragging');
+}
+
+function getPageDragAfterElement(container, y) {
+    const draggableElements = [...container.querySelectorAll('.page-item:not(.dragging)')];
+    
+    return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        
+        if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+        } else {
+            return closest;
+        }
+    }, { offset: Number.NEGATIVE_INFINITY }).element;
+}
+
+function updatePagesFromDOM() {
+    const pageItems = document.querySelectorAll('#enabledPages .page-item');
+    const pages = [];
+    
+    pageItems.forEach((item, index) => {
+        const pageId = parseInt(item.dataset.pageId);
+        const pageData = currentStepConfig.pages.find(p => p.pcid === pageId);
+        if (pageData) {
+            // Update the order in the config
+            if (!pageData.config) pageData.config = {};
+            pageData.config.order = index + 1;
+            pages.push(pageData);
+        }
+    });
+    
+    currentStepConfig.pages = pages;
+    updatePageConfigTextarea(getPagesFromInterface());
+    console.log('Updated pages order from DOM:', pages);
+}
+
+function getPagesFromInterface() {
+    const pageItems = document.querySelectorAll('#enabledPages .page-item');
+    const enabled_ids = [];
+    const configurations = {};
+    
+    pageItems.forEach((item, index) => {
+        const pageId = parseInt(item.dataset.pageId);
+        enabled_ids.push(pageId);
+        
+        // Find the current page data to get its configuration
+        const pageData = currentStepConfig.pages.find(p => p.pcid === pageId);
+        if (pageData && pageData.config) {
+            configurations[pageId] = pageData.config;
+        }
+    });
+    
+    return {
+        enabled_ids: enabled_ids,
+        configurations: configurations
+    };
+}
+
+function updatePageConfigTextarea(pages) {
+    document.getElementById('pagesConfig').value = JSON.stringify(pages, null, 2);
+}
+
+function showPageSelector() {
+    loadAvailablePages();
+    document.getElementById('pageSelectorModal').classList.add('show');
+}
+
+function hidePageSelector() {
+    document.getElementById('pageSelectorModal').classList.remove('show');
+}
+
+function loadAvailablePages() {
+    const pyoptions = {
+        data: {},
+        csrf: csrf,
+        url: '../get_available_pages',
+        submit_mode: 'silent'
+    };
+    
+    console.log('Loading available pages...');
+    
+    pylims_post(pyoptions).then(result => {
+        console.log('Available pages loaded:', result);
+        if (result.status === 'success') {
+            availablePagesData = result.available_pages;
+            renderAvailablePages();
+        } else {
+            console.error('Error loading available pages:', result.error);
+            pylims_ui.error('Failed to load available pages: ' + result.error);
+        }
+    }).catch(error => {
+        console.error('Error loading available pages:', error);
+        pylims_ui.error('Failed to load available pages');
+    });
+}
+
+function renderAvailablePages() {
+    const container = document.getElementById('availablePagesList');
+    
+    if (!availablePagesData || availablePagesData.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--gray-med);">No pages available</div>';
+        return;
+    }
+    
+    // Get currently enabled page IDs
+    const enabledPageIds = new Set();
+    if (currentStepConfig && currentStepConfig.pages) {
+        currentStepConfig.pages.forEach(page => {
+            enabledPageIds.add(page.pcid);
+        });
+    }
+    
+    const availableHTML = availablePagesData.map(page => {
+        const isEnabled = enabledPageIds.has(page.pcid);
+        const showAfterComplete = page.show_after_complete ? 'Show after complete' : '';
+        
+        return `
+            <div class="available-item ${isEnabled ? 'disabled' : ''}" onclick="${isEnabled ? '' : `addPage(${page.pcid})`}">
+                <div class="available-item-info">
+                    <div class="available-item-name">
+                        <i class="fas fa-file-alt"></i>
+                        ${page.page_name}
+                    </div>
+                    <div class="available-item-details">${showAfterComplete}</div>
+                </div>
+                ${isEnabled ? '<div class="available-item-status">Already added</div>' : ''}
+            </div>
+        `;
+    }).join('');
+    
+    container.innerHTML = availableHTML;
+}
+
+function addPage(pageId) {
+    console.log('Adding page:', pageId);
+    
+    // Find the page data
+    const pageData = availablePagesData.find(page => page.pcid === pageId);
+    if (!pageData) {
+        console.error('Page not found:', pageId);
+        return;
+    }
+    
+    // Initialize pages array if it doesn't exist
+    if (!currentStepConfig.pages) {
+        currentStepConfig.pages = [];
+    }
+    
+    // Check if page is already added
+    const existingPage = currentStepConfig.pages.find(page => page.pcid === pageId);
+    if (existingPage) {
+        console.log('Page already added:', pageId);
+        return;
+    }
+    
+    // Add page with default configuration
+    const newPage = {
+        pcid: pageData.pcid,
+        page_name: pageData.page_name,
+        show_after_complete: pageData.show_after_complete,
+        config: {
+            order: currentStepConfig.pages.length + 1,
+            required: false,
+            show_when: 'always'
+        }
+    };
+    
+    currentStepConfig.pages.push(newPage);
+    
+    // Update interface
+    loadPagesInterface(currentStepConfig.pages);
+    updatePageConfigTextarea(getPagesFromInterface());
+    
+    // Update available pages list
+    renderAvailablePages();
+    
+    console.log('Page added successfully:', newPage);
+    hidePageSelector();
+}
+
+function removePage(pageId) {
+    console.log('Removing page:', pageId);
+    
+    if (!currentStepConfig.pages) {
+        return;
+    }
+    
+    // Remove page from array
+    currentStepConfig.pages = currentStepConfig.pages.filter(page => page.pcid !== pageId);
+    
+    // Update interface
+    loadPagesInterface(currentStepConfig.pages);
+    updatePageConfigTextarea(getPagesFromInterface());
+    
+    console.log('Page removed successfully');
+}
+
+function showPageConfigModal(pageId, pageName) {
+    console.log('Showing page config modal for:', pageId, pageName);
+    
+    // Find the page data
+    const pageData = currentStepConfig.pages.find(page => page.pcid === pageId);
+    if (!pageData) {
+        console.error('Page not found:', pageId);
+        return;
+    }
+    
+    currentPageConfig = pageData;
+    
+    // Update modal title
+    document.getElementById('configPageName').textContent = pageName;
+    
+    // Load current configuration
+    const config = pageData.config || {};
+    
+    document.getElementById('pageOrder').value = config.order || 1;
+    document.getElementById('pageRequired').checked = config.required || false;
+    document.getElementById('pageShowAfterComplete').checked = pageData.show_after_complete || false;
+    document.getElementById('pageCondition').value = config.show_when || 'always';
+    
+    // Show modal
+    document.getElementById('pageConfigModal').classList.add('show');
+}
+
+function hidePageConfigModal() {
+    document.getElementById('pageConfigModal').classList.remove('show');
+    currentPageConfig = null;
+}
+
+function savePageConfig() {
+    if (!currentPageConfig) {
+        console.error('No page config to save');
+        return;
+    }
+    
+    // Get form values
+    const order = parseInt(document.getElementById('pageOrder').value) || 1;
+    const required = document.getElementById('pageRequired').checked;
+    const showAfterComplete = document.getElementById('pageShowAfterComplete').checked;
+    const showWhen = document.getElementById('pageCondition').value;
+    
+    // Update page configuration
+    if (!currentPageConfig.config) {
+        currentPageConfig.config = {};
+    }
+    
+    currentPageConfig.config.order = order;
+    currentPageConfig.config.required = required;
+    currentPageConfig.config.show_when = showWhen;
+    currentPageConfig.show_after_complete = showAfterComplete;
+    
+    // Update interface
+    loadPagesInterface(currentStepConfig.pages);
+    updatePageConfigTextarea(getPagesFromInterface());
+    
+    console.log('Page configuration saved:', currentPageConfig);
+    hidePageConfigModal();
+}
+
+function removeCurrentPage() {
+    if (!currentPageConfig) {
+        console.error('No page to remove');
+        return;
+    }
+    
+    const pageId = currentPageConfig.pcid;
+    hidePageConfigModal();
+    removePage(pageId);
 }
