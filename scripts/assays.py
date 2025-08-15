@@ -696,6 +696,7 @@ def settings_assay_configure(request, assay_id):
         cursor.execute("""
             SELECT sstid, special_type_name, show_in_config
             FROM velocity.special_sample_types
+            WHERE show_in_config = true
             ORDER BY special_type_name
         """)
         special_sample_types = cursor.fetchall()
@@ -1128,7 +1129,7 @@ def get_step_config(request):
                             SELECT ss.*, sst.sstid as type_id, sst.special_type_name
                             FROM velocity.special_samples ss
                             JOIN velocity.special_sample_types sst ON ss.special_type = sst.sstid
-                            WHERE ss.ssid IN ({placeholders}) AND ss.special_status = 1
+                            WHERE ss.ssid IN ({placeholders}) AND ss.special_status = 2
                             ORDER BY sst.special_type_name, ss.special_name
                         """, special_samples_ids)
                         
@@ -1161,7 +1162,7 @@ def get_step_config(request):
                         SELECT ss.*, sst.sstid as type_id, sst.special_type_name
                         FROM velocity.special_samples ss
                         JOIN velocity.special_sample_types sst ON ss.special_type = sst.sstid
-                        WHERE ss.ssid IN ({placeholders}) AND ss.special_status = 1
+                        WHERE ss.ssid IN ({placeholders}) AND ss.special_status = 2
                         ORDER BY sst.special_type_name, ss.special_name
                     """, special_samples_data)
                     
@@ -1465,6 +1466,27 @@ def get_special_samples(request):
         cursor = conn.cursor()
         
         # Get special samples by type ID, joining with special_sample_types
+        # First check if any samples exist for this type (regardless of status)
+        cursor.execute("""
+            SELECT COUNT(*) as total_count
+            FROM velocity.special_samples ss
+            WHERE ss.special_type = %s
+        """, (special_type_id,))
+        
+        total_count = cursor.fetchone()['total_count']
+        print(f"DEBUG: Found {total_count} total special samples for type {special_type_id}")
+        
+        # Check active samples
+        cursor.execute("""
+            SELECT COUNT(*) as active_count
+            FROM velocity.special_samples ss
+            WHERE ss.special_type = %s AND ss.special_status = 1
+        """, (special_type_id,))
+        
+        active_count = cursor.fetchone()['active_count']
+        print(f"DEBUG: Found {active_count} active special samples for type {special_type_id}")
+        
+        # Get all samples for this type with status info
         cursor.execute("""
             SELECT ss.ssid, ss.special_name, ss.special_type, ss.part_number, ss.color, 
                    ss.custom_color, ss.custom_icon, ss.default_well, ss.default_index,
@@ -1476,6 +1498,7 @@ def get_special_samples(request):
         """, (special_type_id,))
         
         special_samples = cursor.fetchall()
+        print(f"DEBUG: Returning {len(special_samples)} special samples for type {special_type_id}")
         
         conn.close()
         
