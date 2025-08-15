@@ -47,7 +47,7 @@ def archive_assay_version(cursor, avid):
             current_version['version_patch'],
             current_version['modified'],
             current_version['assay'],
-            current_version['assay_steps']
+            json.dumps(current_version['assay_steps']) if current_version['assay_steps'] is not None else None
         ))
         
         archive_result = cursor.fetchone()
