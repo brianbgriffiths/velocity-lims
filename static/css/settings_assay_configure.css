@@ -1375,3 +1375,51 @@ textarea.form-input {
     transform: translateY(1px);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
+
+/* Full Width Pages Section Styles */
+.pages-section {
+    width: 100%;
+    margin: 20px 0;
+    background-color: var(--white);
+    border: solid 1px var(--gray-med);
+    border-radius: 3px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background-color: var(--gray-lightest);
+    border-bottom: solid 1px var(--gray-med);
+    border-radius: 3px 3px 0 0;
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: bold;
+    color: var(--gray-darkest);
+}
+
+.pages-section .pages-config-panel {
+    border: none;
+    border-radius: 0 0 3px 3px;
+}
+
+.pages-section .enabled-pages {
+    padding: 20px;
+    min-height: 120px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+}
+
+.pages-section .page-item {
+    margin-bottom: 0; /* Remove margin since we're using grid gap */
+}
+
+.pages-section .no-pages {
+    grid-column: 1 / -1; /* Span all columns when empty */
+    padding: 40px 0;
+}

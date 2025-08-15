@@ -148,24 +148,23 @@
                                     </div>
                                     
                                     <!-- Special Samples Configuration Cards will be generated here dynamically -->
-                                    
-                                    <!-- Pages Configuration -->
-                                    <div class="config-card">
-                                        <label class="form-label">Pages Configuration</label>
-                                        <div class="pages-config-panel">
-                                            <div class="pages-config-header">
-                                                <span>Enabled Pages</span>
-                                                <button type="button" class="btn-add-page" onclick="showPageSelector()">
-                                                    <i class="fas fa-plus"></i> Add
-                                                </button>
-                                            </div>
-                                            <div class="enabled-pages" id="enabledPages">
-                                                <div class="no-pages">No pages configured</div>
-                                            </div>
-                                        </div>
-                                        <!-- Hidden textarea for data storage -->
-                                        <textarea id="pagesConfig" style="display: none;">[]</textarea>
+                                </div>
+                                
+                                <!-- Pages Configuration - Full Width Section -->
+                                <div class="pages-section">
+                                    <div class="section-header">
+                                        <h3>Pages Configuration</h3>
+                                        <button type="button" class="btn-primary" onclick="showPageSelector()">
+                                            <i class="fas fa-plus"></i> Add Page
+                                        </button>
                                     </div>
+                                    <div class="pages-config-panel">
+                                        <div class="enabled-pages" id="enabledPages">
+                                            <div class="no-pages">No pages configured</div>
+                                        </div>
+                                    </div>
+                                    <!-- Hidden textarea for data storage -->
+                                    <textarea id="pagesConfig" style="display: none;">[]</textarea>
                                 </div>
                                 
                                 <div class="form-group" style="display: none;">
