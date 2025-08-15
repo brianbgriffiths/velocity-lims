@@ -1179,22 +1179,6 @@ textarea.form-input {
     color: var(--gray-darkest);
 }
 
-.btn-add-page {
-    background-color: var(--accent1);
-    color: white;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.btn-add-page:hover {
-    background-color: var(--accent2);
-}
 
 .enabled-pages {
     padding: 15px;
