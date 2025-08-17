@@ -40,10 +40,14 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
         }
     });
 
-    if (!enabledSamples.length) {
-        // No enabled samples; nothing to render. Keep existing UI (Add button + hidden textarea) intact.
-        return;
-    }
+    // Build map of all available special sample types so empty types still display
+    const allTypeMap = {};
+    specialSampleTypesDataAll.forEach(s => {
+        const typeId = s.special_type || s.type_id || s.sstid || 0;
+        if (!allTypeMap[typeId]) {
+            allTypeMap[typeId] = s.special_type_name || s.type || `Type ${typeId}`;
+        }
+    });
 
     // Group by type id
     const groups = {};
@@ -56,6 +60,14 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
     // Determine insertion point: before the Add Special Sample button container if present
     const addButtonWrapper = anchor.querySelector('.btn-add-special-sample') ? anchor.querySelector('.btn-add-special-sample').closest('div') : null;
 
+    // Add empty group entries for any types not yet represented
+    Object.keys(allTypeMap).forEach(typeIdStr => {
+        const tid = parseInt(typeIdStr);
+        if (!groups[tid]) {
+            groups[tid] = { typeId: tid, typeName: allTypeMap[tid], samples: [] };
+        }
+    });
+
     Object.values(groups).sort((a,b)=>a.typeId-b.typeId).forEach(group => {
         const cardId = `specialSampleTypeCard_${group.typeId}`;
         const samplesLabel = `${group.samples.length} Sample${group.samples.length!==1?'s':''}`;
@@ -67,7 +79,7 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
                         <span>${samplesLabel}</span>
                     </div>
                     <div class="enabled-special-samples" id="specialSampleGroup_${group.typeId}">
-                        ${group.samples.map((sample, idx) => specialSampleItemHTMLForGroup(sample, idx)).join('')}
+                        ${group.samples.length ? group.samples.map((sample, idx) => specialSampleItemHTMLForGroup(sample, idx)).join('') : '<div class="no-special-samples" style="padding:6px 8px;color:var(--gray-med);font-size:11px;">No samples of this type enabled</div>'}
                     </div>
                 </div>
             </div>`;
