@@ -23,6 +23,10 @@ function loadSpecialSamplesInterface(specialSamples) {
     console.log('Loading special samples interface with data:', specialSamples);
     
     const enabledSpecialSamplesDiv = document.getElementById('enabledSpecialSamples');
+    if (!enabledSpecialSamplesDiv) {
+        console.warn('Special samples container #enabledSpecialSamples not found in DOM');
+        return;
+    }
     
     if (!specialSamples || specialSamples.length === 0) {
         enabledSpecialSamplesDiv.innerHTML = '<div class="no-special-samples">No special samples configured for this step</div>';

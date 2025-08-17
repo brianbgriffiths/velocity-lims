@@ -1,0 +1,536 @@
+{% extends 'index.html' %}
+{% load static %}
+{% block title %}Velocity LIMS - Configure Assay Version{% endblock %}
+{% block headdata %}
+<script src="{% static 'js/pylims_common.js' %}"></script>
+<script src="{% static 'js/pylims_request.js' %}"></script>
+<script src="{% static 'js/pylims_ui.js' %}"></script>
+<link rel="stylesheet" href="{% static 'css/pylims_ui.css' %}">
+<link rel="stylesheet" href="{% static 'css/settings_assay_configure.css' %}">
+
+{% endblock %}
+
+{% block centercontent %}
+<div id="main" class="center-border">
+    <breadcrumbs>
+        <a href="{% url 'view_settings' %}">Settings</a> > 
+        <a href="{% url 'settings_assays' %}">Assays</a> > 
+        Configure Version
+    </breadcrumbs>
+    <div id="pylims_requests_messages">
+        <div id="pylims_request_error"></div>
+        <div id="pylims_request_success"></div>
+    </div>
+
+    {% if error %}
+        <div class="error-message">{{ error }}</div>
+    {% endif %}
+    
+    {% if assay %}
+        <div class="assay-info">
+            <div class="assay-title">{{ assay.assay_name }}</div>
+            <div class="version-info">
+                <span>Version:</span>
+                <span class="version-badge {% if assay.status == 1 %}badge-draft{% elif assay.status == 2 %}badge-testing{% elif assay.status == 3 %}badge-locked{% endif %}">
+                    v{{ assay.version_major }}.{{ assay.version_minor }}.{{ assay.version_patch|default:"0" }}
+                    ({% if assay.status == 1 %}Draft{% elif assay.status == 2 %}Testing{% elif assay.status == 3 %}Locked{% endif %})
+                </span>
+            </div>
+            <div class="assay-meta">
+                Created: {{ assay.version_created|date:"M d, Y H:i" }} | 
+                Modified: {{ assay.version_modified|date:"M d, Y H:i" }}
+            </div>
+            
+            <div class="form-group" style="margin-top: 15px;">
+                <label class="form-label" for="versionName">Version Name</label>
+                <input type="text" id="versionName" class="form-input" value="{{ assay.version_name }}" placeholder="Enter version name">
+            </div>
+        </div>
+        
+        <div class="top-controls">
+            <div></div>
+            <button class="save-all-btn" onclick="saveAll()">
+                <i class="fas fa-save"></i> Save All Changes
+            </button>
+        </div>
+        
+        <div class="configure-container">
+            <div class="left-panel">
+                <div class="panel-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><i class="fas fa-list"></i> Assay Steps</span>
+                        <div class="lock-toggle" id="stepOrderToggle" onclick="toggleStepOrder()">
+                            <i class="fas fa-lock" id="lockIcon"></i>
+                            <span id="lockText" style="font-size: 10px; margin-left: 5px;">STEP ORDER</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    {% if has_steps %}
+                        <div class="steps-list" id="stepsList">
+                            {% for step in steps %}
+                                <div class="step-item" data-step-id="{{ step.scid }}" onclick="selectStep({{ step.scid }}, '{{ step.step_name|escapejs }}')">
+                                    <div class="drag-handle" style="display: none;">
+                                        <i class="fas fa-grip-vertical"></i>
+                                    </div>
+                                    <div class="step-order">{{ forloop.counter }}</div>
+                                    <div class="step-info">
+                                        <div class="step-name">{{ step.step_name }}</div>
+                                        <div class="step-description">Step configuration available</div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="no-steps">
+                            No steps have been added to this assay version yet.
+                        </div>
+                    {% endif %}
+                    
+                    <button class="btn-add-step" onclick="addNewStep()">
+                        <i class="fas fa-plus"></i> Add New Step
+                    </button>
+                </div>
+            </div>
+            
+            <div class="right-panel">
+                <div class="panel-header">
+                    <i class="fas fa-cog"></i> Step Configuration
+                </div>
+                <div class="panel-content">
+                    <div class="step-placeholder" id="stepPlaceholder">
+                        <i class="fas fa-arrow-left" style="font-size: 24px; margin-bottom: 10px;"></i>
+                        <div>Select a step from the left panel to configure its settings</div>
+                    </div>
+                    
+                    <div id="stepConfigPanel" style="display: none;">
+                        <div class="step-config-header">
+                            <span id="stepConfigTitle">Step Configuration</span>
+                            <button type="button" class="btn-close-step" onclick="clearStepSelection()" title="Back to step list">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div id="stepConfigContent">
+                            <form id="stepConfigForm">
+                                <div class="form-group">
+                                    <label class="form-label" for="stepName">Step Name</label>
+                                    <input type="text" id="stepName" class="form-input" placeholder="Enter step name">
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <input type="checkbox" id="createSamples" style="margin-right: 5px;">
+                                        Create Samples
+                                    </label>
+                                    <div style="font-size: 11px; color: var(--gray-dark); margin-top: 2px;">
+                                        Check if this step should create sample derivatives
+                                    </div>
+                                </div>
+                                
+                                <!-- Configuration Cards Container -->
+                                <div class="config-cards-container" id="configCardsContainer">
+                                    <!-- Containers Configuration -->
+                                    <div class="config-card">
+                                        <label class="form-label">Containers Configuration</label>
+                                        <div class="container-config-panel">
+                                            <div class="container-config-header">
+                                                <span>Enabled Containers</span>
+                                                <button type="button" class="btn-add-container" onclick="showContainerSelector()">
+                                                    <i class="fas fa-plus"></i> Add
+                                                </button>
+                                            </div>
+                                            <div class="enabled-containers" id="enabledContainers">
+                                                <div class="no-containers">No containers configured</div>
+                                            </div>
+                                        </div>
+                                        <!-- Hidden textarea for data storage -->
+                                        <textarea id="containerConfig" style="display: none;">[]</textarea>
+                                    </div>
+                                    
+                                    <!-- Special Samples Configuration Cards will be generated here dynamically -->
+                                    <div class="config-card">
+                                        <label class="form-label">Special Samples Configuration</label>
+                                        <div class="special-sample-config-panel">
+                                            <div class="special-sample-config-header">
+                                                <span>Enabled Special Samples</span>
+                                                <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector()">
+                                                    <i class="fas fa-plus"></i> Add
+                                                </button>
+                                            </div>
+                                            <div class="enabled-special-samples" id="enabledSpecialSamples">
+                                                <div class="no-special-samples">No special samples configured</div>
+                                            </div>
+                                        </div>
+                                        <!-- Hidden textarea for special samples data storage -->
+                                        <textarea id="specialSampleConfig" style="display: none;">[]</textarea>
+                                    </div>
+                                </div>
+                                
+                                <!-- Pages Configuration - Full Width Section -->
+                                <div class="pages-section">
+                                    <div class="section-header">
+                                        <h3>Pages Configuration</h3>
+                                        <button type="button" class="btn-add-page" onclick="showPageSelector()">
+                                            <i class="fas fa-plus"></i> Add
+                                        </button>
+                                    </div>
+                                    <div class="pages-config-panel">
+                                        <div class="enabled-pages" id="enabledPages">
+                                            <div class="no-pages">No pages configured</div>
+                                        </div>
+                                    </div>
+                                    <!-- Hidden textarea for data storage -->
+                                    <textarea id="pagesConfig" style="display: none;">[]</textarea>
+                                </div>
+                                
+                                <div class="form-group" style="display: none;">
+                                    <label class="form-label" for="pagesConfigOld">Pages Configuration (Old)</label>
+                                    <textarea id="pagesConfigOld" class="form-input" rows="4" placeholder="JSON array of page configurations">[]</textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="sampleDataConfig">Sample Data Configuration</label>
+                                    <textarea id="sampleDataConfig" class="form-input" rows="4" placeholder="JSON array of sample data fields">[]</textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="stepScriptsConfig">Step Scripts Configuration</label>
+                                    <textarea id="stepScriptsConfig" class="form-input" rows="4" placeholder="JSON array of script configurations">[]</textarea>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="error-message">Assay version not found or no development version available.</div>
+    {% endif %}
+    
+    <!-- Container Selector Modal -->
+    <div class="container-selector-modal" id="containerSelectorModal">
+        <div class="container-selector-dialog">
+            <div class="container-selector-header">
+                <span><i class="fas fa-layer-group"></i> Add Container Type</span>
+                <button class="container-selector-close" onclick="hideContainerSelector()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="container-selector-content">
+                <div id="availableContainersList">
+                    <div style="text-align: center; padding: 20px; color: var(--gray-med);">
+                        Loading available containers...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Special Samples Selector Modal -->
+    <div class="container-selector-modal" id="specialSampleSelectorModal">
+        <div class="container-selector-dialog">
+            <div class="container-selector-header">
+                <span><i class="fas fa-vial"></i> Add <span id="specialSampleTypeLabel">Special Sample</span></span>
+                <button class="container-selector-close" onclick="hideSpecialSampleSelector()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="container-selector-content">
+                <div id="availableSpecialSamplesList">
+                    <div style="text-align: center; padding: 20px; color: var(--gray-med);">
+                        Loading available samples...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Special Sample Configuration Modal -->
+    <div class="special-sample-config-modal" id="specialSampleConfigModal">
+        <div class="special-sample-config-dialog">
+            <div class="special-sample-config-header">
+                <span><i class="fas fa-cog"></i> Configure <span id="configSampleName">Special Sample</span></span>
+            </div>
+            <div class="special-sample-config-content">
+                <div class="config-section">
+                    <div class="config-section-title">Sample Creation</div>
+                    <div class="config-row">
+                        <label>Create:</label>
+                        <input type="number" id="sampleCount" min="0" max="999" value="1">
+                        <span>for each</span>
+                        <select id="createForEach">
+                            <option value="step">Step</option>
+                            <option value="input_plate">Input Plate</option>
+                            <option value="output_plate">Output Plate</option>
+                            <option value="sample">Sample</option>
+                        </select>
+                    </div>
+                    <div class="config-row">
+                        <label>
+                            <input type="checkbox" id="autoAdd" style="margin-right: 5px;">
+                            Auto-add
+                        </label>
+                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
+                            Automatically add samples without user intervention
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="config-section-title">Sample Placement</div>
+                    <div class="placement-options">
+                        <div class="placement-option">
+                            <input type="radio" id="placementUserPlaced" name="placement" value="user_placed" checked>
+                            <label for="placementUserPlaced">User-placed</label>
+                        </div>
+                        <div class="placement-option">
+                            <input type="radio" id="placementSpecificWell" name="placement" value="specific_well">
+                            <label for="placementSpecificWell">Specific well:</label>
+                            <div class="placement-detail" id="specificWellDetail">
+                                <input type="text" id="specificWell" placeholder="A1" maxlength="3">
+                            </div>
+                        </div>
+                        <div class="placement-option">
+                            <input type="radio" id="placementAfterSamples" name="placement" value="after_samples">
+                            <label for="placementAfterSamples">N after last sample:</label>
+                            <div class="placement-detail" id="afterSamplesDetail">
+                                <input type="number" id="afterSamplesCount" min="0" max="99" value="1">
+                            </div>
+                        </div>
+                        <div class="placement-option">
+                            <input type="radio" id="placementScriptPlaced" name="placement" value="script_placed">
+                            <label for="placementScriptPlaced">Script placed</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="config-buttons">
+                    <button type="button" class="btn-config-cancel" onclick="hideSpecialSampleConfigModal()">Cancel</button>
+                    <button type="button" class="btn-remove-sample" onclick="removeCurrentSpecialSample()">Remove Control</button>
+                    <button type="button" class="btn-config-save" onclick="saveSpecialSampleConfig()">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Container Configuration Modal -->
+    <div class="container-config-modal" id="containerConfigModal">
+        <div class="container-config-dialog">
+            <div class="container-config-modal-header">
+                <span><i class="fas fa-cog"></i> Configure <span id="configContainerName">Container</span></span>
+            </div>
+            <div class="container-config-content">
+                <div class="config-section">
+                    <div class="config-section-title">Output Generation</div>
+                    <div class="config-row">
+                        <label>Create:</label>
+                        <input type="number" id="outputCount" min="0" max="999" value="1">
+                        <span>outputs for</span>
+                        <select id="outputFor">
+                            <option value="every_input">every input</option>
+                            <option value="n_samples">N samples</option>
+                            <option value="absolute">absolute</option>
+                        </select>
+                    </div>
+                    <div class="config-row" id="nSamplesRow" style="display: none;">
+                        <label>N samples:</label>
+                        <input type="number" id="nSamplesCount" min="1" max="999" value="1">
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="config-section-title">Container Naming</div>
+                    <div class="config-row">
+                        <label>
+                            <input type="checkbox" id="renameContainer" style="margin-right: 5px;" onchange="toggleRenameOptions()">
+                            Rename container
+                        </label>
+                    </div>
+                    <div class="config-row" id="renameTextRow" style="display: none;">
+                        <label>New name:</label>
+                        <div class="container-name-input-wrapper">
+                            <input type="text" id="containerNewName" placeholder="e.g., Prefix_{requisition_id}" style="width: 200px;" autocomplete="off">
+                            <div class="token-popup" id="tokenPopup">
+                                <div class="token-option" data-token="container_value">
+                                    <span class="token-option-icon"><i class="fas fa-cube"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Container Value</div>
+                                        <select class="token-select" id="containerValueSelect" onclick="event.stopPropagation()">
+                                            <option value="">Select container parameter</option>
+                                            <option value="barcode">Container Barcode</option>
+                                            <option value="type">Container Type</option>
+                                            <option value="position">Container Position</option>
+                                            <option value="status">Container Status</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="token-option" data-token="batch_value">
+                                    <span class="token-option-icon"><i class="fas fa-layer-group"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Batch Value</div>
+                                        <select class="token-select" id="batchValueSelect" onclick="event.stopPropagation()">
+                                            <option value="">Select batch parameter</option>
+                                            <option value="batch_id">Batch ID</option>
+                                            <option value="batch_date">Batch Date</option>
+                                            <option value="batch_operator">Batch Operator</option>
+                                            <option value="batch_notes">Batch Notes</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="token-option" data-token="container_order">
+                                    <span class="token-option-icon"><i class="fas fa-sort-numeric-up"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Container Order</div>
+                                        <div class="token-option-description">Sequential container number</div>
+                                    </div>
+                                </div>
+                                <div class="token-option" data-token="container_count">
+                                    <span class="token-option-icon"><i class="fas fa-calculator"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Container Count</div>
+                                        <div class="token-option-description">Total number of containers</div>
+                                    </div>
+                                </div>
+                                <div class="token-option" data-token="sample_count">
+                                    <span class="token-option-icon"><i class="fas fa-list-ol"></i></span>
+                                    <div class="token-option-text">
+                                        <div>Sample Count</div>
+                                        <div class="token-option-description">Total number of samples</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="config-section-title">Container Placement</div>
+                    <div class="config-row">
+                        <label>Placement:</label>
+                        <select id="containerPlacement">
+                            <option value="operator">Operator</option>
+                            <option value="script">Script</option>
+                            <option value="disabled">Disabled</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="container-config-buttons">
+                    <button type="button" class="btn-container-config-cancel" onclick="hideContainerConfigModal()">Cancel</button>
+                    <button type="button" class="btn-remove-container" onclick="removeCurrentContainer()">Remove Container</button>
+                    <button type="button" class="btn-container-config-save" onclick="saveContainerConfig()">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Page Selector Modal -->
+    <div class="container-selector-modal" id="pageSelectorModal">
+        <div class="container-selector-dialog">
+            <div class="container-selector-header">
+                <span><i class="fas fa-file-alt"></i> Add Page</span>
+                <button class="container-selector-close" onclick="hidePageSelector()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="container-selector-content">
+                <div id="availablePagesList">
+                    <div style="text-align: center; padding: 20px; color: var(--gray-med);">
+                        Loading available pages...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Page Configuration Modal -->
+    <div class="page-config-modal" id="pageConfigModal">
+        <div class="page-config-dialog">
+            <div class="page-config-header">
+                <span><i class="fas fa-cog"></i> Configure <span id="configPageName">Page</span></span>
+            </div>
+            <div class="page-config-content">
+                <div class="config-section">
+                    <div class="config-section-title">Page Ordering</div>
+                    <div class="config-row">
+                        <label>Order:</label>
+                        <input type="number" id="pageOrder" min="1" max="99" value="1">
+                        <span>Position in step sequence</span>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="config-section-title">Page Display</div>
+                    <div class="config-row">
+                        <label>
+                            <input type="checkbox" id="pageRequired" style="margin-right: 5px;">
+                            Required
+                        </label>
+                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
+                            User must complete this page to proceed
+                        </span>
+                    </div>
+                    <div class="config-row">
+                        <label>
+                            <input type="checkbox" id="pageShowAfterComplete" style="margin-right: 5px;">
+                            Show after completion
+                        </label>
+                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
+                            Display page after step completion
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <div class="config-section-title">Page Conditions</div>
+                    <div class="config-row">
+                        <label>Show when:</label>
+                        <select id="pageCondition">
+                            <option value="always">Always</option>
+                            <option value="has_samples">Has samples</option>
+                            <option value="has_errors">Has errors</option>
+                            <option value="script_condition">Script condition</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="page-config-buttons">
+                    <button type="button" class="btn-page-config-cancel" onclick="hidePageConfigModal()">Cancel</button>
+                    <button type="button" class="btn-remove-page" onclick="removeCurrentPage()">Remove Page</button>
+                    <button type="button" class="btn-page-config-save" onclick="savePageConfig()">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascript %}
+<script>
+const csrf = '{{ csrf_token }}';
+const assayId = {{ assay.assayid|default:"null" }};
+const specialSampleTypesData = {{ special_sample_types_json|safe }};
+const containerTypesData = {{ container_types_json|safe }};
+// Expose container types on window for modules using window.containerTypesData
+window.containerTypesData = containerTypesData;
+let selectedStepId = {{ selected_step_id|default:"null" }};
+let isReorderMode = false;
+let draggedElement = null;
+const avid = {{ assay.avid|default:"null" }};
+const initialStepId = {{ selected_step_id|default:"null" }};
+
+// Unified special sample data global
+window.specialSampleTypesData = specialSampleTypesData;
+// Initialize availableContainers from inline data (one-time load)
+if (typeof window.availableContainers === 'undefined' || window.availableContainers.length === 0) {
+    window.availableContainers = Array.isArray(containerTypesData) ? containerTypesData : [];
+}
+</script>
+<!-- Dependency order: containers & special samples & pages & steps, then main -->
+<script src="{% static 'js/assay-config-containers.js' %}"></script>
+<script src="{% static 'js/assay-config-special-samples.js' %}"></script>
+<script src="{% static 'js/assay-config-pages.js' %}"></script>
+<script src="{% static 'js/assay-config-steps.js' %}"></script>
+<script src="{% static 'js/assay-config-main.js' %}"></script>
+
+{% endblock %}
