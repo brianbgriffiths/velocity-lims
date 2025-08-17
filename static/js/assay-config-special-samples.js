@@ -266,23 +266,28 @@ function renderAvailableSpecialSamples(filterTypeId=null) {
     let html = '';
         specialSampleTypesDataAll.forEach(sample => {
             const typeId = sample.special_type || sample.type_id || sample.sstid || 0;
-            if (filterTypeId !== null && typeId !== filterTypeId) return; // only this type
+            if (filterTypeId !== null && typeId !== filterTypeId) return;
             const sampleId = sample.ssid || sample.stid;
             const isEnabled = enabled.has(sampleId);
-            const canAddAnother = !(sample.unique_only && isEnabled);
-            const classes = `available-special-sample ${canAddAnother ? '' : 'disabled'}`;
-            const attrs = canAddAnother ? `onclick=\"addSpecialSample(${sampleId})\" role=\"button\" tabindex=\"0\"` : `aria-disabled=\"true\"`;
-            const title = canAddAnother ? 'Click to add this special sample' : 'Already added (unique-only)';
-            html += `<div class=\"${classes}\" ${attrs} title=\"${title}\">`+
-                `<div class=\"special-sample-info\"><div class=\"special-sample-name\">${sample.special_name || sample.name}</div><div class=\"special-sample-type\">${sample.special_type_name || sample.type}</div></div>`+
-                `${isEnabled ? '<div style=\\"margin-left:auto;color:var(--green-med);opacity:0.9;\\"><i class=\\"fas fa-check\\"></i></div>' : ''}`+
-                `</div>`;
-    });
+            const disabledClass = (sample.unique_only && isEnabled) ? 'disabled' : '';
+            const title = (sample.unique_only && isEnabled) ? 'Special sample already added' : 'Click to add this special sample';
+            html += `
+                <div class=\"available-special-sample ${disabledClass}\"
+                     onclick=\"${(sample.unique_only && isEnabled) ? '' : `addSpecialSample(${sampleId})`}\"
+                     title=\"${title}\">
+                    <div class=\"special-sample-info\">
+                        <div class=\"special-sample-name\">${sample.special_name || sample.name}</div>
+                        <div class=\"special-sample-type\">${sample.special_type_name || sample.type}</div>
+                    </div>
+                    ${isEnabled ? '<div style=\\"margin-left:auto;color:var(--green-med);\\"><i class=\\"fas fa-check\\"></i></div>' : ''}
+                </div>`;
+        });
     if (!html) {
         listDiv.innerHTML = '<div style="text-align:center;padding:18px;color:var(--gray-med);font-size:12px;">All samples of this type have been added</div>';
     } else {
         listDiv.innerHTML = html;
     }
+
 }
 
 function addSpecialSample(sampleId) {
