@@ -20,59 +20,75 @@ function initializeSpecialSampleTypes() {
 // Removed network loading; all special sample types are provided inline in template.
 
 function loadSpecialSamplesInterface(stepSpecialSamples) {
-    // Render per-type cards: each sample has its own card (since user wants separation by type)
+    // Group samples by special_type; one card per type containing its enabled samples
     const anchor = document.getElementById('specialSamplesCardsAnchor');
     if (!anchor) return;
     anchor.innerHTML = '';
 
     const enabledIds = (stepSpecialSamples && Array.isArray(stepSpecialSamples.enabled_ids)) ? stepSpecialSamples.enabled_ids : [];
-    // Build list; include placeholder type id 4 always
-    let samplesToRender = enabledIds.map(id => specialSampleTypesDataAll.find(s => s.ssid === id || s.stid === id)).filter(Boolean);
+    // Build enabled sample objects
+    let enabledSamples = enabledIds.map(id => specialSampleTypesDataAll.find(s => s.ssid === id || s.stid === id)).filter(Boolean);
+    // Ensure placeholder type (4) visible even if not enabled
     const placeholderSamples = specialSampleTypesDataAll.filter(s => (s.special_type === 4 || s.sstid === 4 || s.type_id === 4));
     placeholderSamples.forEach(ps => {
         const pid = ps.ssid || ps.stid;
-        if (pid && !samplesToRender.find(x => (x.ssid||x.stid) === pid)) samplesToRender.push(ps);
+        if (!enabledSamples.find(x => (x.ssid||x.stid) === pid)) {
+            enabledSamples.push(ps); // appears but not in enabledIds (ghost)
+        }
     });
 
-    if (!samplesToRender.length) {
+    if (!enabledSamples.length) {
         anchor.innerHTML = '<div class="no-special-samples">No special samples configured</div>';
         return;
     }
 
-    samplesToRender.forEach(sample => {
-        const sampleId = sample.ssid || sample.stid;
-        const cardId = `specialSampleCard_${sampleId}`;
-        const configured = specialSampleConfigs[sampleId] && Object.keys(specialSampleConfigs[sampleId]).length > 0;
-        const displayName = sample.special_name || sample.name || `Sample ${sampleId}`;
-        const displayType = sample.special_type_name || sample.type || 'Type';
-        const sampleTypeId = sample.special_type || sample.type_id || sample.sstid || 0;
-        const gearIcon = configured ? 'fas fa-cog' : 'far fa-cog';
-        const buttonTitle = configured ? 'Sample configured - click to edit' : 'Configure special sample';
-        const html = `
-            <div class="config-card" id="${cardId}" data-sample-id="${sampleId}" data-sample-type="${sampleTypeId}">
-                <label class="form-label">${displayType}</label>
+    // Group by type id
+    const groups = {};
+    enabledSamples.forEach(s => {
+        const typeId = s.special_type || s.type_id || s.sstid || 0;
+        if (!groups[typeId]) groups[typeId] = { typeId, typeName: s.special_type_name || s.type || `Type ${typeId}`, samples: [] };
+        groups[typeId].samples.push(s);
+    });
+
+    Object.values(groups).sort((a,b)=>a.typeId-b.typeId).forEach(group => {
+        const cardId = `specialSampleTypeCard_${group.typeId}`;
+        const cardHtml = `
+            <div class="config-card" id="${cardId}" data-sample-type-group="${group.typeId}">
+                <label class="form-label">${group.typeName}</label>
                 <div class="special-samples-config-panel">
                     <div class="special-samples-config-header">
-                        <span>${displayName}</span>
-                        <div style="display:flex; gap:6px;">
-                            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${sampleId}, '${displayName.replace(/'/g, "&#39;")}', '${displayType.replace(/'/g, "&#39;")}')" title="${buttonTitle}"><i class="${gearIcon}"></i></button>
-                            <button type="button" class="btn-remove-page" style="padding:4px 6px;font-size:10px;" onclick="removeSpecialSample(${sampleId})" title="Remove"><i class="fas fa-trash"></i></button>
-                        </div>
+                        <span>${group.samples.length} Sample${group.samples.length!==1?'s':''}</span>
                     </div>
-                    <div class="enabled-special-samples" style="padding:6px 10px;">
-                        <div class="special-sample-item" data-sample-id="${sampleId}" data-sample-type="${sampleTypeId}" draggable="false">
-                            <div class="special-sample-info">
-                                <div class="special-sample-name">${displayName}</div>
-                                <div class="special-sample-type">${displayType}</div>
-                            </div>
-                        </div>
+                    <div class="enabled-special-samples" style="padding:6px 10px;" id="specialSampleGroup_${group.typeId}">
+                        ${group.samples.map((sample, idx) => specialSampleItemHTMLForGroup(sample, idx)).join('')}
                     </div>
                 </div>
             </div>`;
-        anchor.insertAdjacentHTML('beforeend', html);
+        anchor.insertAdjacentHTML('beforeend', cardHtml);
     });
 
     updateSpecialSamplesFromDOM();
+}
+
+function specialSampleItemHTMLForGroup(sample, index) {
+    const sampleId = sample.ssid || sample.stid;
+    const displayName = sample.special_name || sample.name || `Sample ${sampleId}`;
+    const displayType = sample.special_type_name || sample.type || 'Type';
+    const hasConfig = specialSampleConfigs[sampleId] && Object.keys(specialSampleConfigs[sampleId]).length > 0;
+    const gearIcon = hasConfig ? 'fas fa-cog' : 'far fa-cog';
+    const buttonTitle = hasConfig ? 'Sample configured - click to edit' : 'Configure special sample';
+    const sampleTypeId = sample.special_type || sample.type_id || sample.sstid || 0;
+    return `
+        <div class="special-sample-item" data-sample-id="${sampleId}" data-sample-type="${sampleTypeId}" data-index="${index}" draggable="false">
+            <div class="special-sample-info">
+                <div class="special-sample-name">${displayName}</div>
+                <div class="special-sample-type">${displayType}</div>
+            </div>
+            <div style="display:flex; gap:4px; align-items:center;">
+                <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${sampleId}, '${displayName.replace(/'/g, "&#39;")}', '${displayType.replace(/'/g, "&#39;")}')" title="${buttonTitle}" style="width:24px;height:24px;"><i class="${gearIcon}"></i></button>
+                <button type="button" class="btn-remove-page" style="padding:2px 6px;font-size:10px;" onclick="removeSpecialSample(${sampleId})" title="Remove"><i class="fas fa-trash"></i></button>
+            </div>
+        </div>`;
 }
 
 function createSpecialSampleItemHTML(sample, index) {
@@ -94,7 +110,7 @@ function createSpecialSampleItemHTML(sample, index) {
         </div>`;
 }
 
-function enableSpecialSampleDragAndDrop() { /* No-op: per-type cards remove list reordering requirement */ }
+function enableSpecialSampleDragAndDrop() { /* No drag-drop for grouped view */ }
 
 function handleSpecialSampleDragStart(e) {
     e.target.classList.add('dragging');
@@ -141,10 +157,10 @@ function getSpecialSampleDragAfterElement(container, y) {
 }
 
 function updateSpecialSamplesFromDOM() {
-    const cards = document.querySelectorAll('#specialSamplesCardsAnchor .config-card[data-sample-id]');
+    const items = document.querySelectorAll('#specialSamplesCardsAnchor .special-sample-item');
     const samples = [];
-    cards.forEach(card => {
-        const id = parseInt(card.dataset.sampleId);
+    items.forEach(item => {
+        const id = parseInt(item.dataset.sampleId);
         const sampleData = specialSampleTypesDataAll.find(s => (s.ssid === id) || (s.stid === id));
         if (sampleData) samples.push(sampleData);
     });
@@ -153,14 +169,15 @@ function updateSpecialSamplesFromDOM() {
 
 function getSpecialSamplesFromInterface() {
     const data = { enabled_ids: [], configurations: {} };
-    document.querySelectorAll('#specialSamplesCardsAnchor .config-card[data-sample-id]').forEach(card => {
-        const id = parseInt(card.dataset.sampleId);
-        data.enabled_ids.push(id);
+    document.querySelectorAll('#specialSamplesCardsAnchor .special-sample-item').forEach(item => {
+        const id = parseInt(item.dataset.sampleId);
+        // Exclude placeholder (type 4) if it was auto-added but not originally enabled? We include if present in UI.
+        if (!data.enabled_ids.includes(id)) data.enabled_ids.push(id);
         if (specialSampleConfigs[id] && Object.keys(specialSampleConfigs[id]).length > 0) {
             data.configurations[id] = specialSampleConfigs[id];
         }
     });
-    console.log('Getting special samples data for step config:', data);
+    console.log('Getting special samples data for step config (grouped):', data);
     return data;
 }
 
@@ -188,14 +205,14 @@ function renderAvailableSpecialSamples() {
         return;
     }
     const enabled = new Set();
-    document.querySelectorAll('#specialSamplesCardsAnchor .config-card[data-sample-id]').forEach(card => enabled.add(parseInt(card.dataset.sampleId)));
+    document.querySelectorAll('#specialSamplesCardsAnchor .special-sample-item').forEach(item => enabled.add(parseInt(item.dataset.sampleId)));
     let html = '';
     specialSampleTypesDataAll.forEach(sample => {
         const sampleId = sample.ssid || sample.stid;
         const isEnabled = enabled.has(sampleId);
-        html += `<div class="available-special-sample ${isEnabled ? 'disabled' : ''}" ${isEnabled ? '' : `onclick="addSpecialSample(${sampleId})"`} title="${isEnabled ? 'Special sample already added' : 'Click to add this special sample'}">`+
+        html += `<div class="available-special-sample ${isEnabled ? 'disabled' : ''}" ${isEnabled ? '' : `onclick=\"addSpecialSample(${sampleId})\"`} title="${isEnabled ? 'Special sample already added' : 'Click to add this special sample'}">`+
             `<div class="special-sample-info"><div class="special-sample-name">${sample.special_name || sample.name}</div><div class="special-sample-type">${sample.special_type_name || sample.type}</div></div>`+
-            `${isEnabled ? '<div style=\"margin-left:auto;color:var(--green-med);\"><i class=\"fas fa-check\"></i></div>' : ''}`+
+            `${isEnabled ? '<div style=\\"margin-left:auto;color:var(--green-med);\\"><i class=\\"fas fa-check\\"></i></div>' : ''}`+
             `</div>`;
     });
     listDiv.innerHTML = html;
@@ -204,22 +221,32 @@ function renderAvailableSpecialSamples() {
 function addSpecialSample(sampleId) {
     const sample = specialSampleTypesDataAll.find(s => s.ssid === sampleId || s.stid === sampleId);
     if (!sample) return;
-    const existingCard = document.querySelector(`#specialSamplesCardsAnchor .config-card[data-sample-id="${sampleId}"]`);
-    if (existingCard) return; // already
-    // Append card
-    const currentData = { enabled_ids: getSpecialSamplesFromInterface().enabled_ids.concat([sampleId]) };
-    loadSpecialSamplesInterface(currentData); // re-render all for simplicity
+    // If already in UI, skip
+    if (document.querySelector(`#specialSamplesCardsAnchor .special-sample-item[data-sample-id="${sampleId}"]`)) return;
+    // Build current enabled list (excluding placeholders if any logic later)
+    const current = getSpecialSamplesFromInterface().enabled_ids;
+    const updated = current.concat([sampleId]);
+    loadSpecialSamplesInterface({ enabled_ids: updated });
     renderAvailableSpecialSamples();
     hideSpecialSampleSelector();
 }
 
 function removeSpecialSample(sampleId) {
-    const card = document.getElementById(`specialSampleCard_${sampleId}`);
-    if (card) card.remove();
+    // Remove item from its group list
+    const item = document.querySelector(`#specialSamplesCardsAnchor .special-sample-item[data-sample-id="${sampleId}"]`);
+    if (item) {
+        const parentList = item.parentElement;
+        item.remove();
+        // If list becomes empty, remove entire card
+        if (parentList && parentList.querySelectorAll('.special-sample-item').length === 0) {
+            const card = parentList.closest('.config-card');
+            if (card) card.remove();
+        }
+    }
     if (specialSampleConfigs[sampleId]) delete specialSampleConfigs[sampleId];
     updateSpecialSamplesFromDOM();
     renderAvailableSpecialSamples();
-    if (!document.querySelector('#specialSamplesCardsAnchor .config-card')) {
+    if (!document.querySelector('#specialSamplesCardsAnchor .special-sample-item')) {
         document.getElementById('specialSamplesCardsAnchor').innerHTML = '<div class="no-special-samples">No special samples configured</div>';
     }
 }
