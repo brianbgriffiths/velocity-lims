@@ -21,6 +21,7 @@ function initializeSpecialSampleTypes() {
 // Removed network loading; all special sample types are provided inline in template.
 
 function loadSpecialSamplesInterface(stepSpecialSamples) {
+    console.log('[SpecialSamples] loadSpecialSamplesInterface called with', stepSpecialSamples);
     // Group samples by special_type; one card per type containing its enabled samples
     const anchor = document.getElementById('assayConfigCards');
     if (!anchor) return;
@@ -32,14 +33,7 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
     const enabledIds = (stepSpecialSamples && Array.isArray(stepSpecialSamples.enabled_ids)) ? stepSpecialSamples.enabled_ids : [];
     // Build enabled sample objects
     let enabledSamples = enabledIds.map(id => specialSampleTypesDataAll.find(s => s.ssid === id || s.stid === id)).filter(Boolean);
-    // Ensure placeholder type (4) visible even if not enabled
-    const placeholderSamples = specialSampleTypesDataAll.filter(s => (s.special_type === 4 || s.sstid === 4 || s.type_id === 4));
-    placeholderSamples.forEach(ps => {
-        const pid = ps.ssid || ps.stid;
-        if (!enabledSamples.find(x => (x.ssid||x.stid) === pid)) {
-            enabledSamples.push(ps); // appears but not in enabledIds (ghost)
-        }
-    });
+    // Placeholder type (4) visibility handled via empty group card; no ghost sample insertion needed.
 
     // Build map of all available special sample types so empty types still display
     const allTypeMap = {};
@@ -308,6 +302,7 @@ function addSpecialSample(sampleId) {
     const current = getSpecialSamplesFromInterface().enabled_ids;
     const updated = current.concat([sampleId]);
     loadSpecialSamplesInterface({ enabled_ids: updated });
+    console.log('[SpecialSamples] After add, enabled ids ->', updated);
     renderAvailableSpecialSamples();
     hideSpecialSampleSelector();
 }
