@@ -4,17 +4,19 @@
  */
 
 function loadStepConfiguration(stepId) {
-    // Ensure special sample types are initialized first
-    if (specialSampleTypes.length === 0) {
-        initializeSpecialSampleTypes();
+    // Ensure special samples data is initialized (uses special-samples module globals)
+    try {
+        if (typeof availableSpecialSamplesData === 'undefined' || availableSpecialSamplesData.length === 0) {
+            if (typeof initializeSpecialSampleTypes === 'function') {
+                console.log('Initializing special sample types (steps module)');
+                initializeSpecialSampleTypes();
+            } else {
+                console.warn('initializeSpecialSampleTypes not yet available');
+            }
+        }
+    } catch (e) {
+        console.warn('Special samples initialization check failed:', e);
     }
-    
-    // Ensure available special samples are loaded before loading step config
-    if (availableSpecialSamples.length === 0) {
-        console.log('Loading available special samples before step configuration');
-        loadAllAvailableSpecialSamples();
-    }
-    
     loadStepConfigurationData(stepId);
 }
 
@@ -190,89 +192,4 @@ function saveStepConfiguration(isUnifiedSave = false) {
     }
 }
 
-function initializeSpecialSampleTypes() {
-    console.log('Initializing special sample types...');
-    
-    // Parse special sample types from global JSON
-    try {
-        const specialSampleTypesJson = document.getElementById('specialSampleTypesData');
-        if (specialSampleTypesJson && specialSampleTypesJson.textContent) {
-            specialSampleTypes = JSON.parse(specialSampleTypesJson.textContent);
-            console.log('Special sample types loaded:', specialSampleTypes);
-            
-            // Group by type for easier access
-            specialSampleTypeGroups = {};
-            specialSampleTypes.forEach(sample => {
-                const typeId = sample.sstid;
-                if (!specialSampleTypeGroups[typeId]) {
-                    specialSampleTypeGroups[typeId] = {
-                        type_name: sample.special_type_name,
-                        samples: []
-                    };
-                }
-                specialSampleTypeGroups[typeId].samples.push(sample);
-            });
-            
-            console.log('Special sample type groups:', specialSampleTypeGroups);
-            
-            // Generate UI cards for each type
-            generateSpecialSampleCards();
-        } else {
-            console.warn('No special sample types data found in DOM');
-        }
-    } catch (error) {
-        console.error('Error parsing special sample types:', error);
-    }
-}
-
-function generateSpecialSampleCards() {
-    const configCardsContainer = document.querySelector('.config-cards');
-    if (!configCardsContainer) {
-        console.error('Config cards container not found');
-        return;
-    }
-    
-    // Get unique type IDs
-    const typeIds = [...new Set(specialSampleTypes.map(sample => sample.sstid))];
-    console.log('Generating cards for type IDs:', typeIds);
-    
-    typeIds.forEach(typeId => {
-        const typeSamples = specialSampleTypes.filter(sample => sample.sstid === typeId);
-        if (typeSamples.length === 0) return;
-        
-        const typeName = typeSamples[0].special_type_name;
-        const bucketId = `specialSamples${typeId}`;
-        
-        const cardHTML = `
-            <div class="config-card special-samples-card" data-type-id="${typeId}">
-                <label class="form-label">${typeName} Configuration</label>
-                <div class="special-samples-panel">
-                    <div class="special-samples-header">
-                        <span>Enabled ${typeName}</span>
-                        <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector(${typeId})">
-                            <i class="fas fa-plus"></i> Add
-                        </button>
-                    </div>
-                    <div class="enabled-special-samples special-samples-bucket" id="${bucketId}">
-                        <div class="no-special-samples">No ${typeName.toLowerCase()} configured</div>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Insert the card before the pages configuration section
-        const pagesSection = document.querySelector('.pages-section');
-        if (pagesSection) {
-            configCardsContainer.insertBefore(
-                document.createRange().createContextualFragment(cardHTML).firstElementChild,
-                pagesSection
-            );
-        } else {
-            configCardsContainer.appendChild(
-                document.createRange().createContextualFragment(cardHTML).firstElementChild
-            );
-        }
-    });
-    
-    console.log('Generated special sample cards for all types');
-}
+// (Removed duplicated special sample initialization/card generation code; now lives in assay-config-special-samples.js)
