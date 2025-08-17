@@ -6,10 +6,13 @@
 // Global variables for special samples (all types provided inline by template)
 // Modern format only: backend supplies {enabled_ids: [...], configurations: {...}}
 let specialSampleTypesDataAll = window.specialSampleTypesData || [];
-let specialSampleConfigs = {};
+let specialSampleConfigs = {}; // legacy id-keyed (kept for backward compatibility / migration)
+let specialSampleEnabledIds = []; // ordered list permitting duplicates
+let specialSampleInstanceConfigs = []; // index-keyed configs matching enabled_ids
 let currentConfigSampleId = null;
 let currentConfigSampleType = null;
 let currentConfigModalEl = null;
+let currentConfigInstanceIndex = null;
 
 function initializeSpecialSampleTypes() {
     console.log('Initializing special sample types from embedded template data');
@@ -30,9 +33,34 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
     // Instead remove only prior special sample type cards
     anchor.querySelectorAll('.config-card[data-sample-type-group]').forEach(card => card.remove());
 
-    const enabledIds = (stepSpecialSamples && Array.isArray(stepSpecialSamples.enabled_ids)) ? stepSpecialSamples.enabled_ids : [];
-    // Build enabled sample objects
-    let enabledSamples = enabledIds.map(id => specialSampleTypesDataAll.find(s => s.ssid === id || s.stid === id)).filter(Boolean);
+    const enabledIds = (stepSpecialSamples && Array.isArray(stepSpecialSamples.enabled_ids)) ? stepSpecialSamples.enabled_ids.slice() : [];
+    specialSampleEnabledIds = enabledIds.slice();
+    // Build instance list with index (preserving duplicate order)
+    const enabledInstances = enabledIds.map((id, idx) => {
+        const base = specialSampleTypesDataAll.find(s => s.ssid === id || s.stid === id);
+        if (!base) return null;
+        return { ...base, __instanceIndex: idx };
+    }).filter(Boolean);
+    // Migrate configurations (index vs id keyed)
+    specialSampleInstanceConfigs = [];
+    if (stepSpecialSamples && stepSpecialSamples.configurations) {
+        Object.keys(stepSpecialSamples.configurations).forEach(key => {
+            const cfg = stepSpecialSamples.configurations[key];
+            if (cfg && typeof cfg === 'object') {
+                if (!isNaN(parseInt(key))) {
+                    specialSampleInstanceConfigs[parseInt(key)] = cfg; // already index keyed
+                }
+            }
+        });
+        // If no index keys found, treat as legacy id-keyed
+        if (specialSampleInstanceConfigs.length === 0) {
+            enabledIds.forEach((id, idx) => {
+                if (stepSpecialSamples.configurations[id]) {
+                    specialSampleInstanceConfigs[idx] = stepSpecialSamples.configurations[id];
+                }
+            });
+        }
+    }
     // Placeholder type (4) visibility handled via empty group card; no ghost sample insertion needed.
 
     // Build map of all available special sample types so empty types still display
@@ -46,7 +74,7 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
 
     // Group by type id
     const groups = {};
-    enabledSamples.forEach(s => {
+    enabledInstances.forEach(s => {
         const typeId = s.special_type || s.type_id || s.sstid || 0;
         if (!groups[typeId]) groups[typeId] = { typeId, typeName: s.special_type_name || s.type || `Type ${typeId}`, samples: [], uniqueOnly: !!s.unique_only, enabledCount: 0 };
         groups[typeId].samples.push(s);
@@ -95,7 +123,7 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
                 ${addBtnHtml}
                     </div>
                     <div class="enabled-special-samples" id="specialSampleGroup_${group.typeId}">
-                        ${group.samples.length ? group.samples.map((sample, idx) => specialSampleItemHTMLForGroup(sample, idx)).join('') : '<div class="no-special-samples" style="padding:6px 8px;color:var(--gray-med);font-size:11px;">No samples of this type enabled</div>'}
+                        ${group.samples.length ? group.samples.map(sample => specialSampleItemHTMLForGroup(sample)).join('') : '<div class="no-special-samples" style="padding:6px 8px;color:var(--gray-med);font-size:11px;">No samples of this type enabled</div>'}
                     </div>
                 </div>
             </div>`;
@@ -109,24 +137,25 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
     updateSpecialSamplesFromDOM();
 }
 
-function specialSampleItemHTMLForGroup(sample, index) {
+function specialSampleItemHTMLForGroup(sample) {
     const sampleId = sample.ssid || sample.stid;
+    const instanceIndex = sample.__instanceIndex;
     const displayName = sample.special_name || sample.name || `Sample ${sampleId}`;
     const sampleTypeId = sample.special_type || sample.type_id || sample.sstid || 0;
     const baseTypeName = sample.special_type_name || sample.type || 'Type';
     let placementSummary = '';
-    const cfg = specialSampleConfigs[sampleId];
+    const cfg = specialSampleInstanceConfigs[instanceIndex] || specialSampleConfigs[sampleId];
     if (cfg) {
         if (cfg.placement === 'specific_well') placementSummary = `Well ${cfg.specificWell || 'A1'}`;
         else if (cfg.placement === 'after_samples') placementSummary = `After +${cfg.afterSamplesCount || 1}`;
         else if (cfg.placement === 'script_placed') placementSummary = 'Script placed';
     }
     const displayType = (sampleTypeId === 4 && placementSummary) ? placementSummary : baseTypeName;
-    const hasConfig = specialSampleConfigs[sampleId] && Object.keys(specialSampleConfigs[sampleId]).length > 0;
+    const hasConfig = !!(cfg && Object.keys(cfg).length > 0);
     const gearIcon = hasConfig ? 'fas fa-cog' : 'far fa-cog';
     const buttonTitle = hasConfig ? 'Sample configured - click to edit' : 'Configure special sample';
     return `
-        <div class="special-sample-item" data-sample-id="${sampleId}" data-sample-type="${sampleTypeId}" data-index="${index}" draggable="false">
+        <div class="special-sample-item" data-sample-id="${sampleId}" data-sample-type="${sampleTypeId}" data-instance-index="${instanceIndex}" draggable="false">
             <div class="special-sample-drag-handle" style="cursor:default;">
                 <i class="fas fa-grip-vertical"></i>
             </div>
@@ -134,7 +163,7 @@ function specialSampleItemHTMLForGroup(sample, index) {
                 <div class="special-sample-name">${displayName}</div>
                 <div class="special-sample-type">${displayType}</div>
             </div>
-            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${sampleId}, '${displayName.replace(/'/g, "&#39;")}', '${baseTypeName.replace(/'/g, "&#39;")}')" title="${buttonTitle}"><i class="${gearIcon}"></i></button>
+            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModalByInstance(${instanceIndex})" title="${buttonTitle}"><i class="${gearIcon}"></i></button>
         </div>`;
 }
 
@@ -144,24 +173,24 @@ function createSpecialSampleItemHTML(sample, index) {
     const sampleTypeId = sample.special_type || sample.type_id || sample.sstid || 0;
     const baseTypeName = sample.special_type_name || sample.type || 'Type';
     let placementSummary = '';
-    const cfg = specialSampleConfigs[sampleId];
+    const cfg = specialSampleInstanceConfigs[index] || specialSampleConfigs[sampleId];
     if (cfg) {
         if (cfg.placement === 'specific_well') placementSummary = `Well ${cfg.specificWell || 'A1'}`;
         else if (cfg.placement === 'after_samples') placementSummary = `After +${cfg.afterSamplesCount || 1}`;
         else if (cfg.placement === 'script_placed') placementSummary = 'Script placed';
     }
     const displayType = (sampleTypeId === 4 && placementSummary) ? placementSummary : baseTypeName;
-    const hasConfig = specialSampleConfigs[sampleId] && Object.keys(specialSampleConfigs[sampleId]).length > 0;
+    const hasConfig = !!(cfg && Object.keys(cfg).length > 0);
     const gearIcon = hasConfig ? 'fas fa-cog' : 'far fa-cog';
     const buttonTitle = hasConfig ? 'Sample configured - click to edit' : 'Configure special sample';
     return `
-        <div class="special-sample-item" data-sample-id="${sampleId}" data-sample-type="${sampleTypeId}" data-index="${index}" draggable="true">
+        <div class="special-sample-item" data-sample-id="${sampleId}" data-sample-type="${sampleTypeId}" data-instance-index="${index}" draggable="true">
             <div class="special-sample-drag-handle"><i class="fas fa-grip-vertical"></i></div>
             <div class="special-sample-info">
                 <div class="special-sample-name">${displayName}</div>
                 <div class="special-sample-type">${displayType}</div>
             </div>
-            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${sampleId}, '${displayName.replace(/'/g, "&#39;")}', '${baseTypeName.replace(/'/g, "&#39;")}')" title="${buttonTitle}"><i class="${gearIcon}"></i></button>
+            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModalByInstance(${index})" title="${buttonTitle}"><i class="${gearIcon}"></i></button>
         </div>`;
 }
 
@@ -171,30 +200,33 @@ function handleSpecialSampleDragStart(e) {
     e.target.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'move';
 }
-
-function handleSpecialSampleDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    
-    const container = document.getElementById('enabledSpecialSamples');
-    const afterElement = getSpecialSampleDragAfterElement(container, e.clientY);
-    const dragging = document.querySelector('.special-sample-item.dragging');
-    
-    if (afterElement == null) {
-        container.appendChild(dragging);
-    } else {
-        container.insertBefore(dragging, afterElement);
+    function showSpecialSampleConfigModalByInstance(instanceIndex) {
+        const item = document.querySelector(`.special-sample-item[data-instance-index="${instanceIndex}"]`);
+        if (!item) return;
+        const sampleId = parseInt(item.dataset.sampleId);
+        currentConfigInstanceIndex = instanceIndex;
+        currentConfigSampleId = sampleId;
+        const sampleObj = specialSampleTypesDataAll.find(s => (s.ssid === sampleId) || (s.stid === sampleId));
+        const typeId = sampleObj ? (sampleObj.special_type || sampleObj.type_id || sampleObj.sstid || 0) : 0;
+        const specificId = `specialSampleConfigModal_type${typeId}`;
+        currentConfigModalEl = document.getElementById(specificId) || document.getElementById('specialSampleConfigModal_generic');
+        if (!currentConfigModalEl) return;
+        const sampleName = item.querySelector('.special-sample-name')?.textContent || sampleObj?.special_name || sampleObj?.name || 'Special Sample';
+        currentConfigModalEl.querySelectorAll('.configSampleName').forEach(el => el.textContent = sampleName);
+        const existingConfig = specialSampleInstanceConfigs[instanceIndex] || { count:1, createForEach:'step', autoAdd:false, placement:'user_placed', specificWell:'A1', afterSamplesCount:1 };
+        const setVal = (sel, val, prop='value') => { const el = currentConfigModalEl.querySelector(sel); if (el && val !== undefined) el[prop] = val; };
+        setVal('.sampleCount', existingConfig.count);
+        setVal('.createForEach', existingConfig.createForEach);
+        const aa = currentConfigModalEl.querySelector('.autoAdd'); if (aa) aa.checked = existingConfig.autoAdd;
+        currentConfigModalEl.querySelectorAll('.placement').forEach(r=>{ r.checked = (r.value === existingConfig.placement); });
+        handlePlacementDetailDisplay(existingConfig.placement, currentConfigModalEl);
+        setVal('.specificWell', existingConfig.specificWell);
+        setVal('.afterSamplesCount', existingConfig.afterSamplesCount);
+        currentConfigModalEl.style.display = 'flex';
+        currentConfigModalEl.querySelectorAll('.placement').forEach(radio => {
+            radio.addEventListener('change', () => handlePlacementDetailDisplay(radio.value, currentConfigModalEl));
+        });
     }
-}
-
-function handleSpecialSampleDrop(e) {
-    e.preventDefault();
-    updateSpecialSamplesFromDOM();
-}
-
-function handleSpecialSampleDragEnd(e) {
-    e.target.classList.remove('dragging');
-}
 
 function getSpecialSampleDragAfterElement(container, y) {
     const draggableElements = [...container.querySelectorAll('.special-sample-item:not(.dragging)')];
@@ -223,16 +255,12 @@ function updateSpecialSamplesFromDOM() {
 }
 
 function getSpecialSamplesFromInterface() {
-    const data = { enabled_ids: [], configurations: {} };
-    document.querySelectorAll('#assayConfigCards .special-sample-item').forEach(item => {
-        const id = parseInt(item.dataset.sampleId);
-    // Allow duplicates (each occurrence pushed) for non-unique samples
-    data.enabled_ids.push(id);
-        if (specialSampleConfigs[id] && Object.keys(specialSampleConfigs[id]).length > 0) {
-            data.configurations[id] = specialSampleConfigs[id];
-        }
+    // Build from current global arrays (already preserve order & duplicates)
+    const data = { enabled_ids: specialSampleEnabledIds.slice(), configurations: {} };
+    specialSampleInstanceConfigs.forEach((cfg, idx) => {
+        if (cfg && Object.keys(cfg).length > 0) data.configurations[idx] = cfg;
     });
-    console.log('Getting special samples data for step config (grouped):', data);
+    console.log('Getting special samples data for step config (index-keyed):', data);
     return data;
 }
 
@@ -248,6 +276,13 @@ function updateSpecialSampleConfigTextarea(specialSamples) {
             anchor.appendChild(el);
         } else {
             return; // no anchor, cannot persist
+    function hideSpecialSampleConfigModal() {
+        if (currentConfigModalEl) currentConfigModalEl.style.display = 'none';
+        currentConfigSampleId = null;
+        currentConfigSampleType = null;
+        currentConfigInstanceIndex = null;
+        currentConfigModalEl = null;
+    }
         }
     }
     el.value = JSON.stringify(specialSamples, null, 2);
@@ -327,14 +362,11 @@ function addSpecialSample(sampleId) {
     // unique_only now interpreted as: this specific sample can only be added once (duplicates blocked by earlier check)
     // (Multiple different samples of same type still allowed.)
     // Build current enabled list (excluding placeholders if any logic later)
-    const interfaceData = getSpecialSamplesFromInterface();
-    console.log('[SpecialSamples] existing enabled before add:', interfaceData.enabled_ids);
-    const current = interfaceData.enabled_ids;
-    // Always append sampleId (allow duplicates) unless unique_only and already present handled above
-    const updated = current.concat([sampleId]);
-    console.log('[SpecialSamples] updated enabled list:', updated);
-    loadSpecialSamplesInterface({ enabled_ids: updated });
-    console.log('[SpecialSamples] After add, enabled ids ->', updated);
+    console.log('[SpecialSamples] existing enabled before add:', specialSampleEnabledIds);
+    specialSampleEnabledIds.push(sampleId);
+    specialSampleInstanceConfigs.push(null);
+    loadSpecialSamplesInterface({ enabled_ids: specialSampleEnabledIds });
+    console.log('[SpecialSamples] After add, enabled ids ->', specialSampleEnabledIds);
     // Fallback: if after rebuild the item still not present, append manually to its group
     setTimeout(() => {
         if (!document.querySelector(`#assayConfigCards .special-sample-item[data-sample-id="${sampleId}"]`)) {
@@ -362,6 +394,7 @@ function addSpecialSample(sampleId) {
 
 // Ensure function accessible for inline onclick handlers
 window.addSpecialSample = addSpecialSample;
+window.showSpecialSampleConfigModalByInstance = showSpecialSampleConfigModalByInstance;
 
 function removeSpecialSample(sampleId) {
     // Remove item from its group list
@@ -375,7 +408,17 @@ function removeSpecialSample(sampleId) {
             if (card) card.remove();
         }
     }
-    if (specialSampleConfigs[sampleId]) delete specialSampleConfigs[sampleId];
+    // Rebuild arrays from DOM order after removal
+    const items = Array.from(document.querySelectorAll('#assayConfigCards .special-sample-item'));
+    specialSampleEnabledIds = items.map(i => parseInt(i.dataset.sampleId));
+    // Reindex instance configs aligning to new order (drop configs for removed instance)
+    const newConfigs = [];
+    items.forEach((el, idx) => {
+        const oldIndex = parseInt(el.dataset.instanceIndex);
+        newConfigs[idx] = specialSampleInstanceConfigs[oldIndex] || null;
+        el.dataset.instanceIndex = idx; // update DOM index attribute
+    });
+    specialSampleInstanceConfigs = newConfigs;
     updateSpecialSamplesFromDOM();
     renderAvailableSpecialSamples();
     if (!document.querySelector('#assayConfigCards .special-sample-item')) {
@@ -383,71 +426,7 @@ function removeSpecialSample(sampleId) {
     }
 }
 
-function showSpecialSampleConfigModal(sampleId, sampleName, sampleType) {
-    console.log('showSpecialSampleConfigModal called with:', sampleId, sampleName, sampleType);
-    currentConfigSampleId = sampleId;
-    currentConfigSampleType = sampleType;
-    const sampleObj = specialSampleTypesDataAll.find(s => (s.ssid === sampleId) || (s.stid === sampleId));
-    const typeId = sampleObj ? (sampleObj.special_type || sampleObj.type_id || sampleObj.sstid || 0) : 0;
-    const specificId = `specialSampleConfigModal_type${typeId}`;
-    currentConfigModalEl = document.getElementById(specificId) || document.getElementById('specialSampleConfigModal_generic');
-    if (!currentConfigModalEl) return;
-    currentConfigModalEl.querySelectorAll('.configSampleName').forEach(el => el.textContent = sampleName);
-    const existingConfig = specialSampleConfigs[sampleId] || { count:1, createForEach:'step', autoAdd:false, placement:'user_placed', specificWell:'A1', afterSamplesCount:1 };
-    const setVal = (sel, val, prop='value') => { const el = currentConfigModalEl.querySelector(sel); if (el) el[prop] = val; };
-    setVal('.sampleCount', existingConfig.count);
-    setVal('.createForEach', existingConfig.createForEach);
-    const aa = currentConfigModalEl.querySelector('.autoAdd'); if (aa) aa.checked = existingConfig.autoAdd;
-    currentConfigModalEl.querySelectorAll('.placement').forEach(r=>{ r.checked = (r.value === existingConfig.placement); });
-    handlePlacementDetailDisplay(existingConfig.placement, currentConfigModalEl);
-    setVal('.specificWell', existingConfig.specificWell);
-    setVal('.afterSamplesCount', existingConfig.afterSamplesCount);
-    currentConfigModalEl.style.display = 'flex';
-    currentConfigModalEl.querySelectorAll('.placement').forEach(radio => {
-        radio.addEventListener('change', () => handlePlacementDetailDisplay(radio.value, currentConfigModalEl));
-    });
-}
-
-function hideSpecialSampleConfigModal() {
-    if (currentConfigModalEl) currentConfigModalEl.style.display = 'none';
-    currentConfigSampleId = null;
-    currentConfigSampleType = null;
-    currentConfigModalEl = null;
-}
-
-function saveSpecialSampleConfig() {
-    if (!currentConfigSampleId || !currentConfigModalEl) return;
-    const m = currentConfigModalEl;
-    const count = parseInt((m.querySelector('.sampleCount')||{value:1}).value) || 1;
-    const createForEach = (m.querySelector('.createForEach')||{value:'step'}).value;
-    const autoAdd = (m.querySelector('.autoAdd')||{checked:false}).checked;
-    const placementRadio = Array.from(m.querySelectorAll('.placement')).find(r=>r.checked);
-    const placement = placementRadio ? placementRadio.value : 'user_placed';
-    const specificWell = (m.querySelector('.specificWell')||{value:'A1'}).value.trim() || 'A1';
-    const afterSamplesCount = parseInt((m.querySelector('.afterSamplesCount')||{value:1}).value) || 1;
-    specialSampleConfigs[currentConfigSampleId] = { count, createForEach, autoAdd, placement, specificWell, afterSamplesCount };
-    console.log(`Saved configuration for sample ID ${currentConfigSampleId}:`, specialSampleConfigs[currentConfigSampleId]);
-    const sampleItem = document.querySelector(`[data-sample-id="${currentConfigSampleId}"]`);
-    if (sampleItem) {
-        const configButton = sampleItem.querySelector('.special-sample-config-button');
-        if (configButton) {
-            configButton.style.backgroundColor = 'var(--green-med)';
-            configButton.title = 'Sample configured - click to edit';
-        }
-    }
-    hideSpecialSampleConfigModal();
-    console.log('Special sample configuration saved');
-}
-
-function removeCurrentSpecialSample() {
-    if (!currentConfigSampleId || !currentConfigSampleType) return;
-    
-    // Remove the special sample
-    removeSpecialSample(currentConfigSampleId, currentConfigSampleType);
-    
-    // Hide the modal
-    hideSpecialSampleConfigModal();
-}
+// Legacy modal functions removed; instance-based versions defined earlier.
 
 function handlePlacementDetailDisplay(placement, modalEl) {
     const specific = modalEl.querySelector('.specificWellDetail');
