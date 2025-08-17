@@ -147,23 +147,15 @@
                                         <textarea id="containerConfig" style="display: none;">[]</textarea>
                                     </div>
                                     
-                                    <!-- Special Samples Configuration Cards will be generated here dynamically -->
-                                    <div class="config-card">
-                                        <label class="form-label">Special Samples Configuration</label>
-                                        <div class="special-samples-config-panel">
-                                            <div class="special-samples-config-header">
-                                                <span>Enabled Special Samples</span>
-                                                <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector()">
-                                                    <i class="fas fa-plus"></i> Add
-                                                </button>
-                                            </div>
-                                            <div class="enabled-special-samples" id="enabledSpecialSamples">
-                                                <div class="no-special-samples">No special samples configured</div>
-                                            </div>
-                                        </div>
-                                        <!-- Hidden textarea for special samples data storage -->
-                                        <textarea id="specialSampleConfig" style="display: none;">[]</textarea>
+                                    <!-- Special Samples: dynamic cards per type/sample inserted after this anchor -->
+                                    <div id="specialSamplesCardsAnchor" style="width:100%;"></div>
+                                    <div style="margin-top:6px;">
+                                        <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector()">
+                                            <i class="fas fa-plus"></i> Add Special Sample
+                                        </button>
                                     </div>
+                                    <!-- Hidden textarea for special samples data storage -->
+                                    <textarea id="specialSampleConfig" style="display: none;">[]</textarea>
                                 </div>
                                 
                                 <!-- Pages Configuration - Full Width Section -->

@@ -14,8 +14,10 @@ breadcrumbs {
 .configure-container {
     display: flex;
     gap: 20px;
-    height: calc(100vh - 200px);
-    min-height: 600px;
+    /* Removed fixed viewport-constrained height so content can expand naturally */
+    height: auto;
+    min-height: 0;
+    align-items: flex-start;
 }
 
 .top-controls {
@@ -73,7 +75,8 @@ breadcrumbs {
 .panel-content {
     flex: 1;
     padding: 15px;
-    overflow-y: auto;
+    /* Allow full content to expand page instead of internal scroll */
+    overflow: visible;
 }
 
 .assay-info {
@@ -432,6 +435,14 @@ textarea.form-input {
     font-style: italic;
     padding: 15px;
     font-size: 11px;
+}
+
+/* Dynamic special sample cards container */
+#specialSamplesCardsAnchor {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    width: 100%;
 }
 
 /* (Removed unique special sample panel styles to unify with container styles) */

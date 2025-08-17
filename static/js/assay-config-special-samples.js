@@ -20,34 +20,59 @@ function initializeSpecialSampleTypes() {
 // Removed network loading; all special sample types are provided inline in template.
 
 function loadSpecialSamplesInterface(stepSpecialSamples) {
-    // stepSpecialSamples: {enabled_ids: [...], configurations: {...}} (modern format)
-    const enabledSpecialSamplesDiv = document.getElementById('enabledSpecialSamples');
-    if (!enabledSpecialSamplesDiv) return;
+    // Render per-type cards: each sample has its own card (since user wants separation by type)
+    const anchor = document.getElementById('specialSamplesCardsAnchor');
+    if (!anchor) return;
+    anchor.innerHTML = '';
 
     const enabledIds = (stepSpecialSamples && Array.isArray(stepSpecialSamples.enabled_ids)) ? stepSpecialSamples.enabled_ids : [];
-    if (!enabledIds.length) {
-        enabledSpecialSamplesDiv.innerHTML = '<div class="no-special-samples">No special samples configured for this step</div>';
-        return;
-    }
-    let samplesToRender = enabledIds.map(id => {
-        return specialSampleTypesDataAll.find(s => s.ssid === id || s.stid === id); // support legacy stid
-    }).filter(Boolean);
-
-    // Ensure placeholder (special sample type id 4) samples appear even if not yet enabled
+    // Build list; include placeholder type id 4 always
+    let samplesToRender = enabledIds.map(id => specialSampleTypesDataAll.find(s => s.ssid === id || s.stid === id)).filter(Boolean);
     const placeholderSamples = specialSampleTypesDataAll.filter(s => (s.special_type === 4 || s.sstid === 4 || s.type_id === 4));
     placeholderSamples.forEach(ps => {
         const pid = ps.ssid || ps.stid;
-        if (pid && !samplesToRender.find(x => (x.ssid||x.stid) === pid)) {
-            samplesToRender.push(ps);
-        }
+        if (pid && !samplesToRender.find(x => (x.ssid||x.stid) === pid)) samplesToRender.push(ps);
     });
+
     if (!samplesToRender.length) {
-        enabledSpecialSamplesDiv.innerHTML = '<div class="no-special-samples">No special samples configured for this step</div>';
+        anchor.innerHTML = '<div class="no-special-samples">No special samples configured</div>';
         return;
     }
-    const html = samplesToRender.map((sample, idx) => createSpecialSampleItemHTML(sample, idx)).join('');
-    enabledSpecialSamplesDiv.innerHTML = html;
-    enableSpecialSampleDragAndDrop();
+
+    samplesToRender.forEach(sample => {
+        const sampleId = sample.ssid || sample.stid;
+        const cardId = `specialSampleCard_${sampleId}`;
+        const configured = specialSampleConfigs[sampleId] && Object.keys(specialSampleConfigs[sampleId]).length > 0;
+        const displayName = sample.special_name || sample.name || `Sample ${sampleId}`;
+        const displayType = sample.special_type_name || sample.type || 'Type';
+        const sampleTypeId = sample.special_type || sample.type_id || sample.sstid || 0;
+        const gearIcon = configured ? 'fas fa-cog' : 'far fa-cog';
+        const buttonTitle = configured ? 'Sample configured - click to edit' : 'Configure special sample';
+        const html = `
+            <div class="config-card" id="${cardId}" data-sample-id="${sampleId}" data-sample-type="${sampleTypeId}">
+                <label class="form-label">${displayType}</label>
+                <div class="special-samples-config-panel">
+                    <div class="special-samples-config-header">
+                        <span>${displayName}</span>
+                        <div style="display:flex; gap:6px;">
+                            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${sampleId}, '${displayName.replace(/'/g, "&#39;")}', '${displayType.replace(/'/g, "&#39;")}')" title="${buttonTitle}"><i class="${gearIcon}"></i></button>
+                            <button type="button" class="btn-remove-page" style="padding:4px 6px;font-size:10px;" onclick="removeSpecialSample(${sampleId})" title="Remove"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="enabled-special-samples" style="padding:6px 10px;">
+                        <div class="special-sample-item" data-sample-id="${sampleId}" data-sample-type="${sampleTypeId}" draggable="false">
+                            <div class="special-sample-info">
+                                <div class="special-sample-name">${displayName}</div>
+                                <div class="special-sample-type">${displayType}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        anchor.insertAdjacentHTML('beforeend', html);
+    });
+
+    updateSpecialSamplesFromDOM();
 }
 
 function createSpecialSampleItemHTML(sample, index) {
@@ -69,22 +94,7 @@ function createSpecialSampleItemHTML(sample, index) {
         </div>`;
 }
 
-function enableSpecialSampleDragAndDrop() {
-    const container = document.getElementById('enabledSpecialSamples');
-    const draggables = container.querySelectorAll('.special-sample-item');
-    
-    draggables.forEach(draggable => {
-        draggable.removeEventListener('dragstart', handleSpecialSampleDragStart);
-        draggable.removeEventListener('dragend', handleSpecialSampleDragEnd);
-        draggable.addEventListener('dragstart', handleSpecialSampleDragStart);
-        draggable.addEventListener('dragend', handleSpecialSampleDragEnd);
-    });
-    
-    container.removeEventListener('dragover', handleSpecialSampleDragOver);
-    container.removeEventListener('drop', handleSpecialSampleDrop);
-    container.addEventListener('dragover', handleSpecialSampleDragOver);
-    container.addEventListener('drop', handleSpecialSampleDrop);
-}
+function enableSpecialSampleDragAndDrop() { /* No-op: per-type cards remove list reordering requirement */ }
 
 function handleSpecialSampleDragStart(e) {
     e.target.classList.add('dragging');
@@ -131,41 +141,27 @@ function getSpecialSampleDragAfterElement(container, y) {
 }
 
 function updateSpecialSamplesFromDOM() {
-    const specialSampleItems = document.querySelectorAll('#enabledSpecialSamples .special-sample-item');
-    const specialSamples = [];
-    
-    specialSampleItems.forEach((item, index) => {
-        const sampleId = parseInt(item.dataset.sampleId);
-    const sampleData = specialSampleTypesDataAll.find(s => (s.ssid === sampleId) || (s.stid === sampleId));
-        if (sampleData) {
-            specialSamples.push(sampleData);
-        }
+    const cards = document.querySelectorAll('#specialSamplesCardsAnchor .config-card[data-sample-id]');
+    const samples = [];
+    cards.forEach(card => {
+        const id = parseInt(card.dataset.sampleId);
+        const sampleData = specialSampleTypesDataAll.find(s => (s.ssid === id) || (s.stid === id));
+        if (sampleData) samples.push(sampleData);
     });
-    
-    console.log('Updated special samples from DOM:', specialSamples);
-    updateSpecialSampleConfigTextarea(specialSamples);
+    updateSpecialSampleConfigTextarea(samples);
 }
 
 function getSpecialSamplesFromInterface() {
-    // Return object with enabled sample IDs and their configurations
-    const specialSamplesData = {
-        enabled_ids: [],
-        configurations: {}
-    };
-    
-    const specialSampleItems = document.querySelectorAll('#enabledSpecialSamples .special-sample-item');
-    specialSampleItems.forEach(item => {
-        const sampleId = parseInt(item.dataset.sampleId);
-        specialSamplesData.enabled_ids.push(sampleId);
-        
-        // Include configuration if it exists
-        if (specialSampleConfigs[sampleId] && Object.keys(specialSampleConfigs[sampleId]).length > 0) {
-            specialSamplesData.configurations[sampleId] = specialSampleConfigs[sampleId];
+    const data = { enabled_ids: [], configurations: {} };
+    document.querySelectorAll('#specialSamplesCardsAnchor .config-card[data-sample-id]').forEach(card => {
+        const id = parseInt(card.dataset.sampleId);
+        data.enabled_ids.push(id);
+        if (specialSampleConfigs[id] && Object.keys(specialSampleConfigs[id]).length > 0) {
+            data.configurations[id] = specialSampleConfigs[id];
         }
     });
-    
-    console.log('Getting special samples data for step config:', specialSamplesData);
-    return specialSamplesData;
+    console.log('Getting special samples data for step config:', data);
+    return data;
 }
 
 function updateSpecialSampleConfigTextarea(specialSamples) {
@@ -186,107 +182,46 @@ function hideSpecialSampleSelector() {
 
 function renderAvailableSpecialSamples() {
     const listDiv = document.getElementById('availableSpecialSamplesList');
-    
-    console.log('renderAvailableSpecialSamples called');
-    console.log('specialSampleTypesDataAll:', specialSampleTypesDataAll);
-    
+    if (!listDiv) return;
     if (specialSampleTypesDataAll.length === 0) {
-        listDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--gray-med);">No special sample types available</div>';
+        listDiv.innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray-med);">No special sample types available</div>';
         return;
     }
-    
-    // Get currently enabled special sample IDs
-    const enabledSpecialSampleIds = new Set();
-    document.querySelectorAll('#enabledSpecialSamples .special-sample-item').forEach(item => {
-        enabledSpecialSampleIds.add(parseInt(item.dataset.sampleId));
-    });
-    
+    const enabled = new Set();
+    document.querySelectorAll('#specialSamplesCardsAnchor .config-card[data-sample-id]').forEach(card => enabled.add(parseInt(card.dataset.sampleId)));
     let html = '';
     specialSampleTypesDataAll.forEach(sample => {
-        const sampleId = sample.stid;
-        const isEnabled = enabledSpecialSampleIds.has(sampleId);
-        const disabledClass = isEnabled ? 'disabled' : '';
-        const title = isEnabled ? 'Special sample already added' : 'Click to add this special sample';
-        
-        html += `
-            <div class="available-special-sample ${disabledClass}" 
-                 onclick="${isEnabled ? '' : `addSpecialSample(${sampleId})`}" 
-                 title="${title}">
-                <div class="special-sample-info">
-                    <div class="special-sample-name">${sample.name}</div>
-                    <div class="special-sample-type">${sample.type}</div>
-                </div>
-                ${isEnabled ? '<div style="margin-left: auto; color: var(--green-med);"><i class="fas fa-check"></i></div>' : ''}
-            </div>
-        `;
+        const sampleId = sample.ssid || sample.stid;
+        const isEnabled = enabled.has(sampleId);
+        html += `<div class="available-special-sample ${isEnabled ? 'disabled' : ''}" ${isEnabled ? '' : `onclick="addSpecialSample(${sampleId})"`} title="${isEnabled ? 'Special sample already added' : 'Click to add this special sample'}">`+
+            `<div class="special-sample-info"><div class="special-sample-name">${sample.special_name || sample.name}</div><div class="special-sample-type">${sample.special_type_name || sample.type}</div></div>`+
+            `${isEnabled ? '<div style=\"margin-left:auto;color:var(--green-med);\"><i class=\"fas fa-check\"></i></div>' : ''}`+
+            `</div>`;
     });
-    
     listDiv.innerHTML = html;
 }
 
 function addSpecialSample(sampleId) {
     const sample = specialSampleTypesDataAll.find(s => s.ssid === sampleId || s.stid === sampleId);
-    if (!sample) {
-        console.log('Special sample not found:', sampleId);
-        return;
-    }
-    
-    // Check if already enabled
-    const existingItem = document.querySelector(`#enabledSpecialSamples [data-sample-id="${sampleId}"]`);
-    if (existingItem) {
-        console.log('Special sample already enabled:', sampleId);
-        return;
-    }
-    
-    console.log('Adding special sample:', sample);
-    
-    // Add to the enabled special samples display
-    const enabledSpecialSamplesDiv = document.getElementById('enabledSpecialSamples');
-    const noSpecialSamplesDiv = enabledSpecialSamplesDiv.querySelector('.no-special-samples');
-    
-    if (noSpecialSamplesDiv) {
-        enabledSpecialSamplesDiv.innerHTML = '';
-    }
-    
-    const existingItems = enabledSpecialSamplesDiv.querySelectorAll('.special-sample-item');
-    const specialSampleHTML = createSpecialSampleItemHTML(sample, existingItems.length);
-    enabledSpecialSamplesDiv.insertAdjacentHTML('beforeend', specialSampleHTML);
-    
-    // Re-enable drag and drop
-    enableSpecialSampleDragAndDrop();
-    
-    // Update the special samples array
-    updateSpecialSamplesFromDOM();
-    
-    // Update the available special samples display
+    if (!sample) return;
+    const existingCard = document.querySelector(`#specialSamplesCardsAnchor .config-card[data-sample-id="${sampleId}"]`);
+    if (existingCard) return; // already
+    // Append card
+    const currentData = { enabled_ids: getSpecialSamplesFromInterface().enabled_ids.concat([sampleId]) };
+    loadSpecialSamplesInterface(currentData); // re-render all for simplicity
     renderAvailableSpecialSamples();
-    
-    // Hide modal
     hideSpecialSampleSelector();
 }
 
 function removeSpecialSample(sampleId) {
-    // Remove from DOM
-    const specialSampleItem = document.querySelector(`#enabledSpecialSamples [data-sample-id="${sampleId}"]`);
-    if (specialSampleItem) {
-        specialSampleItem.remove();
-    }
-    
-    // Remove configuration
-    if (specialSampleConfigs[sampleId]) {
-        delete specialSampleConfigs[sampleId];
-        console.log(`Removed configuration for special sample ${sampleId}`);
-    }
-    
-    // Check if no special samples remain
-    const enabledSpecialSamplesDiv = document.getElementById('enabledSpecialSamples');
-    const remainingItems = enabledSpecialSamplesDiv.querySelectorAll('.special-sample-item');
-    if (remainingItems.length === 0) {
-        enabledSpecialSamplesDiv.innerHTML = '<div class="no-special-samples">No special samples configured for this step</div>';
-    }
-    
-    // Update the special samples array
+    const card = document.getElementById(`specialSampleCard_${sampleId}`);
+    if (card) card.remove();
+    if (specialSampleConfigs[sampleId]) delete specialSampleConfigs[sampleId];
     updateSpecialSamplesFromDOM();
+    renderAvailableSpecialSamples();
+    if (!document.querySelector('#specialSamplesCardsAnchor .config-card')) {
+        document.getElementById('specialSamplesCardsAnchor').innerHTML = '<div class="no-special-samples">No special samples configured</div>';
+    }
 }
 
 function showSpecialSampleConfigModal(sampleId, sampleName, sampleType) {
