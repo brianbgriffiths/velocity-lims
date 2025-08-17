@@ -245,3 +245,21 @@ function addNewStep() {
     // Implementation depends on your step creation workflow
     console.log('Add new step functionality to be implemented');
 }
+
+// Auto-select first step on initial load (restores legacy behavior)
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        const stepsList = document.getElementById('stepsList');
+        if (!stepsList) return;
+        const firstStep = stepsList.querySelector('.step-item');
+        // Only auto-select if no step already selected (e.g., via hash or prior script)
+        if (firstStep && !document.querySelector('.step-item.selected')) {
+            const stepId = parseInt(firstStep.getAttribute('data-step-id'));
+            const nameEl = firstStep.querySelector('.step-name');
+            const stepName = nameEl ? nameEl.textContent.trim() : 'Step';
+            selectStep(stepId, stepName);
+        }
+    } catch (e) {
+        console.warn('Auto-select first step failed:', e);
+    }
+});
