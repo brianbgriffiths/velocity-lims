@@ -29,7 +29,9 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
         enabledSpecialSamplesDiv.innerHTML = '<div class="no-special-samples">No special samples configured for this step</div>';
         return;
     }
-    const samplesToRender = enabledIds.map(id => specialSampleTypesDataAll.find(s => s.stid === id)).filter(Boolean);
+    const samplesToRender = enabledIds.map(id => {
+        return specialSampleTypesDataAll.find(s => s.ssid === id || s.stid === id); // support legacy stid
+    }).filter(Boolean);
     if (!samplesToRender.length) {
         enabledSpecialSamplesDiv.innerHTML = '<div class="no-special-samples">No special samples configured for this step</div>';
         return;
@@ -40,28 +42,21 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
 }
 
 function createSpecialSampleItemHTML(sample, index) {
-    // Determine if the sample has configuration
-    const sampleId = sample.stid;
+    const sampleId = sample.ssid || sample.stid; // prefer modern ssid
+    const displayName = sample.special_name || sample.name || `Sample ${sampleId}`;
+    const displayType = sample.special_type_name || sample.type || 'Type';
     const hasConfig = specialSampleConfigs[sampleId] && Object.keys(specialSampleConfigs[sampleId]).length > 0;
-    
-    // Use thin gear for unconfigured, solid gear for configured
     const gearIcon = hasConfig ? 'fas fa-cog' : 'far fa-cog';
     const buttonTitle = hasConfig ? 'Sample configured - click to edit' : 'Configure special sample';
-    
     return `
         <div class="special-sample-item" data-sample-id="${sampleId}" data-index="${index}" draggable="true">
-            <div class="special-sample-drag-handle">
-                <i class="fas fa-grip-vertical"></i>
-            </div>
+            <div class="special-sample-drag-handle"><i class="fas fa-grip-vertical"></i></div>
             <div class="special-sample-info">
-                <div class="special-sample-name">${sample.name}</div>
-                <div class="special-sample-type">${sample.type}</div>
+                <div class="special-sample-name">${displayName}</div>
+                <div class="special-sample-type">${displayType}</div>
             </div>
-            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${sampleId}, '${sample.name}', '${sample.type}')" title="${buttonTitle}">
-                <i class="${gearIcon}"></i>
-            </button>
-        </div>
-    `;
+            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${sampleId}, '${displayName.replace(/'/g, "&#39;")}', '${displayType.replace(/'/g, "&#39;")}')" title="${buttonTitle}"><i class="${gearIcon}"></i></button>
+        </div>`;
 }
 
 function enableSpecialSampleDragAndDrop() {
@@ -131,7 +126,7 @@ function updateSpecialSamplesFromDOM() {
     
     specialSampleItems.forEach((item, index) => {
         const sampleId = parseInt(item.dataset.sampleId);
-        const sampleData = specialSampleTypesDataAll.find(s => s.stid === sampleId);
+    const sampleData = specialSampleTypesDataAll.find(s => (s.ssid === sampleId) || (s.stid === sampleId));
         if (sampleData) {
             specialSamples.push(sampleData);
         }
@@ -220,7 +215,7 @@ function renderAvailableSpecialSamples() {
 }
 
 function addSpecialSample(sampleId) {
-    const sample = specialSampleTypesDataAll.find(s => s.stid === sampleId);
+    const sample = specialSampleTypesDataAll.find(s => s.ssid === sampleId || s.stid === sampleId);
     if (!sample) {
         console.log('Special sample not found:', sampleId);
         return;
