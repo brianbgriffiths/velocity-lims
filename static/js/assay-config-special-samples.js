@@ -70,13 +70,14 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
 
     Object.values(groups).sort((a,b)=>a.typeId-b.typeId).forEach(group => {
         const cardId = `specialSampleTypeCard_${group.typeId}`;
-        const samplesLabel = `${group.samples.length} Sample${group.samples.length!==1?'s':''}`;
         const cardHtml = `
             <div class="config-card" id="${cardId}" data-sample-type-group="${group.typeId}">
-                <label class="form-label">${group.typeName}</label>
                 <div class="special-samples-config-panel">
                     <div class="special-samples-config-header">
-                        <span>${samplesLabel}</span>
+                            <span>Enabled ${group.typeName}</span>
+                            <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector()">
+                                <i class="fas fa-plus"></i> Add
+                            </button>
                     </div>
                     <div class="enabled-special-samples" id="specialSampleGroup_${group.typeId}">
                         ${group.samples.length ? group.samples.map((sample, idx) => specialSampleItemHTMLForGroup(sample, idx)).join('') : '<div class="no-special-samples" style="padding:6px 8px;color:var(--gray-med);font-size:11px;">No samples of this type enabled</div>'}
