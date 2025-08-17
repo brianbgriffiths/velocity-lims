@@ -238,16 +238,27 @@ function selectStep(stepId, stepName) {
     
     // Load the step configuration
     loadStepConfiguration(stepId);
-
-    // Update URL (query param & hash) without reloading so direct links work
+    // Update URL path (keep assay id, replace step id) pattern: /.../<assay>/<step>/
     try {
-        const url = new URL(window.location.href);
-        url.searchParams.set('step', stepId);
-        // Optionally keep existing other params
-        history.replaceState({ stepId }, '', url.toString().split('#')[0] + `#step-${stepId}`);
-    } catch (e) {
-        console.warn('Failed to update URL for step selection:', e);
-    }
+        const pathParts = window.location.pathname.split('/');
+        if (pathParts[pathParts.length - 1] === '') pathParts.pop();
+        const numericIdxs = [];
+        pathParts.forEach((p,i)=>{ if (/^\d+$/.test(p)) numericIdxs.push(i); });
+        if (numericIdxs.length >= 2) {
+            // Pattern assay/step -> second numeric is step id (index 1 within numeric list)
+            const stepIdx = numericIdxs[1];
+            pathParts[stepIdx] = String(stepId);
+        } else if (numericIdxs.length === 1) {
+            // Only assay id present; append step id preserving structure
+            pathParts.push(String(stepId));
+        } else {
+            return; // can't safely modify
+        }
+        let newPath = pathParts.join('/');
+        if (!newPath.startsWith('/')) newPath = '/' + newPath;
+        if (!newPath.endsWith('/')) newPath += '/';
+        history.replaceState({ stepId }, '', newPath);
+    } catch (e) { console.warn('Failed to update path for step selection:', e); }
 }
 
 function addNewStep() {
@@ -261,14 +272,16 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
         const stepsList = document.getElementById('stepsList');
         if (!stepsList) return;
-        // Determine target from URL param or hash
+        // Determine target from path (pattern .../assay_id/step_id/)
         let targetStepId = null;
-        const url = new URL(window.location.href);
-        if (url.searchParams.has('step')) {
-            targetStepId = parseInt(url.searchParams.get('step'));
-        } else if (window.location.hash.startsWith('#step-')) {
-            const hashId = parseInt(window.location.hash.replace('#step-', ''));
-            if (!isNaN(hashId)) targetStepId = hashId;
+        const parts = window.location.pathname.split('/').filter(p=>p);
+        const numeric = parts.filter(p=>/^\d+$/.test(p));
+        if (numeric.length >= 2) {
+            // second numeric is step id
+            targetStepId = parseInt(numeric[1]);
+        } else if (numeric.length === 1) {
+            // only assay id in URL; no preselected step
+            targetStepId = null;
         }
         let targetEl = null;
         if (targetStepId) {
