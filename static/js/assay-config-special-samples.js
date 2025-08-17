@@ -302,16 +302,8 @@ function addSpecialSample(sampleId) {
     if (!sample) return;
     // If already in UI, skip
     if (document.querySelector(`#assayConfigCards .special-sample-item[data-sample-id="${sampleId}"]`)) return;
-    // Enforce unique_only: if any sample of same type enabled, block
-    if (sample.unique_only) {
-        const typeId = sample.special_type || sample.type_id || sample.sstid || 0;
-        const existingOfType = document.querySelector(`#assayConfigCards .special-sample-item[data-sample-type="${typeId}"]`);
-        if (existingOfType) {
-            console.error('This special sample type can only be added once');
-            hideSpecialSampleSelector();
-            return;
-        }
-    }
+    // unique_only now interpreted as: this specific sample can only be added once (duplicates blocked by earlier check)
+    // (Multiple different samples of same type still allowed.)
     // Build current enabled list (excluding placeholders if any logic later)
     const current = getSpecialSamplesFromInterface().enabled_ids;
     const updated = current.concat([sampleId]);
