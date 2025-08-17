@@ -229,20 +229,21 @@
         </div>
     </div>
     
-    <!-- Special Sample Configuration Modal -->
-    <div class="special-sample-config-modal" id="specialSampleConfigModal">
+    <!-- Special Sample Configuration Modals (per type) -->
+    <!-- Generic base (fallback) -->
+    <div class="special-sample-config-modal" id="specialSampleConfigModal_generic">
         <div class="special-sample-config-dialog">
             <div class="special-sample-config-header">
-                <span><i class="fas fa-cog"></i> Configure <span id="configSampleName">Special Sample</span></span>
+                <span><i class="fas fa-cog"></i> Configure <span class="configSampleName">Special Sample</span></span>
             </div>
             <div class="special-sample-config-content">
                 <div class="config-section">
                     <div class="config-section-title">Sample Creation</div>
                     <div class="config-row">
                         <label>Create:</label>
-                        <input type="number" id="sampleCount" min="0" max="999" value="1">
+                        <input type="number" class="sampleCount" min="0" max="999" value="1">
                         <span>for each</span>
-                        <select id="createForEach">
+                        <select class="createForEach">
                             <option value="step">Step</option>
                             <option value="input_plate">Input Plate</option>
                             <option value="output_plate">Output Plate</option>
@@ -251,46 +252,70 @@
                     </div>
                     <div class="config-row">
                         <label>
-                            <input type="checkbox" id="autoAdd" style="margin-right: 5px;">
-                            Auto-add
+                            <input type="checkbox" class="autoAdd" style="margin-right: 5px;"> Auto-add
                         </label>
-                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
-                            Automatically add samples without user intervention
-                        </span>
+                        <span style="font-size:11px;color:var(--gray-dark);margin-left:10px;">Automatically add without user intervention</span>
                     </div>
                 </div>
-                
                 <div class="config-section">
-                    <div class="config-section-title">Sample Placement</div>
+                    <div class="config-section-title">Placement</div>
                     <div class="placement-options">
                         <div class="placement-option">
-                            <input type="radio" id="placementUserPlaced" name="placement" value="user_placed" checked>
-                            <label for="placementUserPlaced">User-placed</label>
+                            <input type="radio" class="placement" value="user_placed" checked>
+                            <label>User-placed</label>
                         </div>
                         <div class="placement-option">
-                            <input type="radio" id="placementSpecificWell" name="placement" value="specific_well">
-                            <label for="placementSpecificWell">Specific well:</label>
-                            <div class="placement-detail" id="specificWellDetail">
-                                <input type="text" id="specificWell" placeholder="A1" maxlength="3">
-                            </div>
+                            <input type="radio" class="placement" value="specific_well">
+                            <label>Specific well:</label>
+                            <div class="placement-detail specificWellDetail"><input type="text" class="specificWell" placeholder="A1" maxlength="3"></div>
                         </div>
                         <div class="placement-option">
-                            <input type="radio" id="placementAfterSamples" name="placement" value="after_samples">
-                            <label for="placementAfterSamples">N after last sample:</label>
-                            <div class="placement-detail" id="afterSamplesDetail">
-                                <input type="number" id="afterSamplesCount" min="0" max="99" value="1">
-                            </div>
+                            <input type="radio" class="placement" value="after_samples">
+                            <label>N after last sample:</label>
+                            <div class="placement-detail afterSamplesDetail"><input type="number" class="afterSamplesCount" min="0" max="99" value="1"></div>
                         </div>
                         <div class="placement-option">
-                            <input type="radio" id="placementScriptPlaced" name="placement" value="script_placed">
-                            <label for="placementScriptPlaced">Script placed</label>
+                            <input type="radio" class="placement" value="script_placed">
+                            <label>Script placed</label>
                         </div>
                     </div>
                 </div>
-                
                 <div class="config-buttons">
                     <button type="button" class="btn-config-cancel" onclick="hideSpecialSampleConfigModal()">Cancel</button>
-                    <button type="button" class="btn-remove-sample" onclick="removeCurrentSpecialSample()">Remove Control</button>
+                    <button type="button" class="btn-remove-sample" onclick="removeCurrentSpecialSample()">Remove Special Sample</button>
+                    <button type="button" class="btn-config-save" onclick="saveSpecialSampleConfig()">Save Configuration</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Example type-specific modal: Type 4 Placeholder -->
+    <div class="special-sample-config-modal" id="specialSampleConfigModal_type4">
+        <div class="special-sample-config-dialog">
+            <div class="special-sample-config-header">
+                <span><i class="fas fa-cog"></i> Configure <span class="configSampleName">Placeholder Control</span></span>
+            </div>
+            <div class="special-sample-config-content">
+                <div class="config-section">
+                    <div class="config-section-title">Placeholder Options</div>
+                    <div class="config-row">
+                        <label>Count:</label>
+                        <input type="number" class="sampleCount" min="0" max="999" value="1">
+                    </div>
+                    <div class="config-row">
+                        <label>Auto-add:</label>
+                        <input type="checkbox" class="autoAdd" style="margin-left:6px;">
+                    </div>
+                </div>
+                <div class="config-section">
+                    <div class="config-section-title">Well Placement</div>
+                    <div class="config-row">
+                        <label>Specific Well:</label>
+                        <input type="text" class="specificWell" placeholder="A1" maxlength="3" style="width:70px;">
+                    </div>
+                </div>
+                <div class="config-buttons">
+                    <button type="button" class="btn-config-cancel" onclick="hideSpecialSampleConfigModal()">Cancel</button>
+                    <button type="button" class="btn-remove-sample" onclick="removeCurrentSpecialSample()">Remove Placeholder</button>
                     <button type="button" class="btn-config-save" onclick="saveSpecialSampleConfig()">Save Configuration</button>
                 </div>
             </div>

@@ -9,6 +9,7 @@ let specialSampleTypesDataAll = window.specialSampleTypesData || [];
 let specialSampleConfigs = {};
 let currentConfigSampleId = null;
 let currentConfigSampleType = null;
+let currentConfigModalEl = null;
 
 function initializeSpecialSampleTypes() {
     console.log('Initializing special sample types from embedded template data');
@@ -290,68 +291,48 @@ function removeSpecialSample(sampleId) {
 
 function showSpecialSampleConfigModal(sampleId, sampleName, sampleType) {
     console.log('showSpecialSampleConfigModal called with:', sampleId, sampleName, sampleType);
-    
     currentConfigSampleId = sampleId;
     currentConfigSampleType = sampleType;
-    
-    // Update modal title
-    document.getElementById('configSampleName').textContent = sampleName;
-    
-    // Load existing configuration if available
-    const existingConfig = specialSampleConfigs[sampleId] || {
-        count: 1,
-        createForEach: 'step',
-        autoAdd: false,
-        placement: 'user_placed',
-        specificWell: 'A1',
-        afterSamplesCount: 1
-    };
-    
-    // Populate form fields
-    document.getElementById('sampleCount').value = existingConfig.count;
-    document.getElementById('createForEach').value = existingConfig.createForEach;
-    document.getElementById('autoAdd').checked = existingConfig.autoAdd;
-    
-    // Handle placement radio buttons
-    document.querySelector(`input[name="placement"][value="${existingConfig.placement}"]`).checked = true;
-    updatePlacementDetails(existingConfig.placement);
-    
-    document.getElementById('specificWell').value = existingConfig.specificWell;
-    document.getElementById('afterSamplesCount').value = existingConfig.afterSamplesCount;
-    
-    // Show modal
-    document.getElementById('specialSampleConfigModal').style.display = 'flex';
+    const sampleObj = specialSampleTypesDataAll.find(s => (s.ssid === sampleId) || (s.stid === sampleId));
+    const typeId = sampleObj ? (sampleObj.special_type || sampleObj.type_id || sampleObj.sstid || 0) : 0;
+    const specificId = `specialSampleConfigModal_type${typeId}`;
+    currentConfigModalEl = document.getElementById(specificId) || document.getElementById('specialSampleConfigModal_generic');
+    if (!currentConfigModalEl) return;
+    currentConfigModalEl.querySelectorAll('.configSampleName').forEach(el => el.textContent = sampleName);
+    const existingConfig = specialSampleConfigs[sampleId] || { count:1, createForEach:'step', autoAdd:false, placement:'user_placed', specificWell:'A1', afterSamplesCount:1 };
+    const setVal = (sel, val, prop='value') => { const el = currentConfigModalEl.querySelector(sel); if (el) el[prop] = val; };
+    setVal('.sampleCount', existingConfig.count);
+    setVal('.createForEach', existingConfig.createForEach);
+    const aa = currentConfigModalEl.querySelector('.autoAdd'); if (aa) aa.checked = existingConfig.autoAdd;
+    currentConfigModalEl.querySelectorAll('.placement').forEach(r=>{ r.checked = (r.value === existingConfig.placement); });
+    handlePlacementDetailDisplay(existingConfig.placement, currentConfigModalEl);
+    setVal('.specificWell', existingConfig.specificWell);
+    setVal('.afterSamplesCount', existingConfig.afterSamplesCount);
+    currentConfigModalEl.style.display = 'flex';
+    currentConfigModalEl.querySelectorAll('.placement').forEach(radio => {
+        radio.addEventListener('change', () => handlePlacementDetailDisplay(radio.value, currentConfigModalEl));
+    });
 }
 
 function hideSpecialSampleConfigModal() {
-    document.getElementById('specialSampleConfigModal').style.display = 'none';
+    if (currentConfigModalEl) currentConfigModalEl.style.display = 'none';
     currentConfigSampleId = null;
     currentConfigSampleType = null;
+    currentConfigModalEl = null;
 }
 
 function saveSpecialSampleConfig() {
-    if (!currentConfigSampleId) return;
-    
-    const count = parseInt(document.getElementById('sampleCount').value) || 1;
-    const createForEach = document.getElementById('createForEach').value;
-    const autoAdd = document.getElementById('autoAdd').checked;
-    const placement = document.querySelector('input[name="placement"]:checked').value;
-    const specificWell = document.getElementById('specificWell').value.trim() || 'A1';
-    const afterSamplesCount = parseInt(document.getElementById('afterSamplesCount').value) || 1;
-    
-    // Save configuration
-    specialSampleConfigs[currentConfigSampleId] = {
-        count: count,
-        createForEach: createForEach,
-        autoAdd: autoAdd,
-        placement: placement,
-        specificWell: specificWell,
-        afterSamplesCount: afterSamplesCount
-    };
-    
+    if (!currentConfigSampleId || !currentConfigModalEl) return;
+    const m = currentConfigModalEl;
+    const count = parseInt((m.querySelector('.sampleCount')||{value:1}).value) || 1;
+    const createForEach = (m.querySelector('.createForEach')||{value:'step'}).value;
+    const autoAdd = (m.querySelector('.autoAdd')||{checked:false}).checked;
+    const placementRadio = Array.from(m.querySelectorAll('.placement')).find(r=>r.checked);
+    const placement = placementRadio ? placementRadio.value : 'user_placed';
+    const specificWell = (m.querySelector('.specificWell')||{value:'A1'}).value.trim() || 'A1';
+    const afterSamplesCount = parseInt((m.querySelector('.afterSamplesCount')||{value:1}).value) || 1;
+    specialSampleConfigs[currentConfigSampleId] = { count, createForEach, autoAdd, placement, specificWell, afterSamplesCount };
     console.log(`Saved configuration for sample ID ${currentConfigSampleId}:`, specialSampleConfigs[currentConfigSampleId]);
-    
-    // Update visual indicator (add a small dot or change styling to show it's configured)
     const sampleItem = document.querySelector(`[data-sample-id="${currentConfigSampleId}"]`);
     if (sampleItem) {
         const configButton = sampleItem.querySelector('.special-sample-config-button');
@@ -360,7 +341,6 @@ function saveSpecialSampleConfig() {
             configButton.title = 'Sample configured - click to edit';
         }
     }
-    
     hideSpecialSampleConfigModal();
     pylims_ui.success('Special sample configuration saved');
 }
@@ -375,24 +355,9 @@ function removeCurrentSpecialSample() {
     hideSpecialSampleConfigModal();
 }
 
-function updatePlacementDetails(placement) {
-    // Hide all detail sections first
-    document.getElementById('specificWellDetail').style.display = 'none';
-    document.getElementById('afterSamplesDetail').style.display = 'none';
-    
-    // Show relevant detail section
-    if (placement === 'specific_well') {
-        document.getElementById('specificWellDetail').style.display = 'flex';
-    } else if (placement === 'after_samples') {
-        document.getElementById('afterSamplesDetail').style.display = 'flex';
-    }
+function handlePlacementDetailDisplay(placement, modalEl) {
+    const specific = modalEl.querySelector('.specificWellDetail');
+    const after = modalEl.querySelector('.afterSamplesDetail');
+    if (specific) specific.style.display = (placement === 'specific_well') ? 'flex' : 'none';
+    if (after) after.style.display = (placement === 'after_samples') ? 'flex' : 'none';
 }
-
-// Add event listeners for placement radio buttons when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    document.querySelectorAll('input[name="placement"]').forEach(radio => {
-        radio.addEventListener('change', function() {
-            updatePlacementDetails(this.value);
-        });
-    });
-});
