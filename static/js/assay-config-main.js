@@ -231,10 +231,10 @@ function selectStep(stepId, stepName) {
     }
     
     // Show the step configuration panel
-    const rightPanel = document.querySelector('.right-panel');
-    if (rightPanel) {
-        rightPanel.style.display = 'block';
-    }
+    const placeholder = document.getElementById('stepPlaceholder');
+    const configPanel = document.getElementById('stepConfigPanel');
+    if (placeholder) placeholder.style.display = 'none';
+    if (configPanel) configPanel.style.display = 'block';
     
     // Load the step configuration
     loadStepConfiguration(stepId);
