@@ -276,16 +276,55 @@ function updateSpecialSampleConfigTextarea(specialSamples) {
             anchor.appendChild(el);
         } else {
             return; // no anchor, cannot persist
-    function hideSpecialSampleConfigModal() {
-        if (currentConfigModalEl) currentConfigModalEl.style.display = 'none';
-        currentConfigSampleId = null;
-        currentConfigSampleType = null;
-        currentConfigInstanceIndex = null;
-        currentConfigModalEl = null;
-    }
         }
     }
     el.value = JSON.stringify(specialSamples, null, 2);
+}
+
+function hideSpecialSampleConfigModal() {
+    if (currentConfigModalEl) currentConfigModalEl.style.display = 'none';
+    currentConfigSampleId = null;
+    currentConfigSampleType = null;
+    currentConfigInstanceIndex = null;
+    currentConfigModalEl = null;
+}
+
+function saveSpecialSampleConfig() {
+    if (currentConfigInstanceIndex === null || !currentConfigModalEl) return;
+    const m = currentConfigModalEl;
+    const countInput = m.querySelector('.sampleCount');
+    const count = countInput ? (parseInt(countInput.value) || 1) : 1; // type 4 has no countInput
+    const createForEachEl = m.querySelector('.createForEach');
+    const createForEach = createForEachEl ? createForEachEl.value : 'step';
+    const autoAddEl = m.querySelector('.autoAdd');
+    const autoAdd = autoAddEl ? !!autoAddEl.checked : false;
+    const placementRadio = Array.from(m.querySelectorAll('.placement')).find(r=>r.checked);
+    const placement = placementRadio ? placementRadio.value : 'user_placed';
+    const specificWellEl = m.querySelector('.specificWell');
+    const specificWell = specificWellEl ? (specificWellEl.value.trim() || 'A1') : 'A1';
+    const afterSamplesEl = m.querySelector('.afterSamplesCount');
+    const afterSamplesCount = afterSamplesEl ? (parseInt(afterSamplesEl.value)||1) : 1;
+    specialSampleInstanceConfigs[currentConfigInstanceIndex] = { count, createForEach, autoAdd, placement, specificWell, afterSamplesCount };
+    // Visual indicator
+    const sampleItem = document.querySelector(`.special-sample-item[data-instance-index="${currentConfigInstanceIndex}"]`);
+    if (sampleItem) {
+        const configButton = sampleItem.querySelector('.special-sample-config-button');
+        if (configButton) {
+            configButton.style.backgroundColor = 'var(--green-med)';
+            configButton.title = 'Sample configured - click to edit';
+        }
+    }
+    hideSpecialSampleConfigModal();
+    console.log('[SpecialSamples] Saved configuration for instance', currentConfigInstanceIndex, specialSampleInstanceConfigs[currentConfigInstanceIndex]);
+    updateSpecialSamplesFromDOM(); // persist updated JSON blob
+}
+
+function removeCurrentSpecialSample() {
+    if (currentConfigInstanceIndex === null) { hideSpecialSampleConfigModal(); return; }
+    specialSampleEnabledIds.splice(currentConfigInstanceIndex,1);
+    specialSampleInstanceConfigs.splice(currentConfigInstanceIndex,1);
+    loadSpecialSamplesInterface({ enabled_ids: specialSampleEnabledIds });
+    hideSpecialSampleConfigModal();
 }
 
 function showSpecialSampleSelector() {
@@ -395,6 +434,9 @@ function addSpecialSample(sampleId) {
 // Ensure function accessible for inline onclick handlers
 window.addSpecialSample = addSpecialSample;
 window.showSpecialSampleConfigModalByInstance = showSpecialSampleConfigModalByInstance;
+window.saveSpecialSampleConfig = saveSpecialSampleConfig;
+window.hideSpecialSampleConfigModal = hideSpecialSampleConfigModal;
+window.removeCurrentSpecialSample = removeCurrentSpecialSample;
 
 function removeSpecialSample(sampleId) {
     // Remove item from its group list
