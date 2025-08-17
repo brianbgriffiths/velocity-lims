@@ -382,14 +382,14 @@ textarea.form-input {
     max-width: 350px;
 }
 
-/* Container Configuration Styles */
-.container-config-panel {
+/* Container & Special Sample Configuration Panels (shared) */
+.container-config-panel, .special-samples-config-panel {
     border: 1px solid var(--gray-med);
     border-radius: 3px;
     background-color: white;
 }
 
-.container-config-header {
+.container-config-header, .special-samples-config-header {
     background-color: var(--gray-lightest);
     padding: 8px 10px;
     border-bottom: 1px solid var(--gray-med);
@@ -401,7 +401,8 @@ textarea.form-input {
     color: var(--gray-dark);
 }
 
-.btn-add-container {
+/* Add buttons shared */
+.btn-add-container, .btn-add-special-sample {
     background-color: var(--green-med);
     color: white;
     border: none;
@@ -415,17 +416,17 @@ textarea.form-input {
     gap: 4px;
 }
 
-.btn-add-container:hover {
+.btn-add-container:hover, .btn-add-special-sample:hover {
     background-color: var(--green-dark);
 }
 
-.enabled-containers {
+.enabled-containers, #enabledSpecialSamples {
     padding: 8px;
     max-height: 200px;
     overflow-y: auto;
 }
 
-.no-containers {
+.no-containers, .no-special-samples {
     text-align: center;
     color: var(--gray-med);
     font-style: italic;
@@ -433,108 +434,7 @@ textarea.form-input {
     font-size: 11px;
 }
 
-/* Special Samples Configuration Styles */
-.special-samples-config-panel {
-    border: 1px solid var(--gray-med);
-    border-radius: 3px;
-    background-color: white;
-}
-
-.special-samples-config-header {
-    background-color: var(--gray-lightest);
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--gray-med);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 11px;
-    font-weight: bold;
-    color: var(--gray-dark);
-}
-
-.btn-add-special-sample, .btn-add-page {
-    background-color: var(--green-med);
-    color: white;
-    border: none;
-    padding: 4px 8px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 10px;
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.btn-add-special-sample:hover, .btn-add-page:hover {
-    background-color: var(--green-dark);
-}
-
-.enabled-special-samples {
-    padding: 8px;
-    max-height: 200px;
-    overflow-y: auto;
-    margin: 0;
-    box-sizing: border-box;
-}
-
-.no-special-samples {
-    text-align: center;
-    color: var(--gray-med);
-    font-style: italic;
-    padding: 15px;
-    font-size: 11px;
-}
-
-.special-samples-config-panel .special-sample-item {
-    background-color: var(--inputbg);
-    border: 1px solid var(--gray-med);
-    border-radius: 3px;
-    padding: 8px;
-    margin: 0 0 6px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: grab;
-    transition: all 0.2s;
-    position: relative;
-}
-
-.special-sample-item.dragging {
-    opacity: 0.5;
-    left: 10px;
-}
-
-.special-sample-item:active {
-    cursor: grabbing;
-}
-
-.special-sample-drag-handle {
-    color: var(--gray-med);
-    cursor: grab;
-    font-size: 10px;
-}
-
-.special-sample-drag-handle:active {
-    cursor: grabbing;
-}
-
-.special-sample-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.special-sample-name {
-    font-weight: bold;
-    font-size: 12px;
-    color: var(--text-color);
-    margin-bottom: 1px;
-}
-
-.special-sample-details {
-    font-size: 10px;
-    color: var(--gray-dark);
-}
+/* (Removed unique special sample panel styles to unify with container styles) */
 
 .container-item.color-1, .container-preview.color-1, .special-sample-item[data-sample-type="1"] { border-left: solid 4px var(--data-color1); }
 .container-item.color-2, .container-preview.color-2, .special-sample-item[data-sample-type="2"] { border-left: solid 4px var(--data-color2); }
@@ -559,8 +459,8 @@ textarea.form-input {
 .container-preview[data-type="9"], .container-preview.color-9, .container-item.color-9:hover, .special-sample-item[data-sample-type="9"]:hover { background-color: var(--data-color9-bg);}
 .container-preview[data-type="10"], .container-preview.color-10, .container-item.color-10:hover, .special-sample-item[data-sample-type="10"]:hover { background-color: var(--data-color10-bg);}
 
-/* Container Configuration Styles */
-.container-item {
+/* Shared item card styles for containers & special samples */
+.container-item, .special-sample-item {
     background-color: var(--inputbg);
     border: 1px solid var(--gray-med);
     border-radius: 3px;
@@ -574,49 +474,23 @@ textarea.form-input {
     position:relative;
 }
 
-.container-item.dragging {
+.container-item.dragging, .special-sample-item.dragging {
     opacity: 0.5;
     left: 10px;
 }
 
-.container-item:active {
-    cursor: grabbing;
-}
+.container-item:active, .special-sample-item:active { cursor: grabbing; }
 
-.container-drag-handle {
-    color: var(--gray-med);
-    cursor: grab;
-}
+.container-drag-handle, .special-sample-drag-handle { color: var(--gray-med); cursor: grab; }
+.container-drag-handle:active, .special-sample-drag-handle:active { cursor: grabbing; }
 
-.container-drag-handle:active {
-    cursor: grabbing;
-}
+.container-info, .special-sample-info { flex: 1; min-width: 0; }
+.container-name, .special-sample-name { font-weight: bold; font-size: 12px; color: var(--text-color); margin-bottom: 1px; }
+.container-details, .special-sample-type { font-size: 10px; color: var(--gray-dark); }
 
-.container-info {
-    flex: 1;
-    min-width: 0;
-}
+.container-status { display: flex; align-items: center; margin-left: auto; margin-right: 4px; }
 
-.container-name {
-    font-weight: bold;
-    font-size: 12px;
-    color: var(--text-color);
-    margin-bottom: 1px;
-}
-
-.container-details {
-    font-size: 10px;
-    color: var(--gray-dark);
-}
-
-.container-status {
-    display: flex;
-    align-items: center;
-    margin-left: auto;
-    margin-right: 4px;
-}
-
-.container-config-button {
+.container-config-button, .special-sample-config-button {
     background-color: var(--blue-light);
     color: var(--blue-dark);
     border: none;
@@ -631,7 +505,7 @@ textarea.form-input {
     transition: background-color 0.2s;
 }
 
-.container-config-button:hover {
+.container-config-button:hover, .special-sample-config-button:hover {
     background-color: var(--blue-med);
     color: black;
 }
