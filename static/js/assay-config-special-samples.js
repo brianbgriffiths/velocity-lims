@@ -307,7 +307,7 @@ function addSpecialSample(sampleId) {
         const typeId = sample.special_type || sample.type_id || sample.sstid || 0;
         const existingOfType = document.querySelector(`#assayConfigCards .special-sample-item[data-sample-type="${typeId}"]`);
         if (existingOfType) {
-            pylims_ui.error('This special sample type can only be added once');
+            console.error('This special sample type can only be added once');
             hideSpecialSampleSelector();
             return;
         }
@@ -396,7 +396,7 @@ function saveSpecialSampleConfig() {
         }
     }
     hideSpecialSampleConfigModal();
-    pylims_ui.success('Special sample configuration saved');
+    console.log('Special sample configuration saved');
 }
 
 function removeCurrentSpecialSample() {
