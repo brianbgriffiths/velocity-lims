@@ -264,17 +264,19 @@ function renderAvailableSpecialSamples(filterTypeId=null) {
     const enabled = new Set();
     document.querySelectorAll('#assayConfigCards .special-sample-item').forEach(item => enabled.add(parseInt(item.dataset.sampleId)));
     let html = '';
-    specialSampleTypesDataAll.forEach(sample => {
-        const typeId = sample.special_type || sample.type_id || sample.sstid || 0;
-        if (filterTypeId !== null && typeId !== filterTypeId) return; // skip other types
-        const sampleId = sample.ssid || sample.stid;
-        const isEnabled = enabled.has(sampleId);
-        // If unique_only and already enabled, disable entirely
-        if (sample.unique_only && isEnabled) return;
-        html += `<div class="available-special-sample ${isEnabled ? 'disabled' : ''}" ${isEnabled ? '' : `onclick=\"addSpecialSample(${sampleId})\"`} title="${isEnabled ? 'Special sample already added' : 'Click to add this special sample'}">`+
-            `<div class="special-sample-info"><div class="special-sample-name">${sample.special_name || sample.name}</div><div class="special-sample-type">${sample.special_type_name || sample.type}</div></div>`+
-            `${isEnabled ? '<div style=\\"margin-left:auto;color:var(--green-med);\\"><i class=\\"fas fa-check\\"></i></div>' : ''}`+
-            `</div>`;
+        specialSampleTypesDataAll.forEach(sample => {
+            const typeId = sample.special_type || sample.type_id || sample.sstid || 0;
+            if (filterTypeId !== null && typeId !== filterTypeId) return; // only this type
+            const sampleId = sample.ssid || sample.stid;
+            const isEnabled = enabled.has(sampleId);
+            const canAddAnother = !(sample.unique_only && isEnabled);
+            const classes = `available-special-sample ${canAddAnother ? '' : 'disabled'}`;
+            const attrs = canAddAnother ? `onclick=\"addSpecialSample(${sampleId})\" role=\"button\" tabindex=\"0\"` : `aria-disabled=\"true\"`;
+            const title = canAddAnother ? 'Click to add this special sample' : 'Already added (unique-only)';
+            html += `<div class=\"${classes}\" ${attrs} title=\"${title}\">`+
+                `<div class=\"special-sample-info\"><div class=\"special-sample-name\">${sample.special_name || sample.name}</div><div class=\"special-sample-type\">${sample.special_type_name || sample.type}</div></div>`+
+                `${isEnabled ? '<div style=\\"margin-left:auto;color:var(--green-med);opacity:0.9;\\"><i class=\\"fas fa-check\\"></i></div>' : ''}`+
+                `</div>`;
     });
     if (!html) {
         listDiv.innerHTML = '<div style="text-align:center;padding:18px;color:var(--gray-med);font-size:12px;">All samples of this type have been added</div>';
