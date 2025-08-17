@@ -54,8 +54,19 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
     const groups = {};
     enabledSamples.forEach(s => {
         const typeId = s.special_type || s.type_id || s.sstid || 0;
-        if (!groups[typeId]) groups[typeId] = { typeId, typeName: s.special_type_name || s.type || `Type ${typeId}`, samples: [] };
+        if (!groups[typeId]) groups[typeId] = { typeId, typeName: s.special_type_name || s.type || `Type ${typeId}`, samples: [], uniqueOnly: !!s.unique_only, enabledCount: 0 };
         groups[typeId].samples.push(s);
+    });
+
+    // Track enabled count per type separately (placeholder ghost shouldn't count if not actually enabled)
+    enabledIds.forEach(id => {
+        const s = specialSampleTypesDataAll.find(x => (x.ssid === id) || (x.stid === id));
+        if (s) {
+            const tid = s.special_type || s.type_id || s.sstid || 0;
+            if (!groups[tid]) groups[tid] = { typeId: tid, typeName: s.special_type_name || s.type || `Type ${tid}`, samples: [], uniqueOnly: !!s.unique_only, enabledCount: 0 };
+            groups[tid].enabledCount += 1;
+            if (groups[tid].uniqueOnly === false && s.unique_only) groups[tid].uniqueOnly = true; // ensure true if any sample marks it
+        }
     });
 
     // Determine insertion point: before the Add Special Sample button container if present
@@ -65,20 +76,22 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
     Object.keys(allTypeMap).forEach(typeIdStr => {
         const tid = parseInt(typeIdStr);
         if (!groups[tid]) {
-            groups[tid] = { typeId: tid, typeName: allTypeMap[tid], samples: [] };
+            // find a representative sample for unique_only flag
+            const rep = specialSampleTypesDataAll.find(x => (x.special_type || x.type_id || x.sstid || 0) === tid);
+            groups[tid] = { typeId: tid, typeName: allTypeMap[tid], samples: [], uniqueOnly: rep ? !!rep.unique_only : false, enabledCount: 0 };
         }
     });
 
     Object.values(groups).sort((a,b)=>a.typeId-b.typeId).forEach(group => {
         const cardId = `specialSampleTypeCard_${group.typeId}`;
-        const cardHtml = `
+    const disableAdd = group.uniqueOnly && group.enabledCount > 0; // only count actually enabled
+    const addBtnHtml = disableAdd ? '' : `<button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelectorForType(${group.typeId})"><i class=\"fas fa-plus\"></i> Add</button>`;
+    const cardHtml = `
             <div class="config-card" id="${cardId}" data-sample-type-group="${group.typeId}">
                 <div class="special-samples-config-panel">
                     <div class="special-samples-config-header">
-                            <span>Enabled ${group.typeName}</span>
-                            <button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelector()">
-                                <i class="fas fa-plus"></i> Add
-                            </button>
+                <span>Enabled ${group.typeName}</span>
+                ${addBtnHtml}
                     </div>
                     <div class="enabled-special-samples" id="specialSampleGroup_${group.typeId}">
                         ${group.samples.length ? group.samples.map((sample, idx) => specialSampleItemHTMLForGroup(sample, idx)).join('') : '<div class="no-special-samples" style="padding:6px 8px;color:var(--gray-med);font-size:11px;">No samples of this type enabled</div>'}
@@ -230,12 +243,19 @@ function showSpecialSampleSelector() {
     renderAvailableSpecialSamples();
 }
 
+function showSpecialSampleSelectorForType(typeId) {
+    const modal = document.getElementById('specialSampleSelectorModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    renderAvailableSpecialSamples(typeId);
+}
+
 function hideSpecialSampleSelector() {
     const modal = document.getElementById('specialSampleSelectorModal');
     modal.style.display = 'none';
 }
 
-function renderAvailableSpecialSamples() {
+function renderAvailableSpecialSamples(filterTypeId=null) {
     const listDiv = document.getElementById('availableSpecialSamplesList');
     if (!listDiv) return;
     if (specialSampleTypesDataAll.length === 0) {
@@ -246,8 +266,12 @@ function renderAvailableSpecialSamples() {
     document.querySelectorAll('#assayConfigCards .special-sample-item').forEach(item => enabled.add(parseInt(item.dataset.sampleId)));
     let html = '';
     specialSampleTypesDataAll.forEach(sample => {
+        const typeId = sample.special_type || sample.type_id || sample.sstid || 0;
+        if (filterTypeId !== null && typeId !== filterTypeId) return; // skip other types
         const sampleId = sample.ssid || sample.stid;
         const isEnabled = enabled.has(sampleId);
+        // If unique_only and already enabled, disable entirely
+        if (sample.unique_only && isEnabled) return;
         html += `<div class="available-special-sample ${isEnabled ? 'disabled' : ''}" ${isEnabled ? '' : `onclick=\"addSpecialSample(${sampleId})\"`} title="${isEnabled ? 'Special sample already added' : 'Click to add this special sample'}">`+
             `<div class="special-sample-info"><div class="special-sample-name">${sample.special_name || sample.name}</div><div class="special-sample-type">${sample.special_type_name || sample.type}</div></div>`+
             `${isEnabled ? '<div style=\\"margin-left:auto;color:var(--green-med);\\"><i class=\\"fas fa-check\\"></i></div>' : ''}`+
@@ -261,6 +285,16 @@ function addSpecialSample(sampleId) {
     if (!sample) return;
     // If already in UI, skip
     if (document.querySelector(`#assayConfigCards .special-sample-item[data-sample-id="${sampleId}"]`)) return;
+    // Enforce unique_only: if any sample of same type enabled, block
+    if (sample.unique_only) {
+        const typeId = sample.special_type || sample.type_id || sample.sstid || 0;
+        const existingOfType = document.querySelector(`#assayConfigCards .special-sample-item[data-sample-type="${typeId}"]`);
+        if (existingOfType) {
+            pylims_ui.error('This special sample type can only be added once');
+            hideSpecialSampleSelector();
+            return;
+        }
+    }
     // Build current enabled list (excluding placeholders if any logic later)
     const current = getSpecialSamplesFromInterface().enabled_ids;
     const updated = current.concat([sampleId]);
