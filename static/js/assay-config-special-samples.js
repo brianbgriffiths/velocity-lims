@@ -23,7 +23,10 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
     // Group samples by special_type; one card per type containing its enabled samples
     const anchor = document.getElementById('assayConfigCards');
     if (!anchor) return;
-    anchor.innerHTML = '';
+
+    // IMPORTANT: Do NOT wipe entire anchor (contains container card, add button, hidden textareas)
+    // Instead remove only prior special sample type cards
+    anchor.querySelectorAll('.config-card[data-sample-type-group]').forEach(card => card.remove());
 
     const enabledIds = (stepSpecialSamples && Array.isArray(stepSpecialSamples.enabled_ids)) ? stepSpecialSamples.enabled_ids : [];
     // Build enabled sample objects
@@ -38,7 +41,7 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
     });
 
     if (!enabledSamples.length) {
-        anchor.innerHTML = '<div class="no-special-samples">No special samples configured</div>';
+        // No enabled samples; nothing to render. Keep existing UI (Add button + hidden textarea) intact.
         return;
     }
 
@@ -49,6 +52,9 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
         if (!groups[typeId]) groups[typeId] = { typeId, typeName: s.special_type_name || s.type || `Type ${typeId}`, samples: [] };
         groups[typeId].samples.push(s);
     });
+
+    // Determine insertion point: before the Add Special Sample button container if present
+    const addButtonWrapper = anchor.querySelector('.btn-add-special-sample') ? anchor.querySelector('.btn-add-special-sample').closest('div') : null;
 
     Object.values(groups).sort((a,b)=>a.typeId-b.typeId).forEach(group => {
         const cardId = `specialSampleTypeCard_${group.typeId}`;
@@ -65,7 +71,11 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
                     </div>
                 </div>
             </div>`;
-        anchor.insertAdjacentHTML('beforeend', cardHtml);
+        if (addButtonWrapper) {
+            addButtonWrapper.insertAdjacentHTML('beforebegin', cardHtml);
+        } else {
+            anchor.insertAdjacentHTML('beforeend', cardHtml);
+        }
     });
 
     updateSpecialSamplesFromDOM();
@@ -183,10 +193,18 @@ function getSpecialSamplesFromInterface() {
 }
 
 function updateSpecialSampleConfigTextarea(specialSamples) {
-    const el = document.getElementById('specialSampleConfig');
+    let el = document.getElementById('specialSampleConfig');
     if (!el) {
-        console.warn('specialSampleConfig textarea not found when updating; skipping');
-        return;
+        console.warn('specialSampleConfig textarea not found; creating hidden textarea dynamically');
+        const anchor = document.getElementById('assayConfigCards');
+        if (anchor) {
+            el = document.createElement('textarea');
+            el.id = 'specialSampleConfig';
+            el.style.display = 'none';
+            anchor.appendChild(el);
+        } else {
+            return; // no anchor, cannot persist
+        }
     }
     el.value = JSON.stringify(specialSamples, null, 2);
 }
