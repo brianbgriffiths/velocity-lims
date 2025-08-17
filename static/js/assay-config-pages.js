@@ -75,7 +75,7 @@ function loadPagesInterface(pages) {
 
 function createPageItemHTML(page, index) {
     const config = page.config || {};
-    const required = config.required ? 'Required' : 'Optional';
+    // Internal properties (order, required) no longer displayed; only show flags meaningful to user
     const showAfterComplete = page.show_after_complete ? 'Show after complete' : '';
     
     return `
@@ -84,7 +84,7 @@ function createPageItemHTML(page, index) {
                 <i class="fas fa-grip-vertical page-item-drag"></i>
                 <div>
                     <div class="page-item-name">${page.page_name}</div>
-                    <div class="page-item-details">${required} ${showAfterComplete ? '• ' + showAfterComplete : ''}</div>
+                    <div class="page-item-details">${showAfterComplete}</div>
                 </div>
             </div>
             <div class="page-item-actions">
@@ -365,8 +365,7 @@ function showPageConfigModal(pageId, pageName, evt) {
     // Load current configuration
     const config = pageData.config || {};
     
-    document.getElementById('pageOrder').value = config.order || 1;
-    document.getElementById('pageRequired').checked = config.required || false;
+    // Removed order/required inputs from UI; maintain internal values if present
     document.getElementById('pageShowAfterComplete').checked = pageData.show_after_complete || false;
     document.getElementById('pageCondition').value = config.show_when || 'always';
     
@@ -386,8 +385,7 @@ function savePageConfig() {
     }
     
     // Get form values
-    const order = parseInt(document.getElementById('pageOrder').value) || 1;
-    const required = document.getElementById('pageRequired').checked;
+    // Order and required are internal; order maintained via array index; required deprecated
     const showAfterComplete = document.getElementById('pageShowAfterComplete').checked;
     const showWhen = document.getElementById('pageCondition').value;
     
@@ -396,8 +394,12 @@ function savePageConfig() {
         currentPageConfig.config = {};
     }
     
-    currentPageConfig.config.order = order;
-    currentPageConfig.config.required = required;
+    // Preserve existing order if already set; otherwise set based on current collection
+    if (typeof currentPageConfig.config.order !== 'number') {
+        const idx = currentStepConfig.pages.findIndex(p => p.pcid === currentPageConfig.pcid);
+        currentPageConfig.config.order = idx >= 0 ? idx + 1 : currentStepConfig.pages.length;
+    }
+    // required flag no longer user-facing; retain previous value if it existed
     currentPageConfig.config.show_when = showWhen;
     currentPageConfig.show_after_complete = showAfterComplete;
     

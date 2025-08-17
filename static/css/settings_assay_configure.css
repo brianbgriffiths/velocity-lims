@@ -1244,10 +1244,17 @@ textarea.form-input {
 .page-config-dialog {
     background-color: white;
     border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    max-width: 500px;
-    width: 90%;
-    max-height: 80vh;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    width: 92%;
+    max-width: 1400px; /* large workspace */
+    height: 85vh; /* take most of viewport height */
+    max-height: 900px;
+    display: flex;
+    flex-direction: column;
+}
+
+.page-config-content {
+    flex: 1;
     overflow-y: auto;
 }
 

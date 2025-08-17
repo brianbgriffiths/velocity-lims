@@ -462,44 +462,28 @@
         </div>
     </div>
     
-    <!-- Page Configuration Modal -->
+    <!-- Page Configuration Modal (expanded) -->
     <div class="page-config-modal" id="pageConfigModal">
         <div class="page-config-dialog">
             <div class="page-config-header">
                 <span><i class="fas fa-cog"></i> Configure <span id="configPageName">Page</span></span>
             </div>
             <div class="page-config-content">
+                <!-- Display Options -->
                 <div class="config-section">
-                    <div class="config-section-title">Page Ordering</div>
+                    <div class="config-section-title">Display Options</div>
                     <div class="config-row">
-                        <label>Order:</label>
-                        <input type="number" id="pageOrder" min="1" max="99" value="1">
-                        <span>Position in step sequence</span>
-                    </div>
-                </div>
-                
-                <div class="config-section">
-                    <div class="config-section-title">Page Display</div>
-                    <div class="config-row">
-                        <label>
-                            <input type="checkbox" id="pageRequired" style="margin-right: 5px;">
-                            Required
+                        <label style="display:flex;align-items:center;gap:6px;">
+                            <input type="checkbox" id="pageShowAfterComplete">
+                            <span>Show after completion</span>
                         </label>
                         <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
-                            User must complete this page to proceed
-                        </span>
-                    </div>
-                    <div class="config-row">
-                        <label>
-                            <input type="checkbox" id="pageShowAfterComplete" style="margin-right: 5px;">
-                            Show after completion
-                        </label>
-                        <span style="font-size: 11px; color: var(--gray-dark); margin-left: 10px;">
-                            Display page after step completion
+                            Display page again after step completion
                         </span>
                     </div>
                 </div>
-                
+
+                <!-- Conditions -->
                 <div class="config-section">
                     <div class="config-section-title">Page Conditions</div>
                     <div class="config-row">
@@ -512,7 +496,7 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="page-config-buttons">
                     <button type="button" class="btn-page-config-cancel" onclick="hidePageConfigModal()">Cancel</button>
                     <button type="button" class="btn-remove-page" onclick="removeCurrentPage()">Remove Page</button>
