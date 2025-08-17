@@ -19,27 +19,51 @@ function initializeSpecialSampleTypes() {
 
 // Removed network loading; all special sample types are provided inline in template.
 
-function loadSpecialSamplesInterface(specialSamples) {
-    console.log('Loading special samples interface with data:', specialSamples);
-    
+function loadSpecialSamplesInterface(specialSamplesRaw) {
+    console.log('Loading special samples interface with data:', specialSamplesRaw);
+
     const enabledSpecialSamplesDiv = document.getElementById('enabledSpecialSamples');
     if (!enabledSpecialSamplesDiv) {
         console.warn('Special samples container #enabledSpecialSamples not found in DOM');
         return;
     }
-    
-    if (!specialSamples || specialSamples.length === 0) {
+
+    // Normalize input: backend may send {enabled_ids: [...], configurations:{...}} or legacy array or organized object
+    let specialSamplesArray = [];
+    try {
+        if (Array.isArray(specialSamplesRaw)) {
+            specialSamplesArray = specialSamplesRaw; // already array of sample objects
+        } else if (specialSamplesRaw && typeof specialSamplesRaw === 'object') {
+            if (Array.isArray(specialSamplesRaw.enabled_ids)) {
+                // New format: build array from enabled_ids using master list
+                specialSamplesRaw.enabled_ids.forEach(id => {
+                    const sampleObj = specialSampleTypesDataAll.find(s => s.stid === id);
+                    if (sampleObj) {
+                        specialSamplesArray.push(sampleObj);
+                    }
+                });
+            } else {
+                // Possibly organized by type id: iterate values (arrays)
+                Object.values(specialSamplesRaw).forEach(val => {
+                    if (Array.isArray(val)) {
+                        val.forEach(sample => {
+                            if (sample && sample.stid) specialSamplesArray.push(sample);
+                        });
+                    }
+                });
+            }
+        }
+    } catch (e) {
+        console.warn('Failed to normalize special samples structure:', e);
+    }
+
+    if (!specialSamplesArray || specialSamplesArray.length === 0) {
         enabledSpecialSamplesDiv.innerHTML = '<div class="no-special-samples">No special samples configured for this step</div>';
         return;
     }
-    
-    const specialSamplesHTML = specialSamples.map((sample, index) => {
-        return createSpecialSampleItemHTML(sample, index);
-    }).join('');
-    
+
+    const specialSamplesHTML = specialSamplesArray.map((sample, index) => createSpecialSampleItemHTML(sample, index)).join('');
     enabledSpecialSamplesDiv.innerHTML = specialSamplesHTML;
-    
-    // Enable drag and drop for special samples reordering
     enableSpecialSampleDragAndDrop();
 }
 
