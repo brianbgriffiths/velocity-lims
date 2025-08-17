@@ -64,7 +64,15 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
     });
 
     // Determine insertion point: before the Add Special Sample button container if present
-    const addButtonWrapper = anchor.querySelector('.btn-add-special-sample') ? anchor.querySelector('.btn-add-special-sample').closest('div') : null;
+    // Locate a stable wrapper for insertion (the parent config cards container itself if no specific reference)
+    let addButtonWrapper = null;
+    const firstAddBtn = anchor.querySelector('.btn-add-special-sample');
+    if (firstAddBtn) {
+        // Use the parent config-card of the first add button so new type cards appear before it for consistency
+        const parentCard = firstAddBtn.closest('.config-card');
+        if (parentCard) addButtonWrapper = parentCard; 
+    }
+    console.log('[SpecialSamples] insertion reference card:', addButtonWrapper ? addButtonWrapper.id : 'none');
 
     // Add empty group entries for any types not yet represented
     Object.keys(allTypeMap).forEach(typeIdStr => {
@@ -299,8 +307,11 @@ function addSpecialSample(sampleId) {
     // unique_only now interpreted as: this specific sample can only be added once (duplicates blocked by earlier check)
     // (Multiple different samples of same type still allowed.)
     // Build current enabled list (excluding placeholders if any logic later)
-    const current = getSpecialSamplesFromInterface().enabled_ids;
-    const updated = current.concat([sampleId]);
+    const interfaceData = getSpecialSamplesFromInterface();
+    console.log('[SpecialSamples] existing enabled before add:', interfaceData.enabled_ids);
+    const current = interfaceData.enabled_ids;
+    const updated = current.includes(sampleId) ? current.slice() : current.concat([sampleId]);
+    console.log('[SpecialSamples] updated enabled list:', updated);
     loadSpecialSamplesInterface({ enabled_ids: updated });
     console.log('[SpecialSamples] After add, enabled ids ->', updated);
     renderAvailableSpecialSamples();
