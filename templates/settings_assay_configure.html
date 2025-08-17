@@ -501,5 +501,12 @@ const avid = {{ assay.avid|default:"null" }};
 const initialStepId = {{ selected_step_id|default:"null" }};
 
 </script>
-<script src="{% static 'js/settings_assay_configure.js' %}"></script>
+<script src="{% static 'js/assay-config-main.js' %}"></script>
+<!-- Modular Assay Configuration Scripts (order matters for dependencies) -->
+<script src="{% static 'js/assay-config-containers.js' %}"></script>
+<script src="{% static 'js/assay-config-special-samples.js' %}"></script>
+<script src="{% static 'js/assay-config-pages.js' %}"></script>
+<script src="{% static 'js/assay-config-steps.js' %}"></script>
+<!-- Main last so it can call functions defined above -->
+
 {% endblock %}
