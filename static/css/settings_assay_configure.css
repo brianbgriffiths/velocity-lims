@@ -372,7 +372,7 @@ textarea.form-input {
 }
 
 /* Configuration Cards Layout */
-.config-cards-container {
+.assay-config-cards {
     display: flex;
     flex-wrap: wrap;
     gap: 15px;

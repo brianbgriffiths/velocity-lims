@@ -16,6 +16,9 @@ if (typeof window.containerTypesData !== 'undefined' && Array.isArray(window.con
     window.availableContainers = window.containerTypesData.slice();
 }
 
+// Track currently configured container
+let currentConfigContainerId = null;
+
 // Token popup system for container renaming (extracted from legacy file)
 function initializeTokenSystem() {
     const popup = document.getElementById('tokenPopup');
@@ -198,6 +201,184 @@ function getContainersFromInterface() {
 function updateContainerConfigTextarea(containers) {
     document.getElementById('containerConfig').value = JSON.stringify(containers, null, 2);
 }
+
+// ------------------------------
+// Container Configuration Modal
+// ------------------------------
+
+function showContainerConfigModal(containerId, containerName) {
+    currentConfigContainerId = containerId;
+    const modal = document.getElementById('containerConfigModal');
+    if (!modal) return;
+    const nameSpan = document.getElementById('configContainerName');
+    if (nameSpan) nameSpan.textContent = containerName || 'Container';
+
+    if (!window.containerConfigurations) window.containerConfigurations = {};
+    if (!window.containerConfigurations[containerId]) window.containerConfigurations[containerId] = { container_id: containerId };
+    const cfg = window.containerConfigurations[containerId];
+
+    // Default / legacy field mapping
+    const outputCountEl = document.getElementById('outputCount');
+    const outputForEl = document.getElementById('outputFor');
+    const nSamplesRow = document.getElementById('nSamplesRow');
+    const nSamplesCountEl = document.getElementById('nSamplesCount');
+    const renameCheckbox = document.getElementById('renameContainer');
+    const renameTextRow = document.getElementById('renameTextRow');
+    const nameInput = document.getElementById('containerNewName');
+    const placementEl = document.getElementById('containerPlacement');
+
+    // Populate values (support both flat and nested expected shapes)
+    const output = cfg.output_generation || cfg.output || {};
+    outputCountEl.value = output.count || cfg.output_count || 1;
+    const forVal = output.for || cfg.output_for || 'every_input';
+    outputForEl.value = forVal;
+    const nSamplesVal = output.n_samples || cfg.n_samples || 1;
+    if (forVal === 'n_samples') {
+        nSamplesRow.style.display = '';
+        nSamplesCountEl.value = nSamplesVal;
+    } else {
+        nSamplesRow.style.display = 'none';
+    }
+
+    const naming = cfg.naming || {};
+    const renameEnabled = naming.rename || cfg.rename_container || false;
+    renameCheckbox.checked = renameEnabled;
+    if (renameEnabled) {
+        renameTextRow.style.display = '';
+        nameInput.value = naming.template || cfg.new_name || '';
+    } else {
+        renameTextRow.style.display = 'none';
+        nameInput.value = naming.template || cfg.new_name || '';
+    }
+
+    placementEl.value = cfg.placement || (cfg.container_placement || 'operator');
+
+    // Event handlers (idempotent)
+    outputForEl.onchange = () => {
+        if (outputForEl.value === 'n_samples') {
+            nSamplesRow.style.display = '';
+        } else {
+            nSamplesRow.style.display = 'none';
+        }
+    };
+
+    renameCheckbox.onchange = () => toggleRenameOptions();
+
+    modal.style.display = 'flex';
+    initializeTokenSystem();
+}
+
+function hideContainerConfigModal() {
+    const modal = document.getElementById('containerConfigModal');
+    if (modal) modal.style.display = 'none';
+    currentConfigContainerId = null;
+}
+
+function toggleRenameOptions() {
+    const checkbox = document.getElementById('renameContainer');
+    const row = document.getElementById('renameTextRow');
+    if (checkbox && row) {
+        row.style.display = checkbox.checked ? '' : 'none';
+    }
+}
+
+function saveContainerConfig() {
+    if (currentConfigContainerId == null) return;
+    if (!window.containerConfigurations) window.containerConfigurations = {};
+    const containerId = currentConfigContainerId;
+
+    const outputCount = parseInt(document.getElementById('outputCount').value) || 1;
+    const outputFor = document.getElementById('outputFor').value;
+    const nSamplesCountEl = document.getElementById('nSamplesCount');
+    const nSamples = nSamplesCountEl ? (parseInt(nSamplesCountEl.value) || 1) : 1;
+    const renameEnabled = document.getElementById('renameContainer').checked;
+    const newNameTemplate = document.getElementById('containerNewName').value.trim();
+    const placement = document.getElementById('containerPlacement').value;
+
+    const config = {
+        container_id: containerId,
+        output_generation: {
+            count: outputCount,
+            for: outputFor
+        },
+        placement: placement
+    };
+    if (outputFor === 'n_samples') {
+        config.output_generation.n_samples = nSamples;
+    }
+    if (renameEnabled && newNameTemplate) {
+        config.naming = {
+            rename: true,
+            template: newNameTemplate
+        };
+    }
+
+    window.containerConfigurations[containerId] = config;
+    console.log('Saved container config', containerId, config);
+
+    // Update gear icon to solid if now configured
+    const btn = document.querySelector(`.container-item[data-container-id="${containerId}"] .container-config-button i`);
+    if (btn) {
+        btn.classList.remove('far');
+        btn.classList.add('fas');
+    }
+
+    // Ensure containers textarea / step state reflects change
+    updateContainersFromDOM();
+    hideContainerConfigModal();
+}
+
+function removeCurrentContainer() {
+    if (currentConfigContainerId == null) return;
+    const id = currentConfigContainerId;
+    hideContainerConfigModal();
+    removeContainer(id);
+}
+
+// ------------------------------
+// Token Popup Helpers
+// ------------------------------
+
+function showTokenPopup() {
+    const popup = document.getElementById('tokenPopup');
+    if (popup) popup.style.display = 'block';
+}
+
+function hideTokenPopup() {
+    const popup = document.getElementById('tokenPopup');
+    if (popup) popup.style.display = 'none';
+}
+
+function insertToken(token) {
+    const input = document.getElementById('containerNewName');
+    if (!input) return;
+
+    // Handle special select-backed tokens
+    if (token === 'container_value') {
+        const sel = document.getElementById('containerValueSelect');
+        const val = sel && sel.value ? `container_${sel.value}` : token;
+        token = val;
+    } else if (token === 'batch_value') {
+        const sel = document.getElementById('batchValueSelect');
+        const val = sel && sel.value ? `batch_${sel.value}` : token;
+        token = val;
+    }
+
+    const placeholder = `{${token}}`;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    const before = input.value.substring(0, start);
+    const after = input.value.substring(end);
+    input.value = before + placeholder + after;
+    const cursor = start + placeholder.length;
+    input.selectionStart = input.selectionEnd = cursor;
+    input.focus();
+}
+
+// Initialize token system on DOM ready (safe if called multiple times)
+document.addEventListener('DOMContentLoaded', () => {
+    initializeTokenSystem();
+});
 
 function showContainerSelector() {
     const modal = document.getElementById('containerSelectorModal');

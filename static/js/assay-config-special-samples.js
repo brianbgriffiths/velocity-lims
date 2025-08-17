@@ -21,7 +21,7 @@ function initializeSpecialSampleTypes() {
 
 function loadSpecialSamplesInterface(stepSpecialSamples) {
     // Group samples by special_type; one card per type containing its enabled samples
-    const anchor = document.getElementById('specialSamplesCardsAnchor');
+    const anchor = document.getElementById('assayConfigCards');
     if (!anchor) return;
     anchor.innerHTML = '';
 
@@ -158,7 +158,7 @@ function getSpecialSampleDragAfterElement(container, y) {
 }
 
 function updateSpecialSamplesFromDOM() {
-    const items = document.querySelectorAll('#specialSamplesCardsAnchor .special-sample-item');
+    const items = document.querySelectorAll('#assayConfigCards .special-sample-item');
     const samples = [];
     items.forEach(item => {
         const id = parseInt(item.dataset.sampleId);
@@ -170,7 +170,7 @@ function updateSpecialSamplesFromDOM() {
 
 function getSpecialSamplesFromInterface() {
     const data = { enabled_ids: [], configurations: {} };
-    document.querySelectorAll('#specialSamplesCardsAnchor .special-sample-item').forEach(item => {
+    document.querySelectorAll('#assayConfigCards .special-sample-item').forEach(item => {
         const id = parseInt(item.dataset.sampleId);
         // Exclude placeholder (type 4) if it was auto-added but not originally enabled? We include if present in UI.
         if (!data.enabled_ids.includes(id)) data.enabled_ids.push(id);
@@ -206,7 +206,7 @@ function renderAvailableSpecialSamples() {
         return;
     }
     const enabled = new Set();
-    document.querySelectorAll('#specialSamplesCardsAnchor .special-sample-item').forEach(item => enabled.add(parseInt(item.dataset.sampleId)));
+    document.querySelectorAll('#assayConfigCards .special-sample-item').forEach(item => enabled.add(parseInt(item.dataset.sampleId)));
     let html = '';
     specialSampleTypesDataAll.forEach(sample => {
         const sampleId = sample.ssid || sample.stid;
@@ -223,7 +223,7 @@ function addSpecialSample(sampleId) {
     const sample = specialSampleTypesDataAll.find(s => s.ssid === sampleId || s.stid === sampleId);
     if (!sample) return;
     // If already in UI, skip
-    if (document.querySelector(`#specialSamplesCardsAnchor .special-sample-item[data-sample-id="${sampleId}"]`)) return;
+    if (document.querySelector(`#assayConfigCards .special-sample-item[data-sample-id="${sampleId}"]`)) return;
     // Build current enabled list (excluding placeholders if any logic later)
     const current = getSpecialSamplesFromInterface().enabled_ids;
     const updated = current.concat([sampleId]);
@@ -234,7 +234,7 @@ function addSpecialSample(sampleId) {
 
 function removeSpecialSample(sampleId) {
     // Remove item from its group list
-    const item = document.querySelector(`#specialSamplesCardsAnchor .special-sample-item[data-sample-id="${sampleId}"]`);
+    const item = document.querySelector(`#assayConfigCards .special-sample-item[data-sample-id="${sampleId}"]`);
     if (item) {
         const parentList = item.parentElement;
         item.remove();
@@ -247,8 +247,8 @@ function removeSpecialSample(sampleId) {
     if (specialSampleConfigs[sampleId]) delete specialSampleConfigs[sampleId];
     updateSpecialSamplesFromDOM();
     renderAvailableSpecialSamples();
-    if (!document.querySelector('#specialSamplesCardsAnchor .special-sample-item')) {
-        document.getElementById('specialSamplesCardsAnchor').innerHTML = '<div class="no-special-samples">No special samples configured</div>';
+    if (!document.querySelector('#assayConfigCards .special-sample-item')) {
+        document.getElementById('assayConfigCards').innerHTML += '<div class="no-special-samples">No special samples configured</div>';
     }
 }
 
