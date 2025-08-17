@@ -84,8 +84,7 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
 
     Object.values(groups).sort((a,b)=>a.typeId-b.typeId).forEach(group => {
         const cardId = `specialSampleTypeCard_${group.typeId}`;
-    const disableAdd = group.uniqueOnly && group.enabledCount > 0; // only count actually enabled
-    const addBtnHtml = disableAdd ? '' : `<button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelectorForType(${group.typeId})"><i class=\"fas fa-plus\"></i> Add</button>`;
+    const addBtnHtml = `<button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelectorForType(${group.typeId})"><i class=\"fas fa-plus\"></i> Add</button>`;
     const cardHtml = `
             <div class="config-card" id="${cardId}" data-sample-type-group="${group.typeId}">
                 <div class="special-samples-config-panel">
@@ -277,7 +276,11 @@ function renderAvailableSpecialSamples(filterTypeId=null) {
             `${isEnabled ? '<div style=\\"margin-left:auto;color:var(--green-med);\\"><i class=\\"fas fa-check\\"></i></div>' : ''}`+
             `</div>`;
     });
-    listDiv.innerHTML = html;
+    if (!html) {
+        listDiv.innerHTML = '<div style="text-align:center;padding:18px;color:var(--gray-med);font-size:12px;">All samples of this type have been added</div>';
+    } else {
+        listDiv.innerHTML = html;
+    }
 }
 
 function addSpecialSample(sampleId) {
