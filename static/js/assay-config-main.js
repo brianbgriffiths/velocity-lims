@@ -238,6 +238,16 @@ function selectStep(stepId, stepName) {
     
     // Load the step configuration
     loadStepConfiguration(stepId);
+
+    // Update URL (query param & hash) without reloading so direct links work
+    try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('step', stepId);
+        // Optionally keep existing other params
+        history.replaceState({ stepId }, '', url.toString().split('#')[0] + `#step-${stepId}`);
+    } catch (e) {
+        console.warn('Failed to update URL for step selection:', e);
+    }
 }
 
 function addNewStep() {
@@ -251,13 +261,28 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
         const stepsList = document.getElementById('stepsList');
         if (!stepsList) return;
-        const firstStep = stepsList.querySelector('.step-item');
-        // Only auto-select if no step already selected (e.g., via hash or prior script)
-        if (firstStep && !document.querySelector('.step-item.selected')) {
-            const stepId = parseInt(firstStep.getAttribute('data-step-id'));
-            const nameEl = firstStep.querySelector('.step-name');
-            const stepName = nameEl ? nameEl.textContent.trim() : 'Step';
-            selectStep(stepId, stepName);
+        // Determine target from URL param or hash
+        let targetStepId = null;
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('step')) {
+            targetStepId = parseInt(url.searchParams.get('step'));
+        } else if (window.location.hash.startsWith('#step-')) {
+            const hashId = parseInt(window.location.hash.replace('#step-', ''));
+            if (!isNaN(hashId)) targetStepId = hashId;
+        }
+        let targetEl = null;
+        if (targetStepId) {
+            targetEl = stepsList.querySelector(`.step-item[data-step-id="${targetStepId}"]`);
+        }
+        if (!targetEl) {
+            targetEl = stepsList.querySelector('.step-item');
+        }
+        if (targetEl && !document.querySelector('.step-item.selected')) {
+            const sid = parseInt(targetEl.getAttribute('data-step-id'));
+            const nameEl = targetEl.querySelector('.step-name');
+            const sname = nameEl ? nameEl.textContent.trim() : 'Step';
+            selectStep(sid, sname);
+            targetEl.scrollIntoView({ block: 'nearest' });
         }
     } catch (e) {
         console.warn('Auto-select first step failed:', e);
