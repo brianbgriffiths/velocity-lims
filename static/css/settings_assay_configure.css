@@ -1343,6 +1343,91 @@ textarea.form-input {
     border-top: 1px solid var(--gray-light);
 }
 
+/* Step Data Panel Styles */
+#stepDataPanel .step-data-actions .btn-add-step-data {
+    background-color: var(--accent1);
+    color: #fff;
+    border: none;
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#stepDataPanel .step-data-actions .btn-add-step-data:hover {
+    background-color: var(--accent2);
+}
+
+.step-data-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+    min-height: 40px;
+}
+
+.step-data-empty {
+    font-size: 11px;
+    color: var(--gray-med);
+    padding: 6px 4px;
+}
+
+.step-data-item {
+    border: 1px solid var(--gray-med);
+    border-radius: 4px;
+    background: var(--gray-lightest);
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 160px;
+    position: relative;
+}
+
+.step-data-item-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-darkest);
+}
+
+.step-data-item-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.step-data-config-btn, .step-data-remove-btn {
+    background: var(--gray-light);
+    color: var(--gray-darkest);
+    border: 1px solid var(--gray-med);
+    padding: 4px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+}
+
+.step-data-config-btn:hover, .step-data-remove-btn:hover {
+    background: var(--gray-med);
+    color: #fff;
+}
+
+.step-data-remove-btn {
+    border-color: var(--pink-med);
+    color: var(--pink-med);
+    background: #fff;
+}
+
+.step-data-remove-btn:hover {
+    background: var(--pink-med);
+    color: #fff;
+    border-color: var(--pink-dark);
+}
+
 /* Full Width Pages Section Styles */
 .pages-section {
     width: 100%;

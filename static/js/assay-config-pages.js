@@ -368,6 +368,11 @@ function showPageConfigModal(pageId, pageName, evt) {
     // Removed order/required inputs from UI; maintain internal values if present
     document.getElementById('pageShowAfterComplete').checked = pageData.show_after_complete || false;
     document.getElementById('pageCondition').value = config.show_when || 'always';
+
+    // Ensure nested config objects exist for new panels
+    ensurePageOptionStructures(currentPageConfig);
+    // Render panels
+    renderStepDataItems();
     
     // Show modal
     document.getElementById('pageConfigModal').classList.add('show');
@@ -409,6 +414,75 @@ function savePageConfig() {
     
     console.log('Page configuration saved:', currentPageConfig);
     hidePageConfigModal();
+}
+
+// ---------------------- Page Option Panels (Step Data) ----------------------
+function ensurePageOptionStructures(page) {
+    if (!page.config) page.config = {};
+    if (!page.config.step_data) page.config.step_data = { enabled_ids: [], configurations: {} };
+    // sample_data & step_scripts panels will be added later
+}
+
+function renderStepDataItems() {
+    const container = document.getElementById('stepDataItems');
+    if (!currentPageConfig || !container) return;
+    const sd = currentPageConfig.config.step_data;
+    if (!sd.enabled_ids || sd.enabled_ids.length === 0) {
+        container.innerHTML = '<div class="step-data-empty">No step data selected</div>';
+        return;
+    }
+    const html = sd.enabled_ids.map(id => {
+        const cfg = sd.configurations[id] || {}; // future detailed config
+        const label = cfg.label || ('Data #' + id);
+        const hasCfg = Object.keys(cfg).length > 0;
+        const icon = hasCfg ? 'fas fa-cog' : 'far fa-cog';
+        return `
+            <div class="step-data-item" data-step-data-id="${id}">
+                <div class="step-data-item-main">
+                    <div class="step-data-item-name">${label}</div>
+                </div>
+                <div class="step-data-item-actions">
+                    <button type="button" class="step-data-config-btn" title="Configure" onclick="configureStepData(${id})"><i class="${icon}"></i></button>
+                    <button type="button" class="step-data-remove-btn" title="Remove" onclick="removeStepData(${id})"><i class="fas fa-times"></i></button>
+                </div>
+            </div>`;
+    }).join('');
+    container.innerHTML = html;
+}
+
+function showAddStepDataPrompt() {
+    if (!currentPageConfig) return;
+    const idStr = prompt('Enter step data ID to add (temporary placeholder)');
+    if (!idStr) return;
+    const id = parseInt(idStr.trim());
+    if (Number.isNaN(id)) return alert('Invalid ID');
+    const sd = currentPageConfig.config.step_data;
+    if (!sd.enabled_ids.includes(id)) {
+        sd.enabled_ids.push(id);
+        renderStepDataItems();
+        updatePageConfigTextarea(getPagesFromInterface());
+    }
+}
+
+function configureStepData(id) {
+    if (!currentPageConfig) return;
+    const sd = currentPageConfig.config.step_data;
+    const existing = sd.configurations[id] || {};
+    const newLabel = prompt('Set a label for this step data item', existing.label || 'Data #' + id);
+    if (newLabel !== null) {
+        sd.configurations[id] = { ...existing, label: newLabel };
+        renderStepDataItems();
+        updatePageConfigTextarea(getPagesFromInterface());
+    }
+}
+
+function removeStepData(id) {
+    if (!currentPageConfig) return;
+    const sd = currentPageConfig.config.step_data;
+    sd.enabled_ids = sd.enabled_ids.filter(x => x !== id);
+    delete sd.configurations[id];
+    renderStepDataItems();
+    updatePageConfigTextarea(getPagesFromInterface());
 }
 
 function removeCurrentPage() {
