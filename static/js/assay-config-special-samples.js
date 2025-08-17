@@ -29,9 +29,18 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
         enabledSpecialSamplesDiv.innerHTML = '<div class="no-special-samples">No special samples configured for this step</div>';
         return;
     }
-    const samplesToRender = enabledIds.map(id => {
+    let samplesToRender = enabledIds.map(id => {
         return specialSampleTypesDataAll.find(s => s.ssid === id || s.stid === id); // support legacy stid
     }).filter(Boolean);
+
+    // Ensure placeholder (special sample type id 4) samples appear even if not yet enabled
+    const placeholderSamples = specialSampleTypesDataAll.filter(s => (s.special_type === 4 || s.sstid === 4 || s.type_id === 4));
+    placeholderSamples.forEach(ps => {
+        const pid = ps.ssid || ps.stid;
+        if (pid && !samplesToRender.find(x => (x.ssid||x.stid) === pid)) {
+            samplesToRender.push(ps);
+        }
+    });
     if (!samplesToRender.length) {
         enabledSpecialSamplesDiv.innerHTML = '<div class="no-special-samples">No special samples configured for this step</div>';
         return;
@@ -48,8 +57,9 @@ function createSpecialSampleItemHTML(sample, index) {
     const hasConfig = specialSampleConfigs[sampleId] && Object.keys(specialSampleConfigs[sampleId]).length > 0;
     const gearIcon = hasConfig ? 'fas fa-cog' : 'far fa-cog';
     const buttonTitle = hasConfig ? 'Sample configured - click to edit' : 'Configure special sample';
+    const sampleTypeId = sample.special_type || sample.type_id || sample.sstid || 0;
     return `
-        <div class="special-sample-item" data-sample-id="${sampleId}" data-index="${index}" draggable="true">
+        <div class="special-sample-item" data-sample-id="${sampleId}" data-sample-type="${sampleTypeId}" data-index="${index}" draggable="true">
             <div class="special-sample-drag-handle"><i class="fas fa-grip-vertical"></i></div>
             <div class="special-sample-info">
                 <div class="special-sample-name">${displayName}</div>
