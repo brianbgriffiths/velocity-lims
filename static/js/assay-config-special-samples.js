@@ -210,8 +210,8 @@ function getSpecialSamplesFromInterface() {
     const data = { enabled_ids: [], configurations: {} };
     document.querySelectorAll('#assayConfigCards .special-sample-item').forEach(item => {
         const id = parseInt(item.dataset.sampleId);
-        // Exclude placeholder (type 4) if it was auto-added but not originally enabled? We include if present in UI.
-        if (!data.enabled_ids.includes(id)) data.enabled_ids.push(id);
+    // Allow duplicates (each occurrence pushed) for non-unique samples
+    data.enabled_ids.push(id);
         if (specialSampleConfigs[id] && Object.keys(specialSampleConfigs[id]).length > 0) {
             data.configurations[id] = specialSampleConfigs[id];
         }
@@ -302,18 +302,44 @@ function addSpecialSample(sampleId) {
     console.log('[SpecialSamples] addSpecialSample invoked with id:', sampleId);
     const sample = specialSampleTypesDataAll.find(s => s.ssid === sampleId || s.stid === sampleId);
     if (!sample) return;
-    // If already in UI, skip
-    if (document.querySelector(`#assayConfigCards .special-sample-item[data-sample-id="${sampleId}"]`)) return;
+    // If sample marked unique_only, prevent more than one visible instance
+    const existingEl = document.querySelector(`#assayConfigCards .special-sample-item[data-sample-id="${sampleId}"]`);
+    if (sample.unique_only && existingEl) {
+        console.log('[SpecialSamples] Unique-only sample already present; abort');
+        return;
+    }
     // unique_only now interpreted as: this specific sample can only be added once (duplicates blocked by earlier check)
     // (Multiple different samples of same type still allowed.)
     // Build current enabled list (excluding placeholders if any logic later)
     const interfaceData = getSpecialSamplesFromInterface();
     console.log('[SpecialSamples] existing enabled before add:', interfaceData.enabled_ids);
     const current = interfaceData.enabled_ids;
-    const updated = current.includes(sampleId) ? current.slice() : current.concat([sampleId]);
+    // Always append sampleId (allow duplicates) unless unique_only and already present handled above
+    const updated = current.concat([sampleId]);
     console.log('[SpecialSamples] updated enabled list:', updated);
     loadSpecialSamplesInterface({ enabled_ids: updated });
     console.log('[SpecialSamples] After add, enabled ids ->', updated);
+    // Fallback: if after rebuild the item still not present, append manually to its group
+    setTimeout(() => {
+        if (!document.querySelector(`#assayConfigCards .special-sample-item[data-sample-id="${sampleId}"]`)) {
+            console.warn('[SpecialSamples] Rebuild did not insert sample, performing manual append');
+            const typeId = sample.special_type || sample.type_id || sample.sstid || 0;
+            let groupList = document.getElementById(`specialSampleGroup_${typeId}`);
+            if (!groupList) {
+                // create minimal card for this type
+                const anchor = document.getElementById('assayConfigCards');
+                if (anchor) {
+                    const cardId = `specialSampleTypeCard_${typeId}`;
+                    anchor.insertAdjacentHTML('beforeend', `<div class="config-card" id="${cardId}" data-sample-type-group="${typeId}"><div class="special-samples-config-panel"><div class="special-samples-config-header"><span>Enabled ${sample.special_type_name || sample.type || 'Type '+typeId}</span><button type="button" class="btn-add-special-sample" onclick="showSpecialSampleSelectorForType(${typeId})"><i class=\"fas fa-plus\"></i> Add</button></div><div class="enabled-special-samples" id="specialSampleGroup_${typeId}"></div></div></div>`);
+                    groupList = document.getElementById(`specialSampleGroup_${typeId}`);
+                }
+            }
+            if (groupList) {
+                groupList.insertAdjacentHTML('beforeend', specialSampleItemHTMLForGroup(sample, groupList.querySelectorAll('.special-sample-item').length));
+                updateSpecialSamplesFromDOM();
+            }
+        }
+    }, 0);
     renderAvailableSpecialSamples();
     hideSpecialSampleSelector();
 }
