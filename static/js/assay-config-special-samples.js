@@ -112,11 +112,19 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
 function specialSampleItemHTMLForGroup(sample, index) {
     const sampleId = sample.ssid || sample.stid;
     const displayName = sample.special_name || sample.name || `Sample ${sampleId}`;
-    const displayType = sample.special_type_name || sample.type || 'Type';
+    const sampleTypeId = sample.special_type || sample.type_id || sample.sstid || 0;
+    const baseTypeName = sample.special_type_name || sample.type || 'Type';
+    let placementSummary = '';
+    const cfg = specialSampleConfigs[sampleId];
+    if (cfg) {
+        if (cfg.placement === 'specific_well') placementSummary = `Well ${cfg.specificWell || 'A1'}`;
+        else if (cfg.placement === 'after_samples') placementSummary = `After +${cfg.afterSamplesCount || 1}`;
+        else if (cfg.placement === 'script_placed') placementSummary = 'Script placed';
+    }
+    const displayType = (sampleTypeId === 4 && placementSummary) ? placementSummary : baseTypeName;
     const hasConfig = specialSampleConfigs[sampleId] && Object.keys(specialSampleConfigs[sampleId]).length > 0;
     const gearIcon = hasConfig ? 'fas fa-cog' : 'far fa-cog';
     const buttonTitle = hasConfig ? 'Sample configured - click to edit' : 'Configure special sample';
-    const sampleTypeId = sample.special_type || sample.type_id || sample.sstid || 0;
     return `
         <div class="special-sample-item" data-sample-id="${sampleId}" data-sample-type="${sampleTypeId}" data-index="${index}" draggable="false">
             <div class="special-sample-drag-handle" style="cursor:default;">
@@ -126,18 +134,26 @@ function specialSampleItemHTMLForGroup(sample, index) {
                 <div class="special-sample-name">${displayName}</div>
                 <div class="special-sample-type">${displayType}</div>
             </div>
-            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${sampleId}, '${displayName.replace(/'/g, "&#39;")}', '${displayType.replace(/'/g, "&#39;")}')" title="${buttonTitle}"><i class="${gearIcon}"></i></button>
+            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${sampleId}, '${displayName.replace(/'/g, "&#39;")}', '${baseTypeName.replace(/'/g, "&#39;")}')" title="${buttonTitle}"><i class="${gearIcon}"></i></button>
         </div>`;
 }
 
 function createSpecialSampleItemHTML(sample, index) {
     const sampleId = sample.ssid || sample.stid; // prefer modern ssid
     const displayName = sample.special_name || sample.name || `Sample ${sampleId}`;
-    const displayType = sample.special_type_name || sample.type || 'Type';
+    const sampleTypeId = sample.special_type || sample.type_id || sample.sstid || 0;
+    const baseTypeName = sample.special_type_name || sample.type || 'Type';
+    let placementSummary = '';
+    const cfg = specialSampleConfigs[sampleId];
+    if (cfg) {
+        if (cfg.placement === 'specific_well') placementSummary = `Well ${cfg.specificWell || 'A1'}`;
+        else if (cfg.placement === 'after_samples') placementSummary = `After +${cfg.afterSamplesCount || 1}`;
+        else if (cfg.placement === 'script_placed') placementSummary = 'Script placed';
+    }
+    const displayType = (sampleTypeId === 4 && placementSummary) ? placementSummary : baseTypeName;
     const hasConfig = specialSampleConfigs[sampleId] && Object.keys(specialSampleConfigs[sampleId]).length > 0;
     const gearIcon = hasConfig ? 'fas fa-cog' : 'far fa-cog';
     const buttonTitle = hasConfig ? 'Sample configured - click to edit' : 'Configure special sample';
-    const sampleTypeId = sample.special_type || sample.type_id || sample.sstid || 0;
     return `
         <div class="special-sample-item" data-sample-id="${sampleId}" data-sample-type="${sampleTypeId}" data-index="${index}" draggable="true">
             <div class="special-sample-drag-handle"><i class="fas fa-grip-vertical"></i></div>
@@ -145,7 +161,7 @@ function createSpecialSampleItemHTML(sample, index) {
                 <div class="special-sample-name">${displayName}</div>
                 <div class="special-sample-type">${displayType}</div>
             </div>
-            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${sampleId}, '${displayName.replace(/'/g, "&#39;")}', '${displayType.replace(/'/g, "&#39;")}')" title="${buttonTitle}"><i class="${gearIcon}"></i></button>
+            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${sampleId}, '${displayName.replace(/'/g, "&#39;")}', '${baseTypeName.replace(/'/g, "&#39;")}')" title="${buttonTitle}"><i class="${gearIcon}"></i></button>
         </div>`;
 }
 

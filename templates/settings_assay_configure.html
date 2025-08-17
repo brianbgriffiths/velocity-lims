@@ -286,7 +286,7 @@
             </div>
         </div>
     </div>
-    <!-- Example type-specific modal: Type 4 Placeholder -->
+    <!-- Type 4 Placeholder (customized: same placement options as type 1, no count, with auto-add) -->
     <div class="special-sample-config-modal" id="specialSampleConfigModal_type4">
         <div class="special-sample-config-dialog">
             <div class="special-sample-config-header">
@@ -296,19 +296,31 @@
                 <div class="config-section">
                     <div class="config-section-title">Placeholder Options</div>
                     <div class="config-row">
-                        <label>Count:</label>
-                        <input type="number" class="sampleCount" min="0" max="999" value="1">
-                    </div>
-                    <div class="config-row">
-                        <label>Auto-add:</label>
-                        <input type="checkbox" class="autoAdd" style="margin-left:6px;">
+                        <label><input type="checkbox" class="autoAdd" style="margin-right:5px;"> Auto-add</label>
+                        <span style="font-size:11px;color:var(--gray-dark);margin-left:10px;">Automatically add without user intervention</span>
                     </div>
                 </div>
                 <div class="config-section">
-                    <div class="config-section-title">Well Placement</div>
-                    <div class="config-row">
-                        <label>Specific Well:</label>
-                        <input type="text" class="specificWell" placeholder="A1" maxlength="3" style="width:70px;">
+                    <div class="config-section-title">Placement</div>
+                    <div class="placement-options">
+                        <div class="placement-option">
+                            <input type="radio" class="placement" value="user_placed" checked>
+                            <label>User-placed</label>
+                        </div>
+                        <div class="placement-option">
+                            <input type="radio" class="placement" value="specific_well">
+                            <label>Specific well:</label>
+                            <div class="placement-detail specificWellDetail"><input type="text" class="specificWell" placeholder="A1" maxlength="3"></div>
+                        </div>
+                        <div class="placement-option">
+                            <input type="radio" class="placement" value="after_samples">
+                            <label>N after last sample:</label>
+                            <div class="placement-detail afterSamplesDetail"><input type="number" class="afterSamplesCount" min="0" max="99" value="1"></div>
+                        </div>
+                        <div class="placement-option">
+                            <input type="radio" class="placement" value="script_placed">
+                            <label>Script placed</label>
+                        </div>
                     </div>
                 </div>
                 <div class="config-buttons">
