@@ -749,9 +749,25 @@ def settings_assay_configure(request, assay_id, step_id=None):
                 # Step ID not found or not part of this assay, redirect to assay config without step
                 return redirect('settings_assay_configure', assay_id=assay_id)
         
-        # Get special sample types for the step configuration
+        # Get special sample types for the step configuration (all joined rows)
         cursor.execute("""SELECT * FROM velocity.special_samples ss JOIN velocity.special_sample_types sst ON sst.sstid=ss.special_type;""")
         special_sample_types = cursor.fetchall()
+
+        # Get container types once (embed like special samples to avoid AJAX round-trip)
+        try:
+            cursor.execute(
+                """
+                SELECT cid, type_name, rows, columns, well_type, border_type, color,
+                       restricted_well_map, special_well_map, corner_types,
+                       margin_width, well_padding
+                FROM velocity.container_config
+                ORDER BY type_name
+                """
+            )
+            container_types = cursor.fetchall()
+        except Exception:
+            # Fail soft: embed empty list if query fails so page still renders
+            container_types = []
         
         conn.close()
         
@@ -762,6 +778,7 @@ def settings_assay_configure(request, assay_id, step_id=None):
             'steps': steps,
             'has_steps': len(steps) > 0,
             'special_sample_types_json': json.dumps(special_sample_types),
+            'container_types_json': json.dumps(container_types),
             'selected_step_id': step_id,
             'selected_step': selected_step
         })

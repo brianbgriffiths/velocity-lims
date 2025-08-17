@@ -6,7 +6,7 @@
 function loadStepConfiguration(stepId) {
     // Ensure special samples data is initialized (uses special-samples module globals)
     try {
-        if (typeof availableSpecialSamplesData === 'undefined' || availableSpecialSamplesData.length === 0) {
+    if (typeof window.specialSampleTypesData === 'undefined' || window.specialSampleTypesData.length === 0) {
             if (typeof initializeSpecialSampleTypes === 'function') {
                 console.log('Initializing special sample types (steps module)');
                 initializeSpecialSampleTypes();

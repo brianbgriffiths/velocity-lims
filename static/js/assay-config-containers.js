@@ -3,6 +3,19 @@
  * Handles container management, drag & drop, and configuration
  */
 
+// Globals (initialized once). Provided inline data should populate availableContainers elsewhere if needed.
+if (typeof window.enabledContainerIds === 'undefined') {
+    window.enabledContainerIds = new Set();
+}
+if (typeof window.availableContainers === 'undefined') {
+    window.availableContainers = [];
+}
+
+// Hydrate from inline containerTypesData if present and not yet populated
+if (typeof window.containerTypesData !== 'undefined' && Array.isArray(window.containerTypesData) && window.availableContainers.length === 0) {
+    window.availableContainers = window.containerTypesData.slice();
+}
+
 function loadContainersInterface(containers) {
     const enabledContainersDiv = document.getElementById('enabledContainers');
     

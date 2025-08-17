@@ -4,6 +4,7 @@
  */
 
 // Global variables for special samples (all types provided inline by template)
+// Unified global provided by template: window.specialSampleTypesData
 let specialSampleTypesDataAll = window.specialSampleTypesData || [];
 let specialSampleConfigs = {};
 let currentConfigSampleId = null;
@@ -182,9 +183,9 @@ function renderAvailableSpecialSamples() {
     const listDiv = document.getElementById('availableSpecialSamplesList');
     
     console.log('renderAvailableSpecialSamples called');
-    console.log('availableSpecialSamplesData:', availableSpecialSamplesData);
+    console.log('specialSampleTypesDataAll:', specialSampleTypesDataAll);
     
-    if (availableSpecialSamplesData.length === 0) {
+    if (specialSampleTypesDataAll.length === 0) {
         listDiv.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--gray-med);">No special sample types available</div>';
         return;
     }
@@ -196,7 +197,7 @@ function renderAvailableSpecialSamples() {
     });
     
     let html = '';
-    availableSpecialSamplesData.forEach(sample => {
+    specialSampleTypesDataAll.forEach(sample => {
         const sampleId = sample.stid;
         const isEnabled = enabledSpecialSampleIds.has(sampleId);
         const disabledClass = isEnabled ? 'disabled' : '';
@@ -219,7 +220,7 @@ function renderAvailableSpecialSamples() {
 }
 
 function addSpecialSample(sampleId) {
-    const sample = availableSpecialSamplesData.find(s => s.stid === sampleId);
+    const sample = specialSampleTypesDataAll.find(s => s.stid === sampleId);
     if (!sample) {
         console.log('Special sample not found:', sampleId);
         return;
