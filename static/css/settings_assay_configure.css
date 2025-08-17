@@ -419,6 +419,98 @@ textarea.form-input {
     gap: 4px;
 }
 
+/* Special Sample Add Modal (parity with containers) */
+.available-special-sample {
+    border: 1px solid var(--gray-med);
+    border-radius: 3px;
+    padding: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: white;
+}
+
+.available-special-sample:hover {
+    background-color: var(--accent9);
+    border-color: var(--accent3);
+}
+
+.available-special-sample.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--gray-lightest);
+}
+
+.available-special-sample.disabled:hover {
+    background-color: var(--gray-lightest);
+    border-color: var(--gray-med);
+}
+
+/* Info block inside selector item */
+.available-special-sample .special-sample-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 11px;
+}
+
+.available-special-sample .special-sample-name {
+    font-weight: 600;
+    color: var(--gray-dark);
+    font-size: 12px;
+}
+
+.available-special-sample .special-sample-type {
+    color: var(--gray-med);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Selector modal layout adjustments (reuse container selector classes if needed) */
+#specialSampleSelectorModal .special-sample-selector-content,
+#specialSampleSelectorModal .container-selector-content { /* ensure padding even if structure differs */
+    padding: 15px;
+}
+
+#specialSampleSelectorModal .special-sample-selector-header {
+    background-color: var(--accent1);
+    color: white;
+    padding: 15px;
+    font-weight: bold;
+    border-radius: 5px 5px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#specialSampleSelectorModal .special-sample-selector-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+}
+
+#specialSampleSelectorModal .special-sample-selector-close:hover {
+    background-color: rgba(255,255,255,0.2);
+}
+
+/* Provide a simple check icon alignment (already inline style sets color) */
+.available-special-sample i.fas.fa-check {
+    font-size: 12px;
+}
+
 .btn-add-container:hover, .btn-add-special-sample:hover {
     background-color: var(--green-dark);
 }
