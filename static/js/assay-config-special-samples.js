@@ -297,6 +297,7 @@ function renderAvailableSpecialSamples(filterTypeId=null) {
 }
 
 function addSpecialSample(sampleId) {
+    console.log('[SpecialSamples] addSpecialSample invoked with id:', sampleId);
     const sample = specialSampleTypesDataAll.find(s => s.ssid === sampleId || s.stid === sampleId);
     if (!sample) return;
     // If already in UI, skip
@@ -318,6 +319,9 @@ function addSpecialSample(sampleId) {
     renderAvailableSpecialSamples();
     hideSpecialSampleSelector();
 }
+
+// Ensure function accessible for inline onclick handlers
+window.addSpecialSample = addSpecialSample;
 
 function removeSpecialSample(sampleId) {
     // Remove item from its group list
