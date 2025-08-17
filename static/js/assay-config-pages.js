@@ -88,7 +88,8 @@ function createPageItemHTML(page, index) {
                 </div>
             </div>
             <div class="page-item-actions">
-                <button class="page-config-button" onclick="showPageConfigModal(${page.pcid}, '${page.page_name}')">
+                <!-- Explicit type="button" to prevent implicit submit inside forms causing full page refresh -->
+                <button type="button" class="page-config-button" onclick="showPageConfigModal(${page.pcid}, '${page.page_name}')">
                     <i class="fas fa-cog"></i>
                 </button>
             </div>
@@ -341,7 +342,12 @@ function removePage(pageId) {
     console.log('Page removed successfully');
 }
 
-function showPageConfigModal(pageId, pageName) {
+function showPageConfigModal(pageId, pageName, evt) {
+    // Defensive: if called with an event (e.g. inline onclick passing event implicitly in some browsers), prevent default.
+    if (evt && typeof evt.preventDefault === 'function') {
+        evt.preventDefault();
+        evt.stopPropagation();
+    }
     console.log('Showing page config modal for:', pageId, pageName);
     
     // Find the page data
