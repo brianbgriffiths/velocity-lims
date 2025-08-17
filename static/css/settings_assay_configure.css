@@ -423,7 +423,7 @@ textarea.form-input {
     background-color: var(--green-dark);
 }
 
-.enabled-containers, #enabledSpecialSamples {
+.enabled-containers, #enabledSpecialSamples, .enabled-special-samples {
     padding: 8px;
     max-height: 200px;
     overflow-y: auto;
@@ -513,13 +513,14 @@ textarea.form-input {
     align-items: center;
     justify-content: center;
     font-size: 11px;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 .container-config-button:hover, .special-sample-config-button:hover {
     background-color: var(--blue-med);
     color: black;
 }
+
 
 .container-selector-modal {
     position: fixed;

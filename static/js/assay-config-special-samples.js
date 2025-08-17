@@ -52,14 +52,15 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
 
     Object.values(groups).sort((a,b)=>a.typeId-b.typeId).forEach(group => {
         const cardId = `specialSampleTypeCard_${group.typeId}`;
+        const samplesLabel = `${group.samples.length} Sample${group.samples.length!==1?'s':''}`;
         const cardHtml = `
             <div class="config-card" id="${cardId}" data-sample-type-group="${group.typeId}">
                 <label class="form-label">${group.typeName}</label>
                 <div class="special-samples-config-panel">
                     <div class="special-samples-config-header">
-                        <span>${group.samples.length} Sample${group.samples.length!==1?'s':''}</span>
+                        <span>${samplesLabel}</span>
                     </div>
-                    <div class="enabled-special-samples" style="padding:6px 10px;" id="specialSampleGroup_${group.typeId}">
+                    <div class="enabled-special-samples" id="specialSampleGroup_${group.typeId}">
                         ${group.samples.map((sample, idx) => specialSampleItemHTMLForGroup(sample, idx)).join('')}
                     </div>
                 </div>
@@ -80,14 +81,14 @@ function specialSampleItemHTMLForGroup(sample, index) {
     const sampleTypeId = sample.special_type || sample.type_id || sample.sstid || 0;
     return `
         <div class="special-sample-item" data-sample-id="${sampleId}" data-sample-type="${sampleTypeId}" data-index="${index}" draggable="false">
+            <div class="special-sample-drag-handle" style="cursor:default;">
+                <i class="fas fa-grip-vertical"></i>
+            </div>
             <div class="special-sample-info">
                 <div class="special-sample-name">${displayName}</div>
                 <div class="special-sample-type">${displayType}</div>
             </div>
-            <div style="display:flex; gap:4px; align-items:center;">
-                <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${sampleId}, '${displayName.replace(/'/g, "&#39;")}', '${displayType.replace(/'/g, "&#39;")}')" title="${buttonTitle}" style="width:24px;height:24px;"><i class="${gearIcon}"></i></button>
-                <button type="button" class="btn-remove-page" style="padding:2px 6px;font-size:10px;" onclick="removeSpecialSample(${sampleId})" title="Remove"><i class="fas fa-trash"></i></button>
-            </div>
+            <button type="button" class="special-sample-config-button" onclick="showSpecialSampleConfigModal(${sampleId}, '${displayName.replace(/'/g, "&#39;")}', '${displayType.replace(/'/g, "&#39;")}')" title="${buttonTitle}"><i class="${gearIcon}"></i></button>
         </div>`;
 }
 
