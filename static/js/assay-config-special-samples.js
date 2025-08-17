@@ -4,7 +4,7 @@
  */
 
 // Global variables for special samples (all types provided inline by template)
-// Unified global provided by template: window.specialSampleTypesData
+// Modern format only: backend supplies {enabled_ids: [...], configurations: {...}}
 let specialSampleTypesDataAll = window.specialSampleTypesData || [];
 let specialSampleConfigs = {};
 let currentConfigSampleId = null;
@@ -19,51 +19,23 @@ function initializeSpecialSampleTypes() {
 
 // Removed network loading; all special sample types are provided inline in template.
 
-function loadSpecialSamplesInterface(specialSamplesRaw) {
-    console.log('Loading special samples interface with data:', specialSamplesRaw);
-
+function loadSpecialSamplesInterface(stepSpecialSamples) {
+    // stepSpecialSamples: {enabled_ids: [...], configurations: {...}} (modern format)
     const enabledSpecialSamplesDiv = document.getElementById('enabledSpecialSamples');
-    if (!enabledSpecialSamplesDiv) {
-        console.warn('Special samples container #enabledSpecialSamples not found in DOM');
-        return;
-    }
+    if (!enabledSpecialSamplesDiv) return;
 
-    // Normalize input: backend may send {enabled_ids: [...], configurations:{...}} or legacy array or organized object
-    let specialSamplesArray = [];
-    try {
-        if (Array.isArray(specialSamplesRaw)) {
-            specialSamplesArray = specialSamplesRaw; // already array of sample objects
-        } else if (specialSamplesRaw && typeof specialSamplesRaw === 'object') {
-            if (Array.isArray(specialSamplesRaw.enabled_ids)) {
-                // New format: build array from enabled_ids using master list
-                specialSamplesRaw.enabled_ids.forEach(id => {
-                    const sampleObj = specialSampleTypesDataAll.find(s => s.stid === id);
-                    if (sampleObj) {
-                        specialSamplesArray.push(sampleObj);
-                    }
-                });
-            } else {
-                // Possibly organized by type id: iterate values (arrays)
-                Object.values(specialSamplesRaw).forEach(val => {
-                    if (Array.isArray(val)) {
-                        val.forEach(sample => {
-                            if (sample && sample.stid) specialSamplesArray.push(sample);
-                        });
-                    }
-                });
-            }
-        }
-    } catch (e) {
-        console.warn('Failed to normalize special samples structure:', e);
-    }
-
-    if (!specialSamplesArray || specialSamplesArray.length === 0) {
+    const enabledIds = (stepSpecialSamples && Array.isArray(stepSpecialSamples.enabled_ids)) ? stepSpecialSamples.enabled_ids : [];
+    if (!enabledIds.length) {
         enabledSpecialSamplesDiv.innerHTML = '<div class="no-special-samples">No special samples configured for this step</div>';
         return;
     }
-
-    const specialSamplesHTML = specialSamplesArray.map((sample, index) => createSpecialSampleItemHTML(sample, index)).join('');
-    enabledSpecialSamplesDiv.innerHTML = specialSamplesHTML;
+    const samplesToRender = enabledIds.map(id => specialSampleTypesDataAll.find(s => s.stid === id)).filter(Boolean);
+    if (!samplesToRender.length) {
+        enabledSpecialSamplesDiv.innerHTML = '<div class="no-special-samples">No special samples configured for this step</div>';
+        return;
+    }
+    const html = samplesToRender.map((sample, idx) => createSpecialSampleItemHTML(sample, idx)).join('');
+    enabledSpecialSamplesDiv.innerHTML = html;
     enableSpecialSampleDragAndDrop();
 }
 

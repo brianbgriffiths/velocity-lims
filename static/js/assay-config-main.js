@@ -246,7 +246,7 @@ function addNewStep() {
     console.log('Add new step functionality to be implemented');
 }
 
-// Auto-select first step on initial load (restores legacy behavior)
+// Auto-select first step on initial load
 document.addEventListener('DOMContentLoaded', function() {
     try {
         const stepsList = document.getElementById('stepsList');

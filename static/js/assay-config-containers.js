@@ -28,150 +28,38 @@ function initializeTokenSystem() {
         option.addEventListener('mousedown', function(e) {
             e.preventDefault();
             const token = this.getAttribute('data-token');
-            if (token === 'container_value') {
-                const select = document.getElementById('containerValueSelect');
-                if (select && select.value) insertToken(`container_value:${select.value}`);
-            } else if (token === 'batch_value') {
-                const select = document.getElementById('batchValueSelect');
-                if (select && select.value) insertToken(`batch_value:${select.value}`);
-            } else {
-                insertToken(token);
-            }
+            insertToken(token);
         });
     });
-    const containerValueSelect = document.getElementById('containerValueSelect');
-    if (containerValueSelect) containerValueSelect.addEventListener('change', () => {
-        if (containerValueSelect.value) insertToken(`container_value:${containerValueSelect.value}`);
-        containerValueSelect.selectedIndex = 0;
-    });
-    const batchValueSelect = document.getElementById('batchValueSelect');
-    if (batchValueSelect) batchValueSelect.addEventListener('change', () => {
-        if (batchValueSelect.value) insertToken(`batch_value:${batchValueSelect.value}`);
-        batchValueSelect.selectedIndex = 0;
-    });
 }
 
-function showTokenPopup() {
-    const popup = document.getElementById('tokenPopup');
-    if (popup) popup.style.display = 'block';
-}
-
-function hideTokenPopup() {
-    const popup = document.getElementById('tokenPopup');
-    if (popup) popup.style.display = 'none';
-}
-
-function insertToken(token) {
-    const nameInput = document.getElementById('containerNewName');
-    if (!nameInput) return;
-    const start = nameInput.selectionStart || 0;
-    const end = nameInput.selectionEnd || 0;
-    const value = nameInput.value;
-    const before = value.substring(0, start);
-    const after = value.substring(end);
-    const tokenText = `{${token}}`;
-    nameInput.value = before + tokenText + after;
-    const caret = before.length + tokenText.length;
-    nameInput.focus();
-    nameInput.setSelectionRange(caret, caret);
-}
-
-document.addEventListener('DOMContentLoaded', initializeTokenSystem);
-
+// Modern format container loader (array of objects with cid, optional config, may include full details)
 function loadContainersInterface(containers) {
     const enabledContainersDiv = document.getElementById('enabledContainers');
-    
-    console.log('loadContainersInterface called with:', containers);
-    console.log('Container count:', containers ? containers.length : 0);
-    console.log('Container data type:', typeof containers);
-    console.log('Is containers array?', Array.isArray(containers));
-    
-    if (!containers || containers.length === 0) {
+    if (!containers || !containers.length) {
         enabledContainersDiv.innerHTML = '<div class="no-containers">No containers configured for this step</div>';
         enabledContainerIds.clear();
         updateContainerConfigTextarea([]);
-        // Clear container configurations
         window.containerConfigurations = {};
         return;
     }
-    
     enabledContainerIds.clear();
-    // Initialize or clear container configurations
-    if (!window.containerConfigurations) {
-        window.containerConfigurations = {};
-    }
-    
+    if (!window.containerConfigurations) window.containerConfigurations = {};
     let html = '';
-    
     containers.forEach((container, index) => {
-        console.log(`Processing container ${index}:`, container);
-        console.log(`Container ${index} keys:`, Object.keys(container));
-        
-        let containerId;
-        let fullContainer = null;
-        
-        // Handle different container formats:
-        // 1. Legacy format: just integers [1, 2, 3]
-        // 2. Simplified format: {cid: 1, config: {...}}
-        // 3. Full container objects from database: {cid: 1, type_name: "...", rows: 8, ...}
-        if (typeof container === 'number') {
-            // Legacy format: just an integer
-            containerId = container;
-            console.log(`Legacy format container ID: ${containerId}`);
-            // Find the full container details from availableContainers
-            fullContainer = availableContainers.find(c => c.cid === containerId);
-            console.log(`Found full container for legacy ID ${containerId}:`, fullContainer);
-        } else if (container && container.cid) {
-            // Object format with cid
-            containerId = container.cid;
-            console.log(`Object format container ID: ${containerId}`);
-            
-            // Check if this is a full container object (has type_name) or simplified (just cid + config)
-            if (container.type_name) {
-                // Full container object from backend
-                fullContainer = container;
-                console.log(`Using full container object for ID ${containerId}`);
-                // Also add to availableContainers if not already there
-                if (!availableContainers.find(c => c.cid === containerId)) {
-                    availableContainers.push(container);
-                }
-            } else {
-                // Simplified format, find full details in availableContainers
-                fullContainer = availableContainers.find(c => c.cid === containerId);
-                console.log(`Found full container for simplified ID ${containerId}:`, fullContainer);
-            }
-            
-            // Load container configuration if it exists
-            if (container.config) {
-                window.containerConfigurations[containerId] = container.config;
-                console.log(`Loaded config for container ${containerId}:`, container.config);
-            }
-        } else {
-            console.warn('Unknown container format:', container);
-            return;
-        }
-        
-        if (!fullContainer) {
-            console.warn(`Full container details not found for container ID ${containerId}`);
-            console.warn(`Available containers:`, availableContainers);
-            return;
-        }
-        
-        console.log(`Adding container ID ${containerId} to enabled set`);
+        if (!container || !container.cid) return;
+        const containerId = container.cid;
+        let fullContainer = container.type_name ? container : availableContainers.find(c => c.cid === containerId);
+        if (!fullContainer) return;
+        if (!availableContainers.find(c => c.cid === containerId)) availableContainers.push(fullContainer);
+        if (container.config) window.containerConfigurations[containerId] = container.config;
+        if (!window.containerConfigurations[containerId]) window.containerConfigurations[containerId] = {};
         enabledContainerIds.add(containerId);
-        
-        // Initialize empty config if none exists (for legacy data)
-        if (!window.containerConfigurations[containerId]) {
-            window.containerConfigurations[containerId] = {};
-        }
-        
-        console.log(`Creating HTML for container ${containerId}`);
         html += createContainerItemHTML(fullContainer, index);
     });
-    
     enabledContainersDiv.innerHTML = html;
-    updateContainerConfigTextarea(containers);
     enableContainerDragAndDrop();
+    updateContainerConfigTextarea(containers);
 }
 
 function createContainerItemHTML(container, index) {
