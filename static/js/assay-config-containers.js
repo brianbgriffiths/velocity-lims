@@ -16,6 +16,68 @@ if (typeof window.containerTypesData !== 'undefined' && Array.isArray(window.con
     window.availableContainers = window.containerTypesData.slice();
 }
 
+// Token popup system for container renaming (extracted from legacy file)
+function initializeTokenSystem() {
+    const popup = document.getElementById('tokenPopup');
+    if (!popup) return;
+    const nameInput = document.getElementById('containerNewName');
+    if (!nameInput) return;
+    nameInput.addEventListener('focus', showTokenPopup);
+    nameInput.addEventListener('blur', () => setTimeout(hideTokenPopup, 150));
+    popup.querySelectorAll('.token-option').forEach(option => {
+        option.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            const token = this.getAttribute('data-token');
+            if (token === 'container_value') {
+                const select = document.getElementById('containerValueSelect');
+                if (select && select.value) insertToken(`container_value:${select.value}`);
+            } else if (token === 'batch_value') {
+                const select = document.getElementById('batchValueSelect');
+                if (select && select.value) insertToken(`batch_value:${select.value}`);
+            } else {
+                insertToken(token);
+            }
+        });
+    });
+    const containerValueSelect = document.getElementById('containerValueSelect');
+    if (containerValueSelect) containerValueSelect.addEventListener('change', () => {
+        if (containerValueSelect.value) insertToken(`container_value:${containerValueSelect.value}`);
+        containerValueSelect.selectedIndex = 0;
+    });
+    const batchValueSelect = document.getElementById('batchValueSelect');
+    if (batchValueSelect) batchValueSelect.addEventListener('change', () => {
+        if (batchValueSelect.value) insertToken(`batch_value:${batchValueSelect.value}`);
+        batchValueSelect.selectedIndex = 0;
+    });
+}
+
+function showTokenPopup() {
+    const popup = document.getElementById('tokenPopup');
+    if (popup) popup.style.display = 'block';
+}
+
+function hideTokenPopup() {
+    const popup = document.getElementById('tokenPopup');
+    if (popup) popup.style.display = 'none';
+}
+
+function insertToken(token) {
+    const nameInput = document.getElementById('containerNewName');
+    if (!nameInput) return;
+    const start = nameInput.selectionStart || 0;
+    const end = nameInput.selectionEnd || 0;
+    const value = nameInput.value;
+    const before = value.substring(0, start);
+    const after = value.substring(end);
+    const tokenText = `{${token}}`;
+    nameInput.value = before + tokenText + after;
+    const caret = before.length + tokenText.length;
+    nameInput.focus();
+    nameInput.setSelectionRange(caret, caret);
+}
+
+document.addEventListener('DOMContentLoaded', initializeTokenSystem);
+
 function loadContainersInterface(containers) {
     const enabledContainersDiv = document.getElementById('enabledContainers');
     
