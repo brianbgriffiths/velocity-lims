@@ -183,7 +183,12 @@ function getSpecialSamplesFromInterface() {
 }
 
 function updateSpecialSampleConfigTextarea(specialSamples) {
-    document.getElementById('specialSampleConfig').value = JSON.stringify(specialSamples, null, 2);
+    const el = document.getElementById('specialSampleConfig');
+    if (!el) {
+        console.warn('specialSampleConfig textarea not found when updating; skipping');
+        return;
+    }
+    el.value = JSON.stringify(specialSamples, null, 2);
 }
 
 function showSpecialSampleSelector() {
