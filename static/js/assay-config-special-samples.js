@@ -6,7 +6,7 @@
 // Global variables for special samples (all types provided inline by template)
 // Modern format only: backend supplies {enabled_ids: [...], configurations: {...}}
 let specialSampleTypesDataAll = window.specialSampleTypesData || [];
-let specialSampleConfigs = {}; // legacy id-keyed (kept for backward compatibility / migration)
+// Removed legacy id-keyed config support; only index-based instance configs retained
 let specialSampleEnabledIds = []; // ordered list permitting duplicates
 let specialSampleInstanceConfigs = []; // index-keyed configs matching enabled_ids
 let currentConfigSampleId = null;
@@ -41,26 +41,18 @@ function loadSpecialSamplesInterface(stepSpecialSamples) {
         if (!base) return null;
         return { ...base, __instanceIndex: idx };
     }).filter(Boolean);
-    // Migrate configurations (index vs id keyed)
-    specialSampleInstanceConfigs = [];
+    // Initialize configs array to length of enabled instances with nulls
+    specialSampleInstanceConfigs = new Array(enabledInstances.length).fill(null);
+    // Apply only index-keyed configurations (ignore any keys >= length or legacy id keys)
     if (stepSpecialSamples && stepSpecialSamples.configurations) {
-        Object.keys(stepSpecialSamples.configurations).forEach(key => {
-            const cfg = stepSpecialSamples.configurations[key];
-            if (cfg && typeof cfg === 'object') {
-                if (!isNaN(parseInt(key))) {
-                    specialSampleInstanceConfigs[parseInt(key)] = cfg; // already index keyed
-                }
+        Object.entries(stepSpecialSamples.configurations).forEach(([k, cfg]) => {
+            const idx = parseInt(k);
+            if (!Number.isNaN(idx) && idx >= 0 && idx < specialSampleInstanceConfigs.length && cfg && typeof cfg === 'object') {
+                specialSampleInstanceConfigs[idx] = cfg;
             }
         });
-        // If no index keys found, treat as legacy id-keyed
-        if (specialSampleInstanceConfigs.length === 0) {
-            enabledIds.forEach((id, idx) => {
-                if (stepSpecialSamples.configurations[id]) {
-                    specialSampleInstanceConfigs[idx] = stepSpecialSamples.configurations[id];
-                }
-            });
-        }
     }
+    sanitizeSpecialSampleInstanceConfigs();
     // Placeholder type (4) visibility handled via empty group card; no ghost sample insertion needed.
 
     // Build map of all available special sample types so empty types still display
@@ -144,13 +136,13 @@ function specialSampleItemHTMLForGroup(sample) {
     const sampleTypeId = sample.special_type || sample.type_id || sample.sstid || 0;
     const baseTypeName = sample.special_type_name || sample.type || 'Type';
     let placementSummary = '';
-    const cfg = specialSampleInstanceConfigs[instanceIndex] || specialSampleConfigs[sampleId];
+    const cfg = specialSampleInstanceConfigs[instanceIndex];
     if (cfg) {
         if (cfg.placement === 'specific_well') placementSummary = `Well ${cfg.specificWell || 'A1'}`;
         else if (cfg.placement === 'after_samples') placementSummary = `After +${cfg.afterSamplesCount || 1}`;
         else if (cfg.placement === 'script_placed') placementSummary = 'Script placed';
     }
-    const displayType = (sampleTypeId === 4 && placementSummary) ? placementSummary : baseTypeName;
+    const displayType = ((sampleTypeId === 4 || sampleTypeId === 1) && placementSummary) ? placementSummary : baseTypeName;
     const hasConfig = !!(cfg && Object.keys(cfg).length > 0);
     const gearIcon = hasConfig ? 'fas fa-cog' : 'far fa-cog';
     const buttonTitle = hasConfig ? 'Sample configured - click to edit' : 'Configure special sample';
@@ -173,13 +165,13 @@ function createSpecialSampleItemHTML(sample, index) {
     const sampleTypeId = sample.special_type || sample.type_id || sample.sstid || 0;
     const baseTypeName = sample.special_type_name || sample.type || 'Type';
     let placementSummary = '';
-    const cfg = specialSampleInstanceConfigs[index] || specialSampleConfigs[sampleId];
+    const cfg = specialSampleInstanceConfigs[index];
     if (cfg) {
         if (cfg.placement === 'specific_well') placementSummary = `Well ${cfg.specificWell || 'A1'}`;
         else if (cfg.placement === 'after_samples') placementSummary = `After +${cfg.afterSamplesCount || 1}`;
         else if (cfg.placement === 'script_placed') placementSummary = 'Script placed';
     }
-    const displayType = (sampleTypeId === 4 && placementSummary) ? placementSummary : baseTypeName;
+    const displayType = ((sampleTypeId === 4 || sampleTypeId === 1) && placementSummary) ? placementSummary : baseTypeName;
     const hasConfig = !!(cfg && Object.keys(cfg).length > 0);
     const gearIcon = hasConfig ? 'fas fa-cog' : 'far fa-cog';
     const buttonTitle = hasConfig ? 'Sample configured - click to edit' : 'Configure special sample';
@@ -251,6 +243,9 @@ function updateSpecialSamplesFromDOM() {
         const sampleData = specialSampleTypesDataAll.find(s => (s.ssid === id) || (s.stid === id));
         if (sampleData) samples.push(sampleData);
     });
+    // Re-sync enabled ids & sanitize configs
+    specialSampleEnabledIds = samples.map(s => s.ssid || s.stid);
+    sanitizeSpecialSampleInstanceConfigs();
     updateSpecialSampleConfigTextarea(samples);
 }
 
@@ -262,6 +257,20 @@ function getSpecialSamplesFromInterface() {
     });
     console.log('Getting special samples data for step config (index-keyed):', data);
     return data;
+}
+
+function sanitizeSpecialSampleInstanceConfigs() {
+    // Ensure configs array length matches enabled ids
+    if (specialSampleInstanceConfigs.length !== specialSampleEnabledIds.length) {
+        specialSampleInstanceConfigs = specialSampleEnabledIds.map((_, i) => specialSampleInstanceConfigs[i] || null);
+    }
+    // Drop any config objects that are clearly invalid (no placement or unexpected types)
+    specialSampleInstanceConfigs = specialSampleInstanceConfigs.map(cfg => {
+        if (!cfg || typeof cfg !== 'object') return null;
+        // Minimal required keys
+        if (!cfg.placement) return null;
+        return cfg;
+    });
 }
 
 function updateSpecialSampleConfigTextarea(specialSamples) {
@@ -308,10 +317,24 @@ function saveSpecialSampleConfig() {
     // Visual indicator
     const sampleItem = document.querySelector(`.special-sample-item[data-instance-index="${currentConfigInstanceIndex}"]`);
     if (sampleItem) {
+        // Update gear icon to solid and title
         const configButton = sampleItem.querySelector('.special-sample-config-button');
         if (configButton) {
-            configButton.style.backgroundColor = 'var(--green-med)';
+            const iconEl = configButton.querySelector('i');
+            if (iconEl) iconEl.className = 'fas fa-cog';
             configButton.title = 'Sample configured - click to edit';
+        }
+        // Update placement summary immediately
+        const sampleTypeEl = sampleItem.querySelector('.special-sample-type');
+        if (sampleTypeEl) {
+            let placementSummary = '';
+            if (placement === 'specific_well') placementSummary = `Well ${specificWell}`;
+            else if (placement === 'after_samples') placementSummary = `After +${afterSamplesCount}`;
+            else if (placement === 'script_placed') placementSummary = 'Script placed';
+            const sampleTypeId = parseInt(sampleItem.dataset.sampleType);
+            if ((sampleTypeId === 4 || sampleTypeId === 1) && placementSummary) {
+                sampleTypeEl.textContent = placementSummary;
+            }
         }
     }
     hideSpecialSampleConfigModal();
