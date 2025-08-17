@@ -3,45 +3,20 @@
  * Handles special sample types, configuration modals, and placement options
  */
 
-// Global variables for special samples
-let availableSpecialSamplesData = [];
+// Global variables for special samples (all types provided inline by template)
+let specialSampleTypesDataAll = window.specialSampleTypesData || [];
 let specialSampleConfigs = {};
 let currentConfigSampleId = null;
 let currentConfigSampleType = null;
 
 function initializeSpecialSampleTypes() {
-    console.log('Initializing special sample types from server data');
-    if (window.specialSampleTypesData) {
-        console.log('Special sample types data available:', window.specialSampleTypesData);
-        availableSpecialSamplesData = window.specialSampleTypesData;
-    } else {
-        console.log('No special sample types data found on page, will load from server');
-        loadAllAvailableSpecialSamples();
+    console.log('Initializing special sample types from embedded template data');
+    if (!Array.isArray(specialSampleTypesDataAll)) {
+        specialSampleTypesDataAll = [];
     }
 }
 
-function loadAllAvailableSpecialSamples() {
-    console.log('Loading all available special samples...');
-    
-    const pyoptions = {
-        data: {},
-        csrf: csrf,
-        url: '../get_all_special_sample_types',
-        submit_mode: 'silent'
-    };
-    
-    pylims_post(pyoptions).then(result => {
-        console.log('Special samples loaded:', result);
-        if (result.status === 'success') {
-            availableSpecialSamplesData = result.special_sample_types;
-            console.log('Available special samples updated:', availableSpecialSamplesData);
-        } else {
-            console.error('Error loading special samples:', result.error);
-        }
-    }).catch(error => {
-        console.error('Error loading special samples:', error);
-    });
-}
+// Removed network loading; all special sample types are provided inline in template.
 
 function loadSpecialSamplesInterface(specialSamples) {
     console.log('Loading special samples interface with data:', specialSamples);
@@ -155,7 +130,7 @@ function updateSpecialSamplesFromDOM() {
     
     specialSampleItems.forEach((item, index) => {
         const sampleId = parseInt(item.dataset.sampleId);
-        const sampleData = availableSpecialSamplesData.find(s => s.stid === sampleId);
+        const sampleData = specialSampleTypesDataAll.find(s => s.stid === sampleId);
         if (sampleData) {
             specialSamples.push(sampleData);
         }
