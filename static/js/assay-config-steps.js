@@ -193,3 +193,30 @@ function saveStepConfiguration(isUnifiedSave = false) {
 }
 
 // (Removed duplicated special sample initialization/card generation code; now lives in assay-config-special-samples.js)
+
+// Auto-select initial step (prefer backend-provided initialStepId; fallback to first)
+function autoSelectInitialStep() {
+    try {
+        if (document.querySelector('.step-item.selected')) return; // already selected
+        const stepsList = document.getElementById('stepsList');
+        if (!stepsList) return;
+        let target = null;
+        if (typeof initialStepId !== 'undefined' && initialStepId) {
+            target = stepsList.querySelector(`.step-item[data-step-id="${initialStepId}"]`);
+        }
+        if (!target) target = stepsList.querySelector('.step-item');
+        if (!target) return;
+        const stepId = parseInt(target.getAttribute('data-step-id'));
+        const nameEl = target.querySelector('.step-name');
+        const stepName = nameEl ? nameEl.textContent.trim() : 'Step';
+        selectStep(stepId, stepName);
+    } catch (e) {
+        console.warn('Auto-select initial step failed:', e);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', autoSelectInitialStep);
+} else {
+    autoSelectInitialStep();
+}
