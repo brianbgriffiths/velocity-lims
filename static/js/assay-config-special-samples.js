@@ -246,6 +246,12 @@ function showSpecialSampleSelectorForType(typeId) {
     const modal = document.getElementById('specialSampleSelectorModal');
     if (!modal) return;
     modal.style.display = 'flex';
+    // Update header label
+    const labelEl = document.getElementById('specialSampleTypeLabel');
+    if (labelEl) {
+        const rep = specialSampleTypesDataAll.find(s => (s.special_type || s.type_id || s.sstid || 0) === typeId);
+        labelEl.textContent = rep ? (rep.special_type_name || rep.type || 'Special Sample') : 'Special Sample';
+    }
     renderAvailableSpecialSamples(typeId);
 }
 
@@ -264,24 +270,24 @@ function renderAvailableSpecialSamples(filterTypeId=null) {
     const enabled = new Set();
     document.querySelectorAll('#assayConfigCards .special-sample-item').forEach(item => enabled.add(parseInt(item.dataset.sampleId)));
     let html = '';
-                specialSampleTypesDataAll.forEach(sample => {
-                    const typeId = sample.special_type || sample.type_id || sample.sstid || 0;
-                    if (filterTypeId !== null && typeId !== filterTypeId) return;
-                    const sampleId = sample.ssid || sample.stid;
-                    const isEnabled = enabled.has(sampleId);
-                    const disabledClass = (sample.unique_only && isEnabled) ? 'disabled' : '';
-                    const title = (sample.unique_only && isEnabled) ? 'Special sample already added' : 'Click to add this special sample';
-                    const checkHtml = isEnabled ? '<div style="margin-left:auto;color:var(--green-med);"><i class="fas fa-check"></i></div>' : '';
-                    const clickAttr = (sample.unique_only && isEnabled) ? '' : `onclick="addSpecialSample(${sampleId})"`;
-                    html += `
-                        <div class="available-special-sample ${disabledClass}" ${clickAttr} title="${title}">
-                            <div class="special-sample-info">
-                                <div class="special-sample-name">${sample.special_name || sample.name}</div>
-                                <div class="special-sample-type">${sample.special_type_name || sample.type}</div>
-                            </div>
-                            ${checkHtml}
-                        </div>`;
-        });
+    specialSampleTypesDataAll.forEach(sample => {
+        const typeId = sample.special_type || sample.type_id || sample.sstid || 0;
+        if (filterTypeId !== null && typeId !== filterTypeId) return;
+        const sampleId = sample.ssid || sample.stid;
+        const isEnabled = enabled.has(sampleId);
+        const disabledClass = (sample.unique_only && isEnabled) ? 'disabled' : '';
+        const title = (sample.unique_only && isEnabled) ? 'Special sample already added' : 'Click to add this special sample';
+        const checkHtml = isEnabled ? '<div style="margin-left:auto;color:var(--green-med);"><i class="fas fa-check"></i></div>' : '';
+        const clickAttr = (sample.unique_only && isEnabled) ? '' : `onclick="addSpecialSample(${sampleId})"`;
+        html += `
+            <div class="available-special-sample ${disabledClass}" ${clickAttr} title="${title}">
+                <div class="special-sample-info">
+                    <div class="special-sample-name">${sample.special_name || sample.name}</div>
+                    <div class="special-sample-type">${sample.special_type_name || sample.type}</div>
+                </div>
+                ${checkHtml}
+            </div>`;
+    });
     if (!html) {
         listDiv.innerHTML = '<div style="text-align:center;padding:18px;color:var(--gray-med);font-size:12px;">All samples of this type have been added</div>';
     } else {
