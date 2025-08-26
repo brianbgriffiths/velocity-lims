@@ -1728,3 +1728,85 @@ def get_available_pages(request):
         
     except Exception as e:
         return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)
+
+
+@login_required
+def upsert_step_data_config(request):
+    """Create or update a step_data_config row ensuring uniqueness of (step_type, key).
+    Expects POST JSON with: step_type (int), key (str), display_text, value_type (int),
+    value_default (str optional), required (bool), read_only (bool), display_group (int),
+    accepted_value (str optional), value_options (str/JSON optional).
+    Returns the sdcid and echoed fields.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST method required'}, status=405)
+    if not (has_permission(request, 'super_user') or has_permission(request, 'assayconfig_edit')):
+        return JsonResponse({'error': 'Insufficient permissions'}, status=403)
+    try:
+        payload = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    required_fields = ['step_type', 'key', 'display_text', 'value_type']
+    missing = [f for f in required_fields if payload.get(f) in (None, '')]
+    if missing:
+        return JsonResponse({'error': f'Missing fields: {", ".join(missing)}'}, status=400)
+    step_type = int(payload['step_type'])
+    key = str(payload['key']).strip()
+    if not key:
+        return JsonResponse({'error': 'Key cannot be blank'}, status=400)
+    # Normalize key to snake_case
+    key_norm = key.lower().replace(' ', '_')
+    display_text = payload.get('display_text', key)
+    value_type = int(payload['value_type'])
+    value_default = payload.get('value_default')
+    required_flag = bool(payload.get('required', False))
+    read_only_flag = bool(payload.get('read_only', False))
+    display_group = int(payload.get('display_group', 0))
+    accepted_value = payload.get('accepted_value')
+    value_options = payload.get('value_options')
+    try:
+        conn = psycopg.connect(
+            dbname=pylims.dbname, user=pylims.dbuser, password=pylims.dbpass,
+            host=pylims.dbhost, port=pylims.dbport, row_factory=dict_row
+        )
+        cur = conn.cursor()
+        # Attempt to find existing
+        cur.execute("""
+            SELECT sdcid FROM velocity.step_data_config
+            WHERE step_type = %s AND key = %s
+        """, (step_type, key_norm))
+        row = cur.fetchone()
+        if row:
+            sdcid = row['sdcid']
+            cur.execute("""
+                UPDATE velocity.step_data_config
+                SET display_text=%s, value_type=%s, value_default=%s, required=%s, read_only=%s,
+                    display_group=%s, accepted_value=%s, value_options=%s
+                WHERE sdcid=%s
+                RETURNING sdcid
+            """, (display_text, value_type, value_default, required_flag, read_only_flag,
+                   display_group, accepted_value, value_options, sdcid))
+            sdcid = cur.fetchone()['sdcid']
+            action = 'updated'
+        else:
+            cur.execute("""
+                INSERT INTO velocity.step_data_config
+                (step_type, key, display_text, value_type, value_default, required, read_only, display_group, accepted_value, value_options)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+                RETURNING sdcid
+            """, (step_type, key_norm, display_text, value_type, value_default, required_flag, read_only_flag, display_group, accepted_value, value_options))
+            sdcid = cur.fetchone()['sdcid']
+            action = 'created'
+        conn.commit()
+        conn.close()
+        return JsonResponse({
+            'status': 'success',
+            'action': action,
+            'sdcid': sdcid,
+            'step_type': step_type,
+            'key': key_norm,
+            'display_text': display_text,
+            'value_type': value_type
+        })
+    except Exception as e:
+        return JsonResponse({'error': f'Database error: {str(e)}'}, status=500)

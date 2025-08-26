@@ -452,16 +452,54 @@ function renderStepDataItems() {
 
 function showAddStepDataPrompt() {
     if (!currentPageConfig) return;
-    const idStr = prompt('Enter step data ID to add (temporary placeholder)');
-    if (!idStr) return;
-    const id = parseInt(idStr.trim());
-    if (Number.isNaN(id)) return alert('Invalid ID');
-    const sd = currentPageConfig.config.step_data;
-    if (!sd.enabled_ids.includes(id)) {
-        sd.enabled_ids.push(id);
-        renderStepDataItems();
-        updatePageConfigTextarea(getPagesFromInterface());
-    }
+    // Gather inputs via simple prompts (placeholder UI; replace with proper modal later)
+    const key = prompt('Enter unique key (snake_case) for step data:');
+    if (!key) return;
+    const displayText = prompt('Display label (shown to users):', key) || key;
+    const valueTypeStr = prompt('Value type ID (sdtid from step_data_types):', '1');
+    if (!valueTypeStr) return;
+    const valueType = parseInt(valueTypeStr.trim());
+    if (Number.isNaN(valueType)) return alert('Invalid value type');
+    const valueDefault = prompt('Default value (optional):', '') || null;
+    const requiredFlag = confirm('Mark as required? OK = Yes, Cancel = No');
+    const stepType = currentStepConfig.step_type || currentStepConfig.step_type_id || 0;
+    const payload = {
+        step_type: stepType,
+        key: key,
+        display_text: displayText,
+        value_type: valueType,
+        value_default: valueDefault,
+        required: requiredFlag,
+        read_only: false,
+        display_group: 0
+    };
+    const pyoptions = {
+        data: payload,
+        csrf: csrf,
+        url: '../upsert_step_data_config',
+        submit_mode: 'silent'
+    };
+    pylims_post(pyoptions).then(result => {
+        if (result.status === 'success') {
+            const sd = currentPageConfig.config.step_data;
+            const newId = result.sdcid;
+            if (!sd.enabled_ids.includes(newId)) sd.enabled_ids.push(newId);
+            sd.configurations[newId] = {
+                label: result.display_text,
+                key: result.key,
+                value_type: result.value_type,
+                sdcid: result.sdcid,
+                required: payload.required
+            };
+            renderStepDataItems();
+            updatePageConfigTextarea(getPagesFromInterface());
+        } else {
+            pylims_ui.error('Failed: ' + (result.error || 'Unknown error'));
+        }
+    }).catch(err => {
+        console.error('Error upserting step data config', err);
+        pylims_ui.error('Error creating step data config');
+    });
 }
 
 function configureStepData(id) {

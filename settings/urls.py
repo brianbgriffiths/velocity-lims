@@ -67,6 +67,7 @@ urlpatterns = [
     path('save_step_config/', assays.save_step_config, name="save_step_config"),
     path('get_special_samples/', assays.get_special_samples, name="get_special_samples"),
     path('get_available_pages/', assays.get_available_pages, name="get_available_pages"),
+    path('upsert_step_data_config/', assays.upsert_step_data_config, name="upsert_step_data_config"),
     path('settings_assay_view/<int:assay_id>/', assays.settings_assay_view, name="settings_assay_view"),
     path('settings_assay_configure/<int:assay_id>/', assays.settings_assay_configure, name="settings_assay_configure"),
     path('settings_assay_configure/<int:assay_id>/<int:step_id>/', assays.settings_assay_configure, name="settings_assay_configure_step"),
