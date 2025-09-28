@@ -241,6 +241,28 @@
     version::before {
         content:'v';
     }
+    assaytag {
+        display:block;
+        border:solid 1px var(--green-dark);
+        background-color:var(--green-med);
+        color:white;
+        padding:2px 5px;
+        border-radius:10px;
+        font-size:12px;
+        margin:2px;
+    }
+    .content-border {
+        margin:20px 0px;
+        border: solid 1px var(--accent1);
+        text-align: left;
+        padding: 30px 20px;
+        background-color: #ffffff;
+        position: relative;
+    }
+    #specimens {
+        display:flex;
+        flex-direction:row;
+        gap:20px;
 </style>
 {% endblock %}
 {% block centercontent %}
@@ -254,15 +276,16 @@
     <div class="searchtype"> Find a Batch:
         <br><input type="text"></div>
 </div>
-<div style="display:flex">
-    <div class="center-border">
-        <div>Latest Requisitions: <selectedsamples>0 Selected</selectedsamples></div>
-        <div id="requisitions"></div>
-    </div>
-    <div class="center-border">
+<div id="specimens">    
+    <div class="content-border" style="margin-left:50px;">
         <div>Active Assays:</div>
         <div id="active_assays"></div>
     </div>
+    <div class="content-border">
+        <div>Latest Requisitions: <selectedsamples>0 Selected</selectedsamples></div>
+        <div id="requisitions"></div>
+    </div>
+    
 </div>
 <dragsamplecount><dragsamplecount>
 
@@ -274,6 +297,7 @@
 const csrf = '{{ csrf_token }}';
 const default_reqs = {{ last_20 | safe }};
 const default_specimens = {{ specimens | safe }};
+const specimen_assays = {{ specimen_assays | safe }};
 const main = document.getElementById('queues');
 const requisitions = document.getElementById('requisitions');
 const velocity_assays = {{ assays | safe }};
@@ -328,11 +352,22 @@ class Specimen {
 		for (let datum in data) {
 			this[datum] = data[datum];
 		}
+        this.assays = {};
         this.selected=false;
 		this.element = document.createElement('reqsample');
         this.element.textContent=data.specimen_name;
         this.element.addEventListener('mouseup',()=> {
             if (dragging!=2) {
+                if (!event.shiftKey) {
+                    for (let smid of selected_specimens) {
+                        if (smid!=this.smid) {
+                            specimens[smid].selected=false;
+                            specimens[smid].element.classList.remove('selected-specimen');
+                        }
+                    }
+                    selected_specimens = [];
+                    selectedsamples.textContent = '0 Selected';
+                }
                 this.selected=!this.selected;
                 const specimen_index = selected_specimens.indexOf(this.smid)
                 if (this.selected) {
@@ -347,6 +382,7 @@ class Specimen {
                     }
                     this.element.classList.remove('selected-specimen');
                 }
+                selectedsamples.textContent = `${selected_specimens.length} Selected`;
             }
         })
         this.element.addEventListener('mousedown',(event)=> {
@@ -373,16 +409,21 @@ class Specimen {
                 
             } 
         })
+        for (let sa in specimen_assays[this.smid]) {
+            this.assays[specimen_assays[this.smid][sa].assay] = specimen_assays[this.smid][sa];
+            this.display_assay(specimen_assays[this.smid][sa].assay);
+        }
         
+    }
+    display_assay(assayid) {
+        console.log('displaying assay',assayid)
+        const assayinfo = document.createElement('assaytag');
+        assayinfo.textContent=`${assays[assayid].assay_name} (${this.assays[assayid].status})`;
+        this.element.appendChild(assayinfo);
     }
     
 }
-var specimens = {}
-for (let specimen of default_specimens) {
-    specimens[specimen.smid] = new Specimen(specimen)
-    const specimen_req = document.getElementById('req_'+specimen.req)
-    specimen_req.appendChild(specimens[specimen.smid].element)
-}
+
 
 class Assay {
 	constructor(data) {
@@ -404,8 +445,11 @@ class Assay {
                 const data={"assay":this.assayid, samples:selected_specimens}
                 const pyoptions={data,csrf,urlprefix:'..',url:'add_to_assay',submit_mode:'silent'}
                 pylims_post(pyoptions).then(result => {
-                    
-                    
+                    for (let sa of result.specimen_assay) {
+                        specimens[sa.specimen].assays[sa.assay] = sa;
+                        specimens[sa.specimen].display_assay(sa.assay);
+                    }
+
                 }).catch(error => {
                     console.error(error);
                 }); 
@@ -414,6 +458,23 @@ class Assay {
         })
     }
 }
+
+
+
+var assays = {}
+for (const assay of velocity_assays) {
+    assays[assay.assayid] = new Assay(assay)
+    if (assay.archived) {continue;}
+    active_assays.appendChild(assays[assay.assayid].element)
+}
+
+var specimens = {}
+for (let specimen of default_specimens) {
+    specimens[specimen.smid] = new Specimen(specimen)
+    const specimen_req = document.getElementById('req_'+specimen.req)
+    specimen_req.appendChild(specimens[specimen.smid].element)
+}
+
 document.addEventListener('mousemove',(event)=> {
     if (dragging===2) {
         event.preventDefault();
@@ -423,11 +484,7 @@ document.addEventListener('mousemove',(event)=> {
     }
 })
 
-var assays = {}
-for (const assay of velocity_assays) {
-    assays[assay.assayid] = new Assay(assay)
-    active_assays.appendChild(assays[assay.assayid].element)
-}
+
 
 function localerror(msg) {
 	error_element = document.getElementById('pylims_request_error');

@@ -291,22 +291,6 @@ textarea.form-input {
     background-color: var(--gray-light);
 }
 
-.btn-add-step {
-    background-color: var(--green-med);
-    color: white;
-    border: none;
-    padding: 10px 15px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: bold;
-    width: 100%;
-    margin-top: 10px;
-}
-
-.btn-add-step:hover {
-    background-color: var(--green-dark);
-}
 
 .lock-toggle {
     cursor: pointer;
@@ -1344,20 +1328,19 @@ textarea.form-input {
 }
 
 /* Step Data Panel Styles */
-#stepDataPanel .step-data-actions .btn-add-step-data {
-    background-color: var(--accent1);
-    color: #fff;
+#add_step_buttons button {
+    background-color: var(--green-med);
+    color: white;
     border: none;
-    padding: 4px 10px;
+    padding: 8px 8px;
     border-radius: 3px;
-    font-size: 12px;
     cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
+    font-size: 12px;
+    font-weight: bold;
+    flex: 1;
 }
 
-#stepDataPanel .step-data-actions .btn-add-step-data:hover {
+#add_step_buttons button:hover {
     background-color: var(--accent2);
 }
 

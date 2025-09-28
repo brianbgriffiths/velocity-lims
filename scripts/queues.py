@@ -57,10 +57,10 @@ def load_queues(request):
     cursor = conn.cursor()
     
    
-    cursor.execute("SELECT *, (select count(*) FROM velocity.queued_samples qd WHERE qd.queue=vs.sid) as samples FROM velocity.protocol_steps vs JOIN velocity.step_config sc ON sc.scid=vs.step_type JOIN velocity.protocols vp ON vp.pid = vs.protocol ORDER BY vs.protocol, vs.order_in_protocol;")
+    cursor.execute("SELECT *, (select count(*) FROM velocity.queued_items qd WHERE qd.queue_id=vs.sid) as samples FROM velocity.protocol_steps vs JOIN velocity.step_config sc ON sc.scid=vs.step_type JOIN velocity.protocols vp ON vp.pid = vs.protocol ORDER BY vs.protocol, vs.order_in_protocol;")
     response['queues'] = cursor.fetchall()    
     
-    cursor.execute("SELECT va.assay_name, vsc.step_name, vsu.step FROM velocity.step_users vsu JOIN velocity.steps ON steps.stepid=vsu.step JOIN velocity.step_config vsc ON vsc.scid=steps.step_type JOIN LATERAL jsonb_array_elements(steps.workflow::jsonb) AS wf_id ON TRUE JOIN velocity.workflows vwf ON vwf.wfid = (wf_id)::int JOIN velocity.assay va ON va.assayid=vwf.assay WHERE vsu.userid=%s AND steps.status=1 GROUP BY vsu.step, vsc.step_name, va.assay_name",(request.session['userid'],))
+    cursor.execute("SELECT va.assay_name, vsc.step_name, vsu.step FROM velocity.step_users vsu JOIN velocity.steps ON steps.stepid=vsu.step JOIN velocity.step_config vsc ON vsc.scid=steps.step_type JOIN LATERAL jsonb_array_elements(steps.assay_version::jsonb) AS wf_id ON TRUE JOIN velocity.assay_versions vav ON vav.avid = (wf_id)::int JOIN velocity.assay va ON va.assayid=vav.assay WHERE vsu.userid=%s AND steps.status=1 GROUP BY vsu.step, vsc.step_name, va.assay_name",(request.session['userid'],))
     response['inprogress'] = cursor.fetchall()
     print(f'In Progress: {len(response['inprogress'])}')
 
