@@ -7,7 +7,7 @@
 
 > A modern, Python-powered Laboratory Information Management System designed for high-throughput laboratories, built by seasoned LIMS professionals for the global scientific community.
 
-![Velocity LIMS Hero](splash/screen_1_roles.png)
+![Velocity LIMS Hero](screen_11_scripts.png)
 
 ## 🚀 Overview
 
@@ -120,20 +120,6 @@ Velocity LIMS is organized into focused modules:
 
 ## 🔧 Configuration
 
-### Module Configuration
-
-Velocity LIMS uses a flexible module system. Configure active modules in `json/module_setup.json`:
-
-```json
-{
-    "setup": {
-        "login": "pylims_default_v1.0",
-        "samples": "pylims_velocity_v1.0", 
-        "containers": "pylims_velocity_v1.0",
-        "workflows": "enabled"
-    }
-}
-```
 
 ### Database Schema
 
@@ -145,11 +131,6 @@ The system uses a `velocity.*` schema prefix for organization:
 - `velocity.containers` - Laboratory containers and plates
 - `velocity.workflows` - Process definitions and steps
 
-Use the built-in schema tools for analysis:
-```bash
-python db_schema_discovery.py  # Generate current schema map
-python db_analysis_tool.py "track PCR results"  # AI-powered schema suggestions
-```
 
 ## 🔒 Security & RBAC
 
@@ -277,7 +258,7 @@ Velocity LIMS is open source software. See [LICENSE](LICENSE) for details.
 
 Built with ❤️ by seasoned LIMS professionals for the global scientific community. 
 
-**Why is it free?** [Learn about our mission](splash/why-free.html) to democratize laboratory software.
+**Why is it free?** [Learn about our mission](https://velocitylims.com/why-free.html) to democratize laboratory software.
 
 ---
 
